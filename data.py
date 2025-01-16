@@ -7,7 +7,7 @@ import os
 
 if not os.path.exists("databases"):
     os.mkdir("databases")
-db = sqlite3.connect(os.path.join("databases", "snippet_oracle.db"), autocommit=False, check_same_thread=False)
+db = sqlite3.connect(os.path.join("databases", "snippet_oracle.db"), check_same_thread=False)
 
 def init():
     cur = db.cursor()
