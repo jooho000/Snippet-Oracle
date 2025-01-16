@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}Sign Up - Snippet Oracle{% endblock %}
+{% block content %}
+
+<section class="section">
+  <div class="content">
+    <form method="post">
+
+      <div class="field">
+        <label class="label" for="username">Name</label>
+        <div class="control">
+          <input class="input" name="username" type="text" placeholder="Username" value="{{ username }}" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Name</label>
+        <div class="control">
+          <input class="input" name="password" type="password" placeholder="Password" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="repeatPassword">Name</label>
+        <div class="control">
+          <input class="input" name="repeatPassword" type="password" placeholder="Repeat password" />
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="control">
+          <button class="button is-link">Sign Up</button>
+        </div>
+      </div>
+
+    </form>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p class="help is-danger">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+  {% endwith %}
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<section class="section">
+    <h1 class="title">This is a title</h1>
+    <h2 class="subtitle">... and this is a subtitle</h2>
+</section>
+<section class="section">
+    <div class="content">
+        <p>Python says: {{ example }}</p>
+        <p id="demo">Javascript says: </p>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='index.js') }}"></script>
+{% endblock %}

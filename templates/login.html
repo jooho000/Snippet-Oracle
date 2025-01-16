@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block title %}Log In - Snippet Oracle{% endblock %}
+{% block content %}
+
+<section class="section">
+  <div class="content">
+    <form method="post">
+
+      <div class="field">
+        <label class="label" for="username">Name</label>
+        <div class="control">
+          <input class="input" name="username" type="text" placeholder="Username" value="{{ username }}" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Name</label>
+        <div class="control">
+          <input class="input" name="password" type="password" placeholder="Password" />
+        </div>
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <input type="submit" class="button is-link" value="Login" />
+        </div>
+        <div class="control">
+          <input type="submit" class="button is-link is-light" value="Sign Up" formaction="{{ url_for('signup') }}" />
+        </div>
+      </div>
+
+    </form>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p class="help is-danger">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+  {% endwith %}
+  </div>
+</section>
+
+{% endblock %}
