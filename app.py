@@ -102,3 +102,54 @@ def signup():
 def logout():
     flask_login.logout_user()
     return flask.redirect(flask.url_for("index"))
+
+# Handles Snippet Creation (Worked on by Alan Ly)
+@app.route("/createSnippet", methods=["GET", "POST"])
+@flask_login.login_required
+def createSnippet():
+    if flask.request.method == "POST":
+        name = flask.request.form.get("name")
+        code = flask.request.form.get("code")
+        description = flask.request.form.get("description")
+        user_id = flask_login.current_user.id
+
+        if not name or not code:
+            flask.flash("Name and Code are required fields!")
+            return flask.redirect(flask.url_for("createSnippet"))
+        
+        cur = data.db.cursor()
+        cur.execute(
+            """
+            INSERT INTO Snippet (Name, Code, Description, UserID, Date)
+            VALUES (?, ?, ?, ?, datetime('now'))
+            """,
+            [name, code, description, user_id]
+        )
+        data.db.commit()
+
+        flask.flash("Snippet created successfully!")
+        return flask.redirect(flask.url_for("snippets"))
+    
+    return flask.render_template("createSnippet.html")
+
+# View All Personal User Snippets (Worked on by Alan Ly)
+@app.route("/snippets")
+@flask_login.login_required
+def snippets():
+    cur = data.db.cursor()
+    cur.execute("SELECT * FROM Snippet WHERE UserID = ? ORDER BY Date DESC", [flask_login.current_user.id])
+    user_snippets = cur.fetchall()  # Fetch all snippets for the logged-in user
+    return flask.render_template("snippets.html", snippets=user_snippets)
+
+# View a Specific Snippet Page (Worked on by Alan Ly)
+@app.route("/snippet/<int:snippet_id>")
+@flask_login.login_required
+def view_snippet(snippet_id):
+    cur = data.db.cursor()
+    cur.execute("SELECT * FROM Snippet WHERE id = ?", [snippet_id])
+    snippet = cur.fetchone()  # Fetch the snippet by its ID
+    if snippet:
+        return flask.render_template("snippetDetail.html", snippet=snippet)
+    else:
+        flask.flash("Snippet not found!")
+        return flask.redirect(flask.url_for("snippets"))

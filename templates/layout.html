@@ -12,21 +12,15 @@
       <div class="navbar-menu">
         <div class="navbar-start">
           <a class="navbar-item" href="{{ url_for('index') }}"> Home </a>
-
           <a class="navbar-item"> About </a>
         </div>
         <div class="navbar-end">
           <div class="navbar-item">
             {% if current_user.is_authenticated %}
             <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link">
-                {{ current_user.name }}
-              </a>
-      
+              <a class="navbar-link">{{ current_user.name }}</a>
               <div class="navbar-dropdown">
-                <a class="navbar-item" href="{{ url_for('logout') }}">
-                  Logout
-                </a>
+                <a class="navbar-item" href="{{ url_for('logout') }}">Logout</a>
               </div>
             </div>
             {% else %}
@@ -41,7 +35,7 @@
     </nav>
     {% endblock %}
     {% block content %}{% endblock %}
-    {% block scripts%}
+    {% block scripts %}
     <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
     {% endblock %}
   </body>
