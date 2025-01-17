@@ -3,24 +3,32 @@
 {% block title %}Welcome - Snippet Oracle{% endblock %}
 
 {% block content %}
-
 <section class="section">
-    <h1 class="title">Welcome to Snippet Oracle</h1>
-    <p>Manage and share your code snippets easily.</p>
+    <div class="container has-text-centered">
+        <h1 class="title">Welcome to Snippet Oracle</h1>
+        <p class="subtitle">Effortlessly manage, search, and share your code snippets.</p>
 
-    <!-- Button to go to the Create Snippet page -->
-    <a class="button is-primary" href="{{ url_for('createSnippet') }}">Create Snippet</a>
+        <!-- Buttons for Navigation -->
+        <div class="buttons is-centered mt-5">
+            <a class="button is-primary is-large" href="{{ url_for('createSnippet') }}">Create Snippet</a>
+            <a class="button is-link is-large" href="{{ url_for('snippets') }}">View My Snippets</a>
+        </div>
 
-    <!-- Button to view all snippets created by the user -->
-    <a class="button is-link" href="{{ url_for('snippets') }}">View My Snippets</a>
-</section>
-<section class="section">
-    <div class="content">
-        <p>Python says: {{ example }}</p>
-        <p id="demo">Javascript says: </p>
+        <!-- Search Bar -->
+        <div class="field mt-5">
+            <div class="control has-icons-left has-icons-right">
+                <input
+                    class="input is-large"
+                    type="text"
+                    placeholder="Search for snippets..."
+                />
+                <span class="icon is-small is-left">
+                    <i class="fas fa-search"></i>
+                </span>
+            </div>
+        </div>
     </div>
 </section>
-
 {% endblock %}
 
 {% block scripts %}

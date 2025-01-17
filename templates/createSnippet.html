@@ -44,16 +44,6 @@
             </div>
         </form>
 
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="notification is-danger">
-            {% for message in messages %}
-            <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
-
         <div class="buttons is-centered mt-4">
             <a class="button is-light" href="{{ url_for('snippets') }}">Back to My Snippets</a>
         </div>

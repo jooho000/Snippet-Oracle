@@ -4,44 +4,77 @@
 {% block content %}
 
 <section class="section">
-  <div class="content">
-    <form method="post">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-half">
+        <div class="box">
+          <h1 class="title has-text-centered">Sign Up</h1>
+          <p class="subtitle has-text-centered">Create your account to get started with Snippet Oracle.</p>
 
-      <div class="field">
-        <label class="label" for="username">Name</label>
-        <div class="control">
-          <input class="input" name="username" type="text" placeholder="Username" value="{{ username }}" />
+          <form method="post">
+            <!-- Username Field -->
+            <div class="field">
+              <label class="label" for="username">Username</label>
+              <div class="control has-icons-left">
+                <input
+                  class="input"
+                  name="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value="{{ username }}"
+                  required
+                />
+                <span class="icon is-small is-left">
+                  <i class="fas fa-user"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="field">
+              <label class="label" for="password">Password</label>
+              <div class="control has-icons-left">
+                <input
+                  class="input"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  required
+                />
+                <span class="icon is-small is-left">
+                  <i class="fas fa-lock"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Repeat Password Field -->
+            <div class="field">
+              <label class="label" for="repeatPassword">Repeat Password</label>
+              <div class="control has-icons-left">
+                <input
+                  class="input"
+                  name="repeatPassword"
+                  type="password"
+                  placeholder="Re-enter your password"
+                  required
+                />
+                <span class="icon is-small is-left">
+                  <i class="fas fa-lock"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Sign Up Button -->
+            <div class="field">
+              <div class="control">
+                <button type="submit" class="button is-primary is-fullwidth">Sign Up</button>
+              </div>
+            </div>
+          </form>
+
         </div>
       </div>
-
-      <div class="field">
-        <label class="label" for="password">Password</label>
-        <div class="control">
-          <input class="input" name="password" type="password" placeholder="Password" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="label" for="repeatPassword">Repeat Password</label>
-        <div class="control">
-          <input class="input" name="repeatPassword" type="password" placeholder="Repeat password" />
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="control">
-          <button class="button is-link">Sign Up</button>
-        </div>
-      </div>
-
-    </form>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    {% for message in messages %}
-    <p class="help is-danger">{{ message }}</p>
-    {% endfor %}
-    {% endif %}
-  {% endwith %}
+    </div>
   </div>
 </section>
 
