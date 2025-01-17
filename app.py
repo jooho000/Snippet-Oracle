@@ -14,6 +14,7 @@ import markupsafe
 import os
 import data
 import auth
+from flask import jsonify, request
 
 app = flask.Flask("snippet_oracle")
 app.secret_key = os.urandom(16)
@@ -153,3 +154,19 @@ def view_snippet(snippet_id):
     else:
         flask.flash("Snippet not found!")
         return flask.redirect(flask.url_for("snippets"))
+    
+@app.route("/search", methods=["GET"])
+def search_snippets():
+    query = request.args.get("q", "")  # Get the search query from the URL
+    results = search_snippets_in_db(query)  # Query the database for matching snippets
+    return jsonify({"results": results})
+
+def search_snippets_in_db(query):
+    # Use SQL's LIKE operator to search for the query in the 'Name' field of the Snippet table
+    cur = data.db.cursor()
+    query = f"%{query}%"  # Add wildcards to match any part of the Name
+    cur.execute("SELECT Name, ID FROM Snippet WHERE Name LIKE ?", (query,))
+    results = cur.fetchall()
+
+    # Return the results as a list of dictionaries, with 'name' and 'id' as the keys
+    return [{"name": result[0], "id": result[1]} for result in results]
