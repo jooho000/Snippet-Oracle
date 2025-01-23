@@ -20,7 +20,9 @@ def init():
             CREATE TABLE User (
                 ID INTEGER PRIMARY KEY,
                 Name TEXT UNIQUE,
-                PasswordHash TEXT
+                PasswordHash TEXT,
+                ProfilePicture TEXT,    -- Profile: To store file path or URL for profile picture
+                Bio TEXT                -- Profile: To store the user's bio
             );
             """
         )
@@ -51,6 +53,20 @@ def init():
                 ID INTEGER PRIMARY KEY,
                 SnippetID INTEGER,
                 Tag TEXT
+            );
+            """
+        )
+
+    # Create Links Table to store personal user links (e.g. Github, X, Discord, etc.)
+    res = cur.execute("SELECT name FROM sqlite_master WHERE name='Links'")
+    if res.fetchone() is None:
+        cur.execute(
+            """
+            CREATE TABLE Links (
+                ID INTEGER PRIMARY KEY,
+                UserID INTEGER,
+                Platform TEXT,  -- e.g., "GitHub", "X", "Discord"
+                URL TEXT        -- The actual link (e.g., "https://github.com/user")
             );
             """
         )
