@@ -104,6 +104,52 @@ def logout():
     flask_login.logout_user()
     return flask.redirect(flask.url_for("index"))
 
+# Add Route for Profile Page
+@app.route("/profile", methods=["GET", "POST"])
+@flask_login.login_required
+def profile():
+    cur = data.db.cursor()
+
+    if flask.request.method == "POST":
+        # Handle Any Profile Edits
+        bio = flask.request.form.get("bio")
+        profile_pic = flask.request.form.get("profile_pic")
+        links = flask.request.form.getlist("links")
+
+        # Update user bio and profile picture
+        cur.execute(
+            """
+            UPDATE User
+            SET Bio = ?, ProfilePicture = ?
+            WHERE ID = ?
+            """,
+            [bio, profile_pic, flask_login.current_user.id]
+        )
+
+        # Clear any existing links and insert updated links
+        cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
+        for link in links:
+            if link.strip():
+                cur.execute(
+                    """
+                    INSERT INTO Links (UserID, Platform, URL)
+                    VALUES (?, ?, ?)
+                    """,
+                    [flask_login.current_user.id, "Custom", link]
+                )
+            
+        data.db.commit()
+        flask.flash("Profile updated successfully!")
+
+    # Fetch user details and links
+    cur.execute("SELECT Name, Bio, ProfilePicture FROM User WHERE ID = ?", [flask_login.current_user.id])
+    user = cur.fetchone()
+
+    cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [flask_login.current_user.id])
+    user_links = cur.fetchall()
+
+    return flask.render_template("profile.html", user=user, links=user_links)
+
 # Handles Snippet Creation (Worked on by Alan Ly)
 @app.route("/createSnippet", methods=["GET", "POST"])
 @flask_login.login_required
