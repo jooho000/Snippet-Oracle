@@ -43,19 +43,6 @@ def init():
             """
         )
 
-    #create Tag Table:
-    res = cur.execute("SELECT name FROM sqlite_master WHERE name='Tags'")
-    if res.fetchone() is None:
-        cur.execute(
-            """
-            CREATE TABLE Tags (
-                ID INTEGER PRIMARY KEY,
-                TagName TEXT UNIQUE,
-                Usage INTEGER
-            );
-            """
-        )
-
     # Create TagUse table
     res = cur.execute("SELECT name FROM sqlite_master WHERE name='TagUse'")
     if res.fetchone() is None:
@@ -63,10 +50,9 @@ def init():
             """
             CREATE TABLE TagUse (
                 SnippetID INTEGER,
-                TagID,
-                PRIMARY KEY (SnippetID, TagID),
-                FOREIGN KEY (SnippetID) REFERENCES Snippet(ID)
-                FOREIGN KEY (TagID) REFERENCES Tags(ID)
+                TagName TEXT,
+                PRIMARY KEY (SnippetID, TagName),
+                FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID)
             );
             """
         )
