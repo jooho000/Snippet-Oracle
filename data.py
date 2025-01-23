@@ -38,6 +38,7 @@ def init():
                 Description TEXT,
                 UserID INTEGER,
                 ParentSnippetID INTEGER,
+                Tags SET,
                 Date
             );
             """
@@ -51,7 +52,7 @@ def init():
             CREATE TABLE TagUse (
                 ID INTEGER PRIMARY KEY,
                 SnippetID INTEGER,
-                Tag TEXT
+                Tag TEXT FOREIGN KEY REFERENCES Snippet(ID)
             );
             """
         )

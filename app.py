@@ -113,6 +113,7 @@ def createSnippet():
         name = flask.request.form.get("name")
         code = flask.request.form.get("code")
         description = flask.request.form.get("description")
+        tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
 
         if not name or not code:
@@ -122,10 +123,10 @@ def createSnippet():
         cur = data.db.cursor()
         cur.execute(
             """
-            INSERT INTO Snippet (Name, Code, Description, UserID, Date)
-            VALUES (?, ?, ?, ?, datetime('now'))
+            INSERT INTO Snippet (Name, Code, Description, UserID, Tags, Date)
+            VALUES (?, ?, ?, ?, ?, datetime('now'))
             """,
-            [name, code, description, user_id]
+            [name, code, description, user_id, tags]
         )
         data.db.commit()
 
@@ -183,7 +184,7 @@ def search_snippets_in_db(query):
 
 def multi_name_search(names):
     cur = data.db.cursor()
-    query = "SELECT Name, ID From Snippet WHERE"
+    query = "SELECT Name, ID FROM Snippet WHERE"
     nq = ""
     params = []
     
@@ -199,3 +200,11 @@ def multi_name_search(names):
     cur.execute(query, params)
     results = cur.fetchall()
     return [{"name": result[0], "id": result[1]} for result in results]
+
+def tag_exclusive_search(tags):
+    cur = data.db.cursor()
+    query = """
+            SLEECT S.Name, S.ID 
+            FROM Snippet AS S, TagUse AS T
+            WHERE S.ID = T.
+            """
