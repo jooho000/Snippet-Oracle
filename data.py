@@ -38,8 +38,20 @@ def init():
                 Description TEXT,
                 UserID INTEGER,
                 ParentSnippetID INTEGER,
-                Tags SET,
                 Date
+            );
+            """
+        )
+
+    #create Tag Table:
+    res = cur.execute("SELECT name FROM sqlite_master WHERE name='Tags'")
+    if res.fetchone() is None:
+        cur.execute(
+            """
+            CREATE TABLE Tags (
+                ID INTEGER PRIMARY KEY,
+                TagName TEXT UNIQUE,
+                Usage INTEGER
             );
             """
         )
@@ -50,9 +62,11 @@ def init():
         cur.execute(
             """
             CREATE TABLE TagUse (
-                ID INTEGER PRIMARY KEY,
                 SnippetID INTEGER,
-                Tag TEXT FOREIGN KEY REFERENCES Snippet(ID)
+                TagID,
+                PRIMARY KEY (SnippetID, TagID),
+                FOREIGN KEY (SnippetID) REFERENCES Snippet(ID)
+                FOREIGN KEY (TagID) REFERENCES Tags(ID)
             );
             """
         )
