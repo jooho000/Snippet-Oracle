@@ -77,6 +77,7 @@ def signup():
         # Validate username and password
         username_error = auth.get_username_error(username)
         password_error = auth.get_password_error(password)
+        
         if username_error or password_error is not None:
             flask.flash(username_error or password_error)
         elif repeat_password is None or repeat_password == "":
@@ -158,7 +159,16 @@ def view_snippet(snippet_id):
 @app.route("/search", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "")  # Get the search query from the URL
-    results = search_snippets_in_db(query)  # Query the database for matching snippets
+
+    terms = query.split(" ")
+    tags, names = set(), set()
+    for term in terms:
+        if (term[0] == ':'):
+            tags.add(term)
+            continue
+        names.add(term + "%")
+
+    results = multi_name_search(names)  # Query the database for matching snippets
     return jsonify({"results": results})
 
 def search_snippets_in_db(query):
@@ -169,4 +179,23 @@ def search_snippets_in_db(query):
     results = cur.fetchall()
 
     # Return the results as a list of dictionaries, with 'name' and 'id' as the keys
+    return [{"name": result[0], "id": result[1]} for result in results]
+
+def multi_name_search(names):
+    cur = data.db.cursor()
+    query = "SELECT Name, ID From Snippet WHERE"
+    nq = ""
+    params = []
+    
+    for i in range(len(names)):
+        if (i != 0):
+            nq += " OR Name Like ?"
+            continue
+        nq += " Name Like ?"
+
+    query += f"({nq})"
+    params.extend(names)
+
+    cur.execute(query, params)
+    results = cur.fetchall()
     return [{"name": result[0], "id": result[1]} for result in results]

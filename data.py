@@ -20,7 +20,8 @@ def init():
             CREATE TABLE User (
                 ID INTEGER PRIMARY KEY,
                 Name TEXT UNIQUE,
-                PasswordHash TEXT
+                PasswordHash TEXT,
+                Description varchar(250)
             );
             """
         )
