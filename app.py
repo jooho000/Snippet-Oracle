@@ -23,9 +23,24 @@ auth.init(app)
 auth.login_manager.login_view = "login"
 
 
+#@app.route("/")
+#def index():
+#    return flask.render_template("index.html", example="Hello world!")
 @app.route("/")
 def index():
-    return flask.render_template("index.html", example="Hello world!")
+    """
+    Render the homepage with the list of snippets.
+    """
+    user_snippets = []
+    if flask_login.current_user.is_authenticated:
+        cur = data.db.cursor()
+        cur.execute(
+            "SELECT ID, Name, Code, Description FROM Snippet WHERE UserID = ? ORDER BY Date DESC",
+            [flask_login.current_user.id],
+        )
+        user_snippets = cur.fetchall()
+
+    return flask.render_template("index.html", snippets=user_snippets)
 
 
 @app.route("/secret")
