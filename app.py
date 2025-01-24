@@ -193,9 +193,10 @@ def search_snippets():
 
     if len(tags) > 0 and len(names) > 0:
         results = tag_name_search(names, tags)
-    if len(tags) > 0:
+        
+    elif len(tags) > 0:
        results = tag_exclusive_search(tags)  # Query the database for matching snippets
-    else:
+    elif len(names) > 0:
        results = multi_name_search(names)
 
     return jsonify({"results": results})
@@ -278,7 +279,7 @@ def tag_name_search(names, tags):
 
 
     query += f" ({nq})"
-    query += f" AND ({tq})"
+    query += f" AND TagName IN ({tq})"
     params.extend(names)
     params.extend(tags)
     cur.execute(query, params)
