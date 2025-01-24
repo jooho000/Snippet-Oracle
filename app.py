@@ -140,7 +140,10 @@ def createSnippet():
         )
         id = cur.fetchone()
         tagz = tags.replace(" ", "").split(",")
-        for tag in tagz:
+        tag_set = set()
+        for t in tagz:
+            tag_set.add(t)
+        for tag in tag_set:
             cur.execute(
                 """
                 INSERT INTO TagUse (SnippetID, TagName)
@@ -183,9 +186,14 @@ def search_snippets():
 
     terms = query.split(" ")
     tags, names = set(), set()
+    desc_has = []
+
     for term in terms:
         if (term[0] == ":"):
             tags.add(term[1:])
+            continue
+        if (term[0]=="-"):
+            desc_has.append(f"%{term[1:]}%")
             continue
         names.add(term + "%")
 
@@ -193,7 +201,8 @@ def search_snippets():
 
     if len(tags) > 0 and len(names) > 0:
         results = tag_name_search(names, tags)
-        
+    elif len (desc_has) > 0:
+        results = desc_search(desc_has)
     elif len(tags) > 0:
        results = tag_exclusive_search(tags)  # Query the database for matching snippets
     elif len(names) > 0:
@@ -286,3 +295,25 @@ def tag_name_search(names, tags):
     results = cur.fetchall()
     return [{"name": result[0], "id": result[1]} for result in results]
 
+def desc_search(desc):
+    cur = data.db.cursor()
+    query = """
+            SELECT Name, ID 
+            FROM Snippet
+            WHERE Description LIKE
+            """
+    dq = ""
+    params = []
+
+    for i in range(len(desc)):
+        if (i != 0):
+            dq += " OR ?"
+            continue
+        dq += "?"
+    
+    query += f"({dq})"
+    params.extend(desc)
+    cur.execute(query, params)
+    results = cur.fetchall()
+    return [{"name": result[0], "id": result[1]} for result in results]
+    
