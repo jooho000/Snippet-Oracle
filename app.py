@@ -139,7 +139,8 @@ def createSnippet():
             """
         )
         id = cur.fetchone()
-        for tag in tags:
+        tagz = tags.replace(" ", "").split(",")
+        for tag in tagz:
             cur.execute(
                 """
                 INSERT INTO TagUse (SnippetID, TagName)
@@ -189,6 +190,9 @@ def search_snippets():
         names.add(term + "%")
 
 
+
+    if len(tags) > 0 and len(names) > 0:
+        results = tag_name_search(names, tags)
     if len(tags) > 0:
        results = tag_exclusive_search(tags)  # Query the database for matching snippets
     else:
@@ -247,3 +251,37 @@ def tag_exclusive_search(tags):
     cur.execute(query, params)
     results = cur.fetchall()
     return [{"name": result[0], "id": result[1]} for result in results]
+
+def tag_name_search(names, tags):
+    cur = data.db.cursor()
+    query = """
+            SELECT S.Name, S.ID
+            FROM Snippet AS S, TagUse AS T
+            WHERE S.ID = T.SnippetID
+            AND 
+            """
+    nq = ""
+    tq = ""
+    params = []
+    
+    for i in range(len(names)):
+        if (i != 0):
+            nq += " OR Name Like ?"
+            continue
+        nq += " Name Like ?"
+    
+    for i in range(len(tags)):
+        if (i != 0):
+            tq += ",?"
+            continue
+        tq += "?"
+
+
+    query += f" ({nq})"
+    query += f" AND ({tq})"
+    params.extend(names)
+    params.extend(tags)
+    cur.execute(query, params)
+    results = cur.fetchall()
+    return [{"name": result[0], "id": result[1]} for result in results]
+
