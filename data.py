@@ -21,7 +21,7 @@ def init():
                 ID INTEGER PRIMARY KEY,
                 Name TEXT UNIQUE,
                 PasswordHash TEXT,
-                Description varchar(250)
+                Description VARCHAR(250)
             );
             """
         )
