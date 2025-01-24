@@ -139,14 +139,15 @@ def createSnippet():
             """
         )
         id = cur.fetchone()
-        cur.execute(
-            """
-            INSERT INTO TagUse (SnippetID, TagName)
-            VALUES (?, ?)
-            """,
-            [id[0], tags[0]]
-        )
-
+        for tag in tags:
+            cur.execute(
+                """
+                INSERT INTO TagUse (SnippetID, TagName)
+                VALUES (?, ?)
+                """,
+                [id[0], tag]
+            )
+        data.db.commit()
 
         flask.flash("Snippet created successfully!")
         return flask.redirect(flask.url_for("snippets"))
@@ -182,12 +183,17 @@ def search_snippets():
     terms = query.split(" ")
     tags, names = set(), set()
     for term in terms:
-        if (term[0] == ':'):
-            tags.add(term)
+        if (term[0] == ":"):
+            tags.add(term[1:])
             continue
         names.add(term + "%")
 
-    results = tag_exclusive_search(tags)  # Query the database for matching snippets
+
+    if len(tags) > 0:
+       results = tag_exclusive_search(tags)  # Query the database for matching snippets
+    else:
+       results = multi_name_search(names)
+
     return jsonify({"results": results})
 
 def search_snippets_in_db(query):
@@ -222,20 +228,21 @@ def multi_name_search(names):
 def tag_exclusive_search(tags):
     cur = data.db.cursor()
     query = """
-            SELECT Name, ID 
-            FROM Snippet AS
-            WHERE Tags IN
+            SELECT S.Name, S.ID
+            FROM Snippet AS S, TagUse AS T
+            WHERE S.ID = T.SnippetID
+            AND T.Tagname IN 
             """
     tq = ""
     params = []
 
     for i in range(len(tags)):
         if (i != 0):
-            tq += " ,?"
+            tq += ",?"
             continue
         tq += "?"
 
-    query += F"({tq})"
+    query += f"({tq})"
     params.extend(tags)
     cur.execute(query, params)
     results = cur.fetchall()

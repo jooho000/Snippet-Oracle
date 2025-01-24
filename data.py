@@ -38,6 +38,7 @@ def init():
                 Description TEXT,
                 UserID INTEGER,
                 ParentSnippetID INTEGER,
+                tags TEXT,
                 Date
             );
             """
