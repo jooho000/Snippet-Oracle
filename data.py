@@ -2,28 +2,43 @@
 Defines the application's databases.
 """
 
-from datetime import datetime, timezone
+import itertools
 import random
 import sqlite3
+import sqlite_vec
 import os
-
 import mock_data
 
-# from sentence_transformers import SentenceTransformer
-# model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+_desc_transformer = None
+
+
+def _get_transformer():
+    from sentence_transformers import SentenceTransformer
+
+    global _desc_transformer
+    if _desc_transformer is None:
+        _desc_transformer = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
+    return _desc_transformer
+
 
 # Create database file and connect to it
 if not os.path.exists("databases"):
     os.mkdir("databases")
 _db_path = os.path.join("databases", "snippet_oracle.db")
+
 _db = sqlite3.connect(_db_path, check_same_thread=False)
+_db.enable_load_extension(True)
+sqlite_vec.load(_db)
+_db.enable_load_extension(False)
 
 
 def _init_db():
     """Initialize the database's tables."""
     cur = _db.cursor()
 
-    # Create User table
+    # Create tables
     cur.executescript(
         """
         BEGIN;
@@ -48,13 +63,16 @@ def _init_db():
             PRIMARY KEY (SnippetID, TagName),
             FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID)
         );
+        CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
+            SnippetID INTEGER PRIMARY KEY,
+            Embedding float[384]
+        );
         COMMIT;
         """
     )
 
 
 _init_db()
-
 
 ## GENERAL ##
 
@@ -68,6 +86,7 @@ def reset():
         DROP TABLE IF EXISTS TagUse;
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
+        DROP TABLE IF EXISTS SnippetEmbedding;
         COMMIT;
         """
     )
@@ -194,6 +213,14 @@ def create_snippet(name, code, user_id, description=None, tags=None):
             [(id, tag) for tag in tags],
         )
 
+    # Create a "summary" of the snippet description for smart search
+    if description is not None:
+        embedding = _get_transformer().encode(description)
+        cur.execute(
+            "INSERT INTO SnippetEmbedding(SnippetID, Embedding) VALUES (?, ?)",
+            [id, embedding],
+        )
+
     _db.commit()
     return id
 
@@ -229,6 +256,17 @@ def get_snippet(id):
 
 
 def get_user_snippets(user_id):
+    """
+    Gets all snippets posted by a specific user.
+
+    - "id": The integer ID of the snippet.
+    - "name": The name of the snippet.
+    - "code": The content of the snippet.
+    - "description": The user-provided description.
+    - "user_id": The author's integer ID.
+    - "parent_snippet_id": The integer ID of the parent snippet or `None`.
+    - "date": The date and time of this snippet's creation.
+    """
     cur = _db.cursor()
     cur.execute(
         """
@@ -316,3 +354,56 @@ def search_snippets(names=None, tags=None, desc=None):
     results = cur.execute(query, params)
 
     return [{"name": result[0], "id": result[1]} for result in results]
+
+
+def smart_search_snippets(query):
+    """
+    Leverages AI technology to return summaries of all snippets that kinda fit a query.
+    Verbatim name matches are also returned.
+
+    - "id": The integer ID of the snippet.
+    - "name": The full name of the snippet.
+    """
+    query_embedding = _get_transformer().encode(query)
+    query_terms = ["%" + term.strip() + "%" for term in query.split(" ")]
+
+    # Find snippets that have all query terms in their names
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT ID, Name
+        FROM Snippet
+        WHERE ("""
+        + " AND ".join(["Name LIKE ?"] * len(query_terms))
+        + """)
+        ORDER BY length(Name) ASC, Name
+        LIMIT 50
+        """,
+        query_terms,
+    )
+    name_matches: list[dict] = cur.fetchall()
+
+    # Search by description embedding
+    cur.execute(
+        """
+        WITH DescMatches AS (
+            SELECT SnippetID, distance
+            FROM SnippetEmbedding
+            WHERE Embedding MATCH ?
+                AND k = 50
+        )
+        SELECT
+            Snippet.ID,
+            Snippet.Name
+        FROM
+            DescMatches,
+            Snippet ON Snippet.ID = DescMatches.SnippetID
+        """,
+        [query_embedding],
+    )
+    desc_matches = cur.fetchall()
+
+    return [
+        {"id": res[0], "name": res[1]}
+        for res in itertools.chain(name_matches, desc_matches)
+    ]

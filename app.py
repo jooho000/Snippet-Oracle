@@ -172,6 +172,9 @@ def search_snippets():
         else:
             names.add(term)
 
-    results = data.search_snippets(names, tags, desc_has)
+    if len(tags) or len(desc_has) > 0:
+        results = data.search_snippets(names, tags, desc_has)
+    else:
+        results = data.smart_search_snippets(query)
 
     return jsonify({"results": results})
