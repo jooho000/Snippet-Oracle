@@ -6,7 +6,7 @@ Save, categorize, and search code with ease!
 
 It's a good idea to start by making a virtual python environment.
 ```
-py -3 -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\activate
 ```
 
