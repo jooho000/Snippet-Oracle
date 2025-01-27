@@ -41,12 +41,12 @@
                     <div class="columns is-vcentered is-mobile">
                         <!-- Name (left side) -->
                         <div class="column is-one-third has-text-left">
-                            <strong class="has-text-primary">{{ snippet[1] }}</strong>
+                            <strong class="has-text-primary">{{ snippet["name"] }}</strong>
                         </div>
 
                         <!-- Description (center, summarized) -->
                         <div class="column is-one-third has-text-centered">
-                            <span>{{ snippet[3] or "No description available." }}</span>
+                            <span>{{ snippet["description"] or "No description available." }}</span>
                         </div>
 
                         <!-- Copy Button and Dropdown Toggle (right side) -->
@@ -54,7 +54,7 @@
                             <!-- Copy Button -->
                             <button 
                                 class="button is-small is-link" 
-                                onclick="copySnippet(`{{ snippet[2] }}`)"
+                                onclick="copySnippet(`{{ snippet['code'] }}`)"
                             >
                                 <span class="icon">
                                     <i class="fas fa-copy"></i>
@@ -65,7 +65,7 @@
                             <!-- Dropdown Toggle Button -->
                             <button 
                                 class="button is-small is-primary ml-2" 
-                                onclick="toggleSnippet('snippet-{{ loop.index }}', this, `{{ snippet[2] }}`, `{{ snippet[3] }}`)"
+                                onclick="toggleSnippet('snippet-{{ loop.index }}', this, `{{ snippet['code'] }}`, `{{ snippet['description'] }}`)"
                             >
                                 <span class="icon">
                                     <svg id="arrow-icon-{{ loop.index }}" xmlns="http://www.w3.org/2000/svg" class="hero-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">

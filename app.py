@@ -40,12 +40,7 @@ def index():
     """
     user_snippets = []
     if flask_login.current_user.is_authenticated:
-        cur = data.db.cursor()
-        cur.execute(
-            "SELECT ID, Name, Code, Description FROM Snippet WHERE UserID = ? ORDER BY Date DESC",
-            [flask_login.current_user.id],
-        )
-        user_snippets = cur.fetchall()
+        user_snippets = data.get_user_snippets(flask_login.current_user.id)
 
     return flask.render_template("index.html", snippets=user_snippets)
 
