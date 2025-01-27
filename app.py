@@ -35,7 +35,19 @@ def create_user():
 
 @app.route("/")
 def index():
-    return flask.render_template("index.html")
+    """
+    Render the homepage with the list of snippets.
+    """
+    user_snippets = []
+    if flask_login.current_user.is_authenticated:
+        cur = data.db.cursor()
+        cur.execute(
+            "SELECT ID, Name, Code, Description FROM Snippet WHERE UserID = ? ORDER BY Date DESC",
+            [flask_login.current_user.id],
+        )
+        user_snippets = cur.fetchall()
+
+    return flask.render_template("index.html", snippets=user_snippets)
 
 
 @app.route("/login", methods=["GET", "POST"])
