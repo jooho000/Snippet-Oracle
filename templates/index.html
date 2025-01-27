@@ -43,18 +43,29 @@
                         <div class="column is-one-third has-text-left">
                             <strong class="has-text-primary">{{ snippet[1] }}</strong>
                         </div>
-                        
+
                         <!-- Description (center, summarized) -->
                         <div class="column is-one-third has-text-centered">
                             <span>{{ snippet[3] or "No description available." }}</span>
                         </div>
-                        
-                        <!-- Dropdown Toggle and Copy Button (right side) -->
+
+                        <!-- Copy Button and Dropdown Toggle (right side) -->
                         <div class="column is-one-third has-text-right">
+                            <!-- Copy Button -->
+                            <button 
+                                class="button is-small is-link" 
+                                onclick="copySnippet(`{{ snippet[2] }}`)"
+                            >
+                                <span class="icon">
+                                    <i class="fas fa-copy"></i>
+                                </span>
+                                <span>Copy</span>
+                            </button>
+
                             <!-- Dropdown Toggle Button -->
                             <button 
-                                class="button is-small is-primary" 
-                                onclick="toggleSnippet('snippet-{{ loop.index }}', this)"
+                                class="button is-small is-primary ml-2" 
+                                onclick="toggleSnippet('snippet-{{ loop.index }}', this, `{{ snippet[2] }}`, `{{ snippet[3] }}`)"
                             >
                                 <span class="icon">
                                     <svg id="arrow-icon-{{ loop.index }}" xmlns="http://www.w3.org/2000/svg" class="hero-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
@@ -62,26 +73,11 @@
                                     </svg>
                                 </span>
                             </button>
-
-                            <!-- Copy Button -->
-                            <button 
-                                class="button is-small is-link ml-2" 
-                                onclick="copySnippet('{{ snippet[2] }}')"
-                            >
-                                <span class="icon">
-                                    <i class="fas fa-copy"></i>
-                                </span>
-                                <span>Copy</span>
-                            </button>
                         </div>
                     </div>
-    
-                    <!-- Hidden Content (Code Snippet & Full Description) -->
-                    <div id="snippet-{{ loop.index }}" class="is-hidden mt-3">
-                        <hr>
-                        <pre class="code-snippet">{{ snippet[2] }}</pre>
-                        <p><strong>Description:</strong> {{ snippet[3] or "No description available." }}</p>
-                    </div>
+
+                    <!-- Snippet Container for Dynamic Content -->
+                    <div id="snippet-{{ loop.index }}" style="display: none;"></div>
                 </div>
             {% endfor %}
         {% else %}
@@ -95,32 +91,49 @@
 {% block scripts %}
 {{ super() }}
 <script>
-    // Function to copy the code snippet
-    function copySnippet(code) {
-        navigator.clipboard.writeText(code).then(() => {
+function copySnippet(code) {
+    navigator.clipboard.writeText(code)
+        .then(() => {
             alert("Code snippet copied to clipboard!");
-        }).catch(err => {
+        })
+        .catch(err => {
             console.error("Failed to copy text: ", err);
         });
-    }
+}
 </script>
 
 <script>
-    // Function to toggle the visibility of snippet content and the arrow direction
-    function toggleSnippet(id, button) {
-        const element = document.getElementById(id);
-        const icon = button.querySelector("i");
-        
-        if (element.classList.contains("is-hidden")) {
-            element.classList.remove("is-hidden"); // Show the content
-            icon.classList.remove("fa-chevron-down"); // Change to up arrow
-            icon.classList.add("fa-chevron-up");
-        } else {
-            element.classList.add("is-hidden"); // Hide the content
-            icon.classList.remove("fa-chevron-up"); // Change to down arrow
-            icon.classList.add("fa-chevron-down");
-        }
+function toggleSnippet(id, button, snippetContent, snippetDescription) {
+    const container = document.getElementById(id);
+    const icon = button.querySelector("svg");
+
+    if (!container.hasChildNodes()) {
+        // Create snippet content dynamically
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'mt-3';
+
+        // Add snippet content and description (no Copy button)
+        contentDiv.innerHTML = `
+            <hr>
+            <pre class="code-snippet">${snippetContent}</pre>
+            <p><strong>Description:</strong> ${snippetDescription || "No description available."}</p>
+        `;
+        container.appendChild(contentDiv);
+
+        // Show the container
+        container.style.display = "block";
+
+        // Update icon to up arrow
+        icon.setAttribute("d", "M5 15l7-7 7 7");
+    } else {
+        // Destroy snippet content dynamically
+        container.innerHTML = '';  // Remove child nodes
+        container.style.display = "none";  // Hide the container
+
+        // Update icon to down arrow
+        icon.setAttribute("d", "M19 9l-7 7-7-7");
     }
+}
 </script>
 
 <script>
