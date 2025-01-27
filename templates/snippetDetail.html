@@ -1,17 +1,17 @@
 {% extends "layout.html" %}
 
-{% block title %}{{ snippet[1] }} - Snippet Oracle{% endblock %}
+{% block title %}{{ snippet["name"] }} - Snippet Oracle{% endblock %}
 
 {% block content %}
 <section class="section">
-  <h1 class="title">{{ snippet[1] }}</h1>  <!-- Snippet Name -->
+  <h1 class="title">{{ snippet["name"] }}</h1>  <!-- Snippet Name -->
   
   <!-- Snippet Content -->
   <pre>
-    <code id="snippet-code">{{ snippet[2] }}</code> <!-- Snippet Code -->
+    <code id="snippet-code">{{ snippet["code"] }}</code> <!-- Snippet Code -->
   </pre>
-  <p><strong>Description:</strong> {{ snippet[3] }}</p>  <!-- Snippet Description -->
-  <p><strong>Created at:</strong> {{ snippet[4] }}</p>  <!-- Snippet Date -->
+  <p><strong>Description:</strong> {{ snippet["description"] }}</p>  <!-- Snippet Description -->
+  <p><strong>Created at:</strong> {{ snippet["date"] }}</p>  <!-- Snippet Date -->
   
   <!-- Copy to Clipboard Button -->
   <div class="field">

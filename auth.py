@@ -2,12 +2,14 @@
 Stores user login information.
 """
 
+import os
 import flask_login
 import argon2
 import data
 
 login_manager = flask_login.LoginManager()
 password_hasher = argon2.PasswordHasher()
+
 
 class User(flask_login.UserMixin):
     def __init__(self, id, name, password_hash):
@@ -16,8 +18,20 @@ class User(flask_login.UserMixin):
         self.password_hash = password_hash
 
 
-def init(app):
+def init(app, login_view):
     login_manager.init_app(app)
+    login_manager.login_view = login_view
+
+
+def get_secret_key():
+    try:
+        file = open("secret_key.bin", "rb")
+        return file.read()
+    except FileNotFoundError:
+        key = os.urandom(32)
+        with open("secret_key.bin", "xb") as file:
+            file.write(key)
+        return key
 
 
 def get_username_error(username):
@@ -53,20 +67,12 @@ def load_user(user_id):
     """
     Fetch a user by ID, returning None if that user does not exist.
     """
-    cur = data.db.cursor()
-    cur.execute(
-        """
-        SELECT Name, PasswordHash
-        FROM User
-        WHERE ID == ?
-        """, [ user_id ])
-    
-    res = cur.fetchone()
+    res = data.get_user_by_id(user_id)
 
     if res is None:
         return None
     else:
-        return User(user_id, res[0], res[1])
+        return User(user_id, res['name'], res['password_hash'])
 
 
 def try_login(username, password):
@@ -76,23 +82,14 @@ def try_login(username, password):
     """
     if username is None or username == "" or password is None or password == "":
         return None
-    
+
     # Fetch account info by name
-    cur = data.db.cursor()
-    cur.execute(
-        """
-        SELECT ID, Name, PasswordHash
-        FROM User
-        WHERE Name == ?
-        """, [ username ]
-    )
-    res = cur.fetchone()
+    res = data.get_user_by_name(username)
 
     # Verify that the password matches
     try:
-        password_hasher.verify(res[2], password)
-        print("Logged in as", res[0])
-        return User(int(res[0]), res[1], res[2])
+        password_hasher.verify(res["password_hash"], password)
+        return User(res["id"], res["name"], res["password_hash"])
     except:
         return None
 
@@ -105,22 +102,9 @@ def try_sign_up(username, password):
     if username is None or username == "" or password is None or password == "":
         return None
 
-    # Fail if an account with this name already exists
-    cur = data.db.cursor()
-    cur.execute("SELECT ID FROM User WHERE Name == ?", [ username ])
-    if cur.fetchone() is not None:
-        return None
-
     # Create the new account
     password_hash = password_hasher.hash(password)
-    cur.execute(
-        """
-        INSERT INTO User(Name, PasswordHash)
-        VALUES(?, ?)
-        """, [ username, password_hash ]
-    )
-    data.db.commit()
-    print("Signed up as", username)
+    data.create_user(username, password_hash)
 
     # Log in with the new account
     return try_login(username, password)

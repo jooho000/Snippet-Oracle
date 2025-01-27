@@ -1,30 +1,28 @@
 {% extends "layout.html" %}
-
 {% block title %}Your Snippets - Snippet Oracle{% endblock %}
-
 {% block content %}
-<section class="section">
-  <h1 class="title">Your Snippets</h1>
-  
-  <!-- Buttons to navigate -->
-  <div class="field is-grouped">
-    <div class="control">
-      <a class="button is-light" href="{{ url_for('createSnippet') }}">Create New Snippet</a>
+  <section class="section">
+    <h1 class="title">Your Snippets</h1>
+    <!-- Buttons to navigate -->
+    <div class="field is-grouped">
+      <div class="control">
+        <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
+      </div>
     </div>
-  </div>
-
-  {% if snippets %}
-    <div class="content">
-      {% for snippet in snippets %}
-        <div class="box">
-          <h2 class="subtitle">{{ snippet[1] }}</h2>  <!-- Snippet Name -->
-          <p>{{ snippet[2][:200] }}...</p> <!-- Truncated Snippet Description -->
-          <a href="{{ url_for('view_snippet', snippet_id=snippet[0]) }}">View Snippet</a>  <!-- Link to view full snippet -->
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p>You haven't created any snippets yet!</p>
-  {% endif %}
-</section>
+    {% if snippets %}
+      <div class="content">
+        {% for snippet in snippets %}
+          <div class="box">
+            <h2 class="subtitle">{{ snippet["name"] }}</h2>
+            <!-- Snippet Name -->
+            <p>{{ snippet["description"][:200] }}...</p>
+            <!-- Truncated Snippet Description -->
+            <a href="{{ url_for('view_snippet', snippet_id=snippet["id"]) }}">View Snippet</a>  <!-- Link to view full snippet -->
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>You haven't created any snippets yet!</p>
+    {% endif %}
+  </section>
 {% endblock %}

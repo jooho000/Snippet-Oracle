@@ -1,0 +1,209 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ user[0] }} - Profile{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .section-box {
+    background-color: #202225;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  ul {
+    padding-left: 1rem;
+  }
+
+  ul li {
+    margin-bottom: 0.75rem;
+  }
+
+.social-links-box {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.social-links-box a {
+  display: inline-block;
+  max-width: 90%;
+  white-space: nowrap; /* Prevent line wrapping */
+  overflow: hidden; /* Hide overflowing content */
+  text-overflow: ellipsis; /* Add ellipsis for truncation */
+  vertical-align: middle;
+}
+
+  .image.is-rounded {
+    width: 100%;
+    height: auto;
+  }
+
+  .profile-picture {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .button.is-primary.is-loading {
+    pointer-events: none;
+  }
+
+  .snippet-box:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .modal {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .modal.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .modal-background {
+    background: rgba(0, 0, 0, 0.5);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="level">
+      <h1 class="title is-4 level-left">Profile Page</h1>
+      <button class="button is-primary level-right" onclick="openEditModal()">Edit Profile</button>
+    </div>
+
+    <div class="columns">
+      <div class="column is-one-quarter">
+        <figure class="image is-square">
+          <img class="profile-picture" src="{{ user[2] or '/static/icons/default_image.png' }}" alt="Profile Picture">
+        </figure>
+      </div>
+
+      <div class="column">
+        <div class="box section-box">
+          <div class="box section-box">
+            <h2 class="title is-3">{{ user[0] }}</h2>
+          </div>
+          <div class="box section-box">
+            <h4 class="title is-5 mb-5">Bio</h4>
+            <p class="subtitle">{{ user[1] }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-one-quarter">
+        <div class="box section-box social-links-box">
+          <h4 class="title is-5">Social Links</h4>
+          <ul>
+            {% for link in links %}
+            <li>
+              <a href="{{ link[1] }}" target="_blank" title="{{ link[1] }}">
+                <img src="{{ get_social_icon(link[1]) }}" alt="{{ link[0] }}" style="width: 20px; height: 20px; margin-right: 8px;">
+                <span class="social-links-box">{{ link[1] }}</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="box section-box">
+          <h4 class="title is-5">Your Snippets</h4>
+          <div class="columns is-multiline" id="snippet-grid">
+            {% if snippets %}
+              {% for snippet in snippets %}
+              <div class="column is-one-third">
+                  <div class="box snippet-box">
+                      <h3 class="title is-5">{{ snippet[1] }}</h3>
+                      <p>{{ snippet[2] }}</p>
+                      <a href="/snippet/{{ snippet[0] }}" class="button is-link is-small mt-2">View</a>
+                  </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p>No snippets found. Start creating your first snippet!</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal" id="edit-modal">
+  <div class="modal-background" onclick="closeEditModal()"></div>
+  <div class="modal-content">
+    <div class="box">
+      <h3 class="title is-4">Edit Profile</h3>
+      <form method="POST" action="/profile" id="edit-profile-form">
+        <div class="field">
+          <label class="label">Bio</label>
+          <div class="control">
+            <textarea class="textarea" name="bio" placeholder="Write something about yourself...">{{ user[1] }}</textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Profile Picture URL</label>
+          <div class="control">
+            <input class="input" type="text" name="profile_picture" placeholder="Enter a URL for your profile picture" value="{{ user[2] if user[2] else '' }}">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Social Links</label>
+          <div id="social-links-container">
+            {% for link in links %}
+            <div class="control">
+              <input class="input" type="text" name="links" placeholder="Enter a URL" value="{{ link[1] }}">
+            </div>
+            {% endfor %}
+            <div class="control">
+              <input class="input" type="text" name="links" placeholder="Enter a new URL">
+            </div>
+          </div>
+          <button type="button" class="button is-small is-link mt-2" onclick="addSocialLink()">Add Link</button>
+        </div>
+
+        <div class="field">
+          <div class="control">
+            <button class="button is-primary" type="submit" id="submit-button">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <button class="modal-close is-large" aria-label="close" onclick="closeEditModal()"></button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  function openEditModal() {
+    document.getElementById("edit-modal").classList.add("is-active");
+  }
+
+  function closeEditModal() {
+    document.getElementById("edit-modal").classList.remove("is-active");
+  }
+
+  function addSocialLink() {
+    const container = document.getElementById("social-links-container");
+    const newField = document.createElement("div");
+    newField.className = "control mt-2";
+    newField.innerHTML = '<input class="input" type="text" name="links" placeholder="Enter a new URL">';
+    container.appendChild(newField);
+  }
+</script>
+{% endblock %}

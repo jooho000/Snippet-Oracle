@@ -1,5 +1,6 @@
 databases/
-
+mock_data/frankenstein.txt
+secret_key.bin
 
 # Created by https://www.toptal.com/developers/gitignore/api/flask,visualstudiocode,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=flask,visualstudiocode,python
