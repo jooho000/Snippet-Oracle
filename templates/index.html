@@ -32,6 +32,59 @@
         <!-- Search Results Display -->
         <div id="search-results" class="mt-5"></div>
     </div>
+
+    <div class="snippets-container">
+        {% if snippets %}
+            {% for snippet in snippets %}
+                <div class="box">
+                    <!-- Snippet Header Row -->
+                    <div class="columns is-vcentered is-mobile">
+                        <!-- Name (left side) -->
+                        <div class="column is-one-third has-text-left">
+                            <strong class="has-text-primary">{{ snippet[1] }}</strong>
+                        </div>
+
+                        <!-- Description (center, summarized) -->
+                        <div class="column is-one-third has-text-centered">
+                            <span>{{ snippet[3] or "No description available." }}</span>
+                        </div>
+
+                        <!-- Copy Button and Dropdown Toggle (right side) -->
+                        <div class="column is-one-third has-text-right">
+                            <!-- Copy Button -->
+                            <button 
+                                class="button is-small is-link" 
+                                onclick="copySnippet(`{{ snippet[2] }}`)"
+                            >
+                                <span class="icon">
+                                    <i class="fas fa-copy"></i>
+                                </span>
+                                <span>Copy</span>
+                            </button>
+
+                            <!-- Dropdown Toggle Button -->
+                            <button 
+                                class="button is-small is-primary ml-2" 
+                                onclick="toggleSnippet('snippet-{{ loop.index }}', this, `{{ snippet[2] }}`, `{{ snippet[3] }}`)"
+                            >
+                                <span class="icon">
+                                    <svg id="arrow-icon-{{ loop.index }}" xmlns="http://www.w3.org/2000/svg" class="hero-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Snippet Container for Dynamic Content -->
+                    <div id="snippet-{{ loop.index }}" style="display: none;"></div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No snippets found. Create one!</p>
+        {% endif %}
+    </div>
+
 </section>
 {% endblock %}
 
