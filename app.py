@@ -15,6 +15,7 @@ import os
 import data
 import auth
 from flask import jsonify, request
+from urllib.parse import urlparse
 
 app = flask.Flask("snippet_oracle")
 app.secret_key = os.urandom(16)
@@ -113,7 +114,7 @@ def profile():
     if flask.request.method == "POST":
         # Handle Any Profile Edits
         bio = flask.request.form.get("bio")
-        profile_pic = flask.request.form.get("profile_pic")
+        profile_picture = flask.request.form.get("profile_picture")
         links = flask.request.form.getlist("links")
 
         # Update user bio and profile picture
@@ -123,7 +124,7 @@ def profile():
             SET Bio = ?, ProfilePicture = ?
             WHERE ID = ?
             """,
-            [bio, profile_pic, flask_login.current_user.id]
+            [bio, profile_picture, flask_login.current_user.id]
         )
 
         # Clear any existing links and insert updated links
@@ -148,7 +149,44 @@ def profile():
     cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [flask_login.current_user.id])
     user_links = cur.fetchall()
 
-    return flask.render_template("profile.html", user=user, links=user_links)
+    # Fetch Snippets with Pagination
+    page = int(flask.request.args.get("page", 1))
+    limit = 10
+    offset = (page - 1) * limit
+    cur.execute(
+        """
+        SELECT ID, Name, Description FROM Snippet
+        WHERE UserID = ? ORDER BY Date DESC LIMIT ? OFFSET ?
+        """,
+        [flask_login.current_user.id, limit, offset]
+    )
+    user_snippets = cur.fetchall()
+
+    return flask.render_template("profile.html", user=user, links=user_links, snippets=user_snippets, page=page, get_social_icon=get_social_icon)
+
+# Helper function to get social media platform icon
+def get_social_icon(url):
+    # Mapping for common social platforms
+    icon_map = {
+        "github.com": "/static/icons/github.png",
+        "x.com": "/static/icons/x.png",
+        "discord.com": "/static/icons/discord.png",
+        "linkedin.com": "/static/icons/linkedin.png",
+        "facebook.com": "/static/icons/facebook.png",
+        "instagram.com": "/static/icons/instagram.png",
+        "youtube.com": "/static/icons/youtube.png"
+    }
+
+    # Check the domain of the URL to match with social platforms
+    parsed_url = urlparse(url)
+    domain = parsed_url.netloc.lower()
+
+    for platform, icon_url in icon_map.items():
+        if platform in domain:
+            return icon_url
+        
+    # Default icon if no platform match
+    return "/static/icons/default_image.png"
 
 # Handles Snippet Creation (Worked on by Alan Ly)
 @app.route("/createSnippet", methods=["GET", "POST"])
