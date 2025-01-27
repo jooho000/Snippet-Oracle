@@ -46,6 +46,8 @@ def _init_db():
             ID INTEGER PRIMARY KEY,
             Name TEXT UNIQUE,
             PasswordHash TEXT,
+            ProfilePicture TEXT,    -- For storing profile picture URLs/paths
+            Bio TEXT,               -- User biography
             Description VARCHAR(250)
         );
         CREATE TABLE IF NOT EXISTS Snippet (
@@ -62,6 +64,13 @@ def _init_db():
             TagName TEXT,
             PRIMARY KEY (SnippetID, TagName),
             FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID)
+        );
+        CREATE TABLE IF NOT EXISTS Links (
+            ID INTEGER PRIMARY KEY,
+            UserID INTEGER,
+            Platform TEXT,  -- e.g., "GitHub", "Discord"
+            URL TEXT,       -- The actual link
+            FOREIGN KEY (UserID) REFERENCES User(ID)
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
             SnippetID INTEGER PRIMARY KEY,
