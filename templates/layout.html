@@ -8,6 +8,25 @@
     {% endblock %}
   </head>
   <body>
+    <!-- Warnings -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div id="warningMessage" style = "position: absolute; top: 60px; z-index: 1; left: 10vw; right: 10vw">
+      <div class="container">
+        <div class="notification is-danger" style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2);">
+          <p class="Message-card-title">Warning</p>
+          <button class="delete" aria-label="close"></button>
+          {% if messages %}
+          {% for message in messages %}
+          <p class="help is-danger">{{ message }}</p>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
     {% block navbar %}
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-menu">
@@ -39,6 +58,9 @@
     {% block content %}{% endblock %}
     {% block scripts %}
     <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
+    {% if get_flashed_messages() %}
+    <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
+    {% endif %}
     {% endblock %}
   </body>
 </html>

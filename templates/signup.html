@@ -23,6 +23,7 @@
                   placeholder="Enter your username"
                   value="{{ username }}"
                   required
+                  maxlength="20"
                 />
                 <span class="icon is-small is-left">
                   <i class="fas fa-user"></i>
@@ -40,6 +41,8 @@
                   type="password"
                   placeholder="Enter your password"
                   required
+                  minlength="8"
+                  maxlength="60"
                 />
                 <span class="icon is-small is-left">
                   <i class="fas fa-lock"></i>
@@ -71,7 +74,6 @@
               </div>
             </div>
           </form>
-
         </div>
       </div>
     </div>
