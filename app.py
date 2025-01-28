@@ -54,11 +54,11 @@ def login():
         user = auth.try_login(username, password)
 
         if username is None or username == "":
-            flask.flash("Input a username!")
+            flask.flash("Input a username!", "warning")
         elif password is None or password == "":
-            flask.flash("Input a password!")
+            flask.flash("Input a password!", "warning")
         elif user is None:
-            flask.flash("Invalid username or password!")
+            flask.flash("Invalid username or password!", "warning")
 
         # TODO: Redirect to flask.request.args.get("next") instead
         # This isn't implement right now because it's a potential attack vector
@@ -90,15 +90,15 @@ def signup():
         password_error = auth.get_password_error(password)
 
         if username_error or password_error is not None:
-            flask.flash(username_error or password_error)
+            flask.flash(username_error or password_error, "warning")
         elif repeat_password is None or repeat_password == "":
-            flask.flash("Repeat your password!")
+            flask.flash("Repeat your password!", "warning")
         elif password != repeat_password:
-            flask.flash("Passwords did not match!")
+            flask.flash("Passwords did not match!", "warning")
         else:
             user = auth.try_sign_up(username, password)
             if user is None:
-                flask.flash("Username was in use!")
+                flask.flash("Username was in use!", "warning")
 
         # Account created! Log the user in
         if user is None:
@@ -151,7 +151,7 @@ def profile():
                 )
             
         data._db.commit()
-        flask.flash("Profile updated successfully!")
+        flask.flash("Profile updated successfully!", "info")
 
     # Fetch user details and links
     cur.execute("SELECT Name, Bio, ProfilePicture FROM User WHERE ID = ?", [flask_login.current_user.id])
@@ -213,7 +213,7 @@ def createSnippet():
         user_id = flask_login.current_user.id
 
         if not name or not code:
-            flask.flash("Name and Code are required fields!")
+            flask.flash("Name and Code are required fields!", "warning")
             return flask.redirect(flask.url_for("createSnippet"))
 
         if tags is not None:
@@ -244,7 +244,7 @@ def view_snippet(snippet_id):
     if snippet:
         return flask.render_template("snippetDetail.html", snippet=snippet)
     else:
-        flask.flash("Snippet not found!")
+        flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))
 
 

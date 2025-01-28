@@ -2,65 +2,89 @@
 <html lang="en">
   <head>
     {% block head %}
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='lib/bulma.min.css') }}" />
-    <title>{% block title %}Snippet Oracle{% endblock %}</title>
+      <meta charset="UTF-8" />
+      <link rel="stylesheet"
+            href="{{ url_for('static', filename='lib/bulma.min.css') }}" />
+      <title>
+        {% block title %}Snippet Oracle{% endblock %}
+      </title>
     {% endblock %}
   </head>
   <body>
     <!-- Warnings -->
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <div id="warningMessage" style = "position: absolute; top: 60px; z-index: 1; left: 10vw; right: 10vw">
-      <div class="container">
-        <div class="notification is-danger" style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2);">
-          <p class="Message-card-title">Warning</p>
-          <button class="delete" aria-label="close"></button>
-          {% if messages %}
-          {% for message in messages %}
-          <p class="help is-danger">{{ message }}</p>
-          {% endfor %}
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-    {% endwith %}
-
-    {% block navbar %}
-    <nav class="navbar" role="navigation" aria-label="main navigation">
-      <div class="navbar-menu">
-        <div class="navbar-start">
-          <a class="navbar-item" href="{{ url_for('index') }}">Home</a>
-          <a class="navbar-item">About</a>
-        </div>
-        <div class="navbar-end">
-          <div class="navbar-item">
-            {% if current_user.is_authenticated %}
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link">{{ current_user.name }}</a>
-              <div class="navbar-dropdown">
-                <a class="navbar-item" href="{{ url_for('profile') }}">Profile</a>
-                <a class="navbar-item" href="{{ url_for('logout') }}">Logout</a>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if category == "warning" %}
+            <div id="warningMessage"
+                 style="position: absolute;
+                        top: 60px;
+                        z-index: 1;
+                        left: 10vw;
+                        right: 10vw">
+              <div class="container">
+                <div class="notification is-danger"
+                     style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2)">
+                  <p class="Message-card-title">Warning</p>
+                  <button class="delete" aria-label="close"></button>
+                  <p class="help is-danger" style="color: black;">{{ message }}</p>
+                </div>
               </div>
             </div>
-            {% else %}
-            <div class="buttons">
-              <a class="button is-primary" href="{{ url_for('signup') }}"><strong>Sign Up</strong></a>
-              <a class="button is-light" href="{{ url_for('login') }}">Log In</a>
+          {% elif category == "info" %}
+            <div id="infoMessage"
+                 style="position: absolute;
+                        top: 120px;
+                        z-index: 1;
+                        left: 10vw;
+                        right: 10vw">
+              <div class="container">
+                <div class="notification is-info"
+                     style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2)">
+                  <p class="Message-card-title">Info</p>
+                  <button class="delete" aria-label="close"></button>
+                  <p class="help is-info" style="color: black;">{{ message }}</p>
+                </div>
+              </div>
             </div>
-            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block navbar %}
+      <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-menu">
+          <div class="navbar-start">
+            <a class="navbar-item" href="{{ url_for("index") }}">Home</a>
+            <a class="navbar-item">About</a>
+          </div>
+          <div class="navbar-end">
+            <div class="navbar-item">
+              {% if current_user.is_authenticated %}
+                <div class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link">{{ current_user.name }}</a>
+                  <div class="navbar-dropdown">
+                    <a class="navbar-item" href="{{ url_for("profile") }}">Profile</a>
+                    <a class="navbar-item" href="{{ url_for("logout") }}">Logout</a>
+                  </div>
+                </div>
+              {% else %}
+                <div class="buttons">
+                  <a class="button is-primary" href="{{ url_for("signup") }}"><strong>Sign Up</strong></a>
+                  <a class="button is-light" href="{{ url_for("login") }}">Log In</a>
+                </div>
+              {% endif %}
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
     {% endblock %}
     {% block content %}{% endblock %}
     {% block scripts %}
-    <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
-    {% if get_flashed_messages() %}
-    <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
-    {% endif %}
+      <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
+      {% if get_flashed_messages() %}
+        <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
+      {% endif %}
     {% endblock %}
   </body>
 </html>
