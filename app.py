@@ -226,6 +226,17 @@ def createSnippet():
 
     return flask.render_template("createSnippet.html")
 
+# Handles Editing Snippet (TJ Wong)
+@app.route("/editSnippet/<int:snippet_id>")
+@flask_login.login_required
+def edit_snippet(snippet_id):
+    snippet = data.get_snippet(snippet_id)
+    if snippet:
+        return flask.render_template("editSnippet.html", snippet=snippet)
+    else:
+        flask.flash("Snippet not found!", "warning")
+        return flask.redirect(flask.url_for("snippets"))
+
 
 # View All Personal User Snippets (Worked on by Alan Ly)
 @app.route("/snippets")
@@ -270,3 +281,4 @@ def search_snippets():
         results = data.smart_search_snippets(query)
 
     return jsonify({"results": results})
+
