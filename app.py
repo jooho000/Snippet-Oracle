@@ -231,8 +231,27 @@ def createSnippet():
 @flask_login.login_required
 def edit_snippet(snippet_id):
     snippet = data.get_snippet(snippet_id)
-    if snippet:
-        return flask.render_template("editSnippet.html", snippet=snippet)
+    tags = data.get_tags(snippet_id)
+    if flask.request.method == "POST":
+        name = flask.request.form.get("name")
+        code = flask.request.form.get("code")
+        description = flask.request.form.get("description")
+        tags = flask.request.form.get("tags")
+        user_id = flask_login.current_user.id
+
+        if not name or not code:
+            flask.flash("Name and Code are required fields!", "warning")
+            return flask.redirect(flask.url_for("createSnippet"))
+
+        if tags is not None:
+            tags = set(tags.replace(" ", "").split(","))
+
+        data.create_snippet(name, code, user_id, description, tags)
+
+        flask.flash("Snippet created successfully!")
+        return flask.render_template("snippetDetail.html", snippet=snippet)
+    elif snippet:
+        return flask.render_template("editSnippet.html", snippet=snippet, tags = tags)
     else:
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))

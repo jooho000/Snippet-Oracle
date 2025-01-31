@@ -11,7 +11,7 @@
             <div class="field">
                 <label class="label" for="name">Snippet Name</label>
                 <div class="control">
-                    <input class="input" type="text" name="name" value={{ snippet["name"] }}>
+                    <input class="input" type="text" name="name" value={{ snippet["name"] }} required>
                 </div>
             </div>
 
@@ -30,9 +30,8 @@
             </div>
 
             <div class="field">
-                <label class="label" for="tags">Tags</label>
                 <div class="control">
-                    <input class="input" type="text" name="tags" placeholder="Enter tags separated by commas" required>
+                    <textarea class="textarea" name="tags">{% for tag in tags %}{{tag["name"]}}, {% endfor %}</textarea>
                 </div>
             </div>
 
