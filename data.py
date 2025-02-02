@@ -72,6 +72,13 @@ def _init_db():
             URL TEXT,       -- The actual link
             FOREIGN KEY (UserID) REFERENCES User(ID)
         );
+        CREATE TABLE IF NOT EXISTS SnippetPermissions (
+            SnippetID INTEGER,
+            UserID INTEGER,
+            PRIMARY KEY (SnippetID, UserID),
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID),
+            FOREIGN KEY (UserID) REFERENCES User(ID)
+        );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
             SnippetID INTEGER PRIMARY KEY,
             Embedding float[384]
@@ -416,3 +423,74 @@ def smart_search_snippets(query):
         {"id": res[0], "name": res[1]}
         for res in itertools.chain(name_matches, desc_matches)
     ]
+
+def grant_snippet_permission(snippet_id, user_id):
+    """
+    Grants a user permission to view a snippet.
+    
+    Returns True if permission was granted, False if it already exists.
+    """
+    cur = _db.cursor()
+    try:
+        cur.execute(
+            """
+            INSERT INTO SnippetPermissions (SnippetID, UserID)
+            VALUES (?, ?)
+            """,
+            [snippet_id, user_id],
+        )
+        _db.commit()
+        return True
+    except sqlite3.IntegrityError:
+        # Permission already exists
+        return False
+
+
+def revoke_snippet_permission(snippet_id, user_id):
+    """
+    Revokes a user's permission to view a snippet.
+    
+    Returns True if permission was revoked, False if the permission did not exist.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        DELETE FROM SnippetPermissions
+        WHERE SnippetID = ? AND UserID = ?
+        """,
+        [snippet_id, user_id],
+    )
+    if cur.rowcount > 0:
+        _db.commit()
+        return True
+    return False
+
+def user_has_permission(snippet_id, user_id):
+    """
+    Checks if a user has permission to view a snippet.
+    
+    Returns True if the user has access, False otherwise.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT 1 FROM SnippetPermissions
+        WHERE SnippetID = ? AND UserID = ?
+        """,
+        [snippet_id, user_id],
+    )
+    return cur.fetchone() is not None
+
+def get_snippets_user_has_access_to(user_id):
+    """
+    Returns a list of snippet IDs that a user has access to.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT SnippetID FROM SnippetPermissions
+        WHERE UserID = ?
+        """,
+        [user_id],
+    )
+    return [row[0] for row in cur.fetchall()]
