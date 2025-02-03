@@ -251,18 +251,21 @@ def view_snippet(snippet_id):
 @app.route("/search", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "")  # Get the search query from the URL
+    if len(query) > 300:
+        query = query[:300]
 
     terms = query.split(" ")
     tags, names = set(), set()
     desc_has = []
 
     for term in terms:
-        if term[0] == ":":
-            tags.add(term[1:])
-        elif term[0] == "-":
-            desc_has.append(term[1:])
-        else:
-            names.add(term)
+        if term != "":
+            if term[0] == ":":
+                tags.add(term[1:])
+            elif term[0] == "-":
+                desc_has.append(term[1:])
+            else:
+                names.add(term)
 
     if len(tags) or len(desc_has) > 0:
         results = data.search_snippets(names, tags, desc_has)
