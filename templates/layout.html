@@ -15,39 +15,25 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          {% if category == "warning" %}
-            <div id="warningMessage"
-                 style="position: absolute;
-                        top: 60px;
-                        z-index: 1;
-                        left: 10vw;
-                        right: 10vw">
-              <div class="container">
-                <div class="notification is-danger"
-                     style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2)">
-                  <p class="Message-card-title">Warning</p>
-                  <button class="delete" aria-label="close"></button>
-                  <p class="help is-danger" style="color: black;">{{ message }}</p>
-                </div>
+          {% set category_class = {
+                      'warning': 'is-danger',
+                      'info': 'is-info'
+                    }.get(category, '') %}
+          <div id="flashes"
+               style="position: absolute;
+                      top: 60px;
+                      z-index: 1;
+                      left: 10vw;
+                      right: 10vw">
+            <div class="container">
+              <div class="notification {{ category_class }}"
+                   style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2)">
+                <p class="Message-card-title">{{ category.capitalize() }}</p>
+                <button id="closeFlashes" class="delete" aria-label="close"></button>
+                <p class="help is-{{ category_class }}" style="color: black;">{{ message }}</p>
               </div>
             </div>
-          {% elif category == "info" %}
-            <div id="infoMessage"
-                 style="position: absolute;
-                        top: 120px;
-                        z-index: 1;
-                        left: 10vw;
-                        right: 10vw">
-              <div class="container">
-                <div class="notification is-info"
-                     style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2)">
-                  <p class="Message-card-title">Info</p>
-                  <button class="delete" aria-label="close"></button>
-                  <p class="help is-info" style="color: black;">{{ message }}</p>
-                </div>
-              </div>
-            </div>
-          {% endif %}
+          </div>
         {% endfor %}
       {% endif %}
     {% endwith %}
@@ -82,9 +68,7 @@
     {% block content %}{% endblock %}
     {% block scripts %}
       <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
-      {% if get_flashed_messages() %}
-        <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
-      {% endif %}
+      <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
     {% endblock %}
   </body>
 </html>
