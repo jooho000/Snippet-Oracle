@@ -1,63 +1,74 @@
 {% extends "layout.html" %}
 {% block title %}Welcome - Snippet Oracle{% endblock %}
+
 {% block content %}
-  <section class="section">
-    <div class="container has-text-centered">
-      <h1 class="title">Welcome to Snippet Oracle</h1>
-      <p class="subtitle">Effortlessly manage, search, and share your code snippets.</p>
-      <!-- Buttons for Navigation -->
-      <div class="control is-centered mt-5">
-        <a class="button is-primary is-large"
-           href="{{ url_for("createSnippet") }}">Create Snippet</a>
-        <a class="button is-link is-large" href="{{ url_for("snippets") }}">View My Snippets</a>
-      </div>
-      <!-- Search Bar -->
-      <div class="field mt-5">
-        <div class="control has-icons-left has-icons-right is-large">
-          <input class="input is-large is-primary"
-                 id="search-input"
-                 type="text"
-                 maxlength="300"
-                 placeholder="Search for snippets...(name | -desc | :tag)" />
-          <span class="icon is-small is-left">
-            <i class="fas fa-search"></i>
-          </span>
-        </div>
-      </div>
-      <!-- Search Results Display -->
-      <div id="search-results" class="mt-5"></div>
+<section class="section">
+  <div class="container has-text-centered">
+    <h1 class="title">Welcome to Snippet Oracle</h1>
+    <p class="subtitle">Effortlessly manage, search, and share your code snippets.</p>
+
+    <!-- Navigation Buttons -->
+    <div class="control is-centered mt-5">
+      <a class="button is-primary is-large" href="{{ url_for('createSnippet') }}">Create Snippet</a>
+      <a class="button is-link is-large" href="{{ url_for('snippets') }}">View My Snippets</a>
     </div>
-    <div class="snippets-container">
-      {% if snippets %}
+
+    <!-- Search Bar -->
+    <div class="field mt-5">
+      <div class="control has-icons-left has-icons-right is-large">
+        <input class="input is-large is-primary"
+               id="search-input"
+               type="text"
+               maxlength="300"
+               placeholder="Search for snippets...(name | -desc | :tag)" />
+        <span class="icon is-small is-left">
+          <i class="fas fa-search"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="search-results" class="mt-5"></div>
+  </div>
+
+  <!-- Snippet Grid -->
+  <div class="container mt-5">
+    {% if snippets %}
+      <div class="columns is-multiline">
         {% for snippet in snippets %}
+        <div class="column is-4-desktop is-6-tablet is-12-mobile"> 
           <div class="box">
-            <!-- Snippet Header Row -->
-            <div class="columns is-vcentered is-mobile">
-              <!-- Name (left side) -->
-              <div class="column is-one-third has-text-left">
-                <strong class="has-text-primary">{{ snippet["name"] }}</strong>
+            <!-- Snippet Header: Name + Buttons + Visibility -->
+            <div class="columns is-vcentered">
+              <!-- Snippet Name (Left) -->
+              <div class="column has-text-left">
+                <h2 class="title is-5">{{ snippet["name"] }}</h2>
               </div>
-              <!-- Description (center, summarized) -->
-              <div class="column is-one-third has-text-centered">
-                <span>{{ snippet["description"] or "No description available." }}</span>
-              </div>
-              <!-- Copy Button and Dropdown Toggle (right side) -->
-              <div class="column is-one-third has-text-right">
+              <!-- Buttons + Visibility (Right) -->
+              <div class="column has-text-right">
+                <!-- Visibility Status -->
+                <span class="tag is-medium {% if snippet['is_public'] %}is-success{% else %}is-danger{% endif %}">
+                  {% if snippet["is_public"] %}
+                    <i class="fas fa-globe"></i> Public
+                  {% else %}
+                    <i class="fas fa-lock"></i> Private
+                  {% endif %}
+                </span>
+
                 <!-- Copy Button -->
-                <button class="button is-small is-link"
+                <button class="button is-small is-info ml-2"
                         onclick="copySnippet(`{{ snippet['code'] }}`)">
                   <span class="icon">
                     <i class="fas fa-copy"></i>
                   </span>
-                  <span>Copy</span>
                 </button>
-                <!-- Dropdown Toggle Button -->
+
+                <!-- Expand Button -->
                 <button class="button is-small is-primary ml-2"
-                        onclick="toggleSnippet('snippet-{{ loop.index }}', this, `{{ snippet['code'] }}`, `{{ snippet['description'] }}`)">
+                        onclick="toggleSnippet('snippet-{{ loop.index }}', this)">
                   <span class="icon">
                     <svg id="arrow-icon-{{ loop.index }}"
                          xmlns="http://www.w3.org/2000/svg"
-                         class="hero-icon"
                          fill="none"
                          viewBox="0 0 24 24"
                          stroke="currentColor"
@@ -69,17 +80,50 @@
                 </button>
               </div>
             </div>
-            <!-- Snippet Container for Dynamic Content -->
-            <div id="snippet-{{ loop.index }}" style="display: none;"></div>
+
+            <!-- Snippet Description -->
+            <p class="is-italic">{{ snippet["description"][:100] }}...</p>
+
+            <!-- Hidden Snippet Code (Toggles on Button Click) -->
+            <div id="snippet-{{ loop.index }}" style="display: none;">
+              <pre><code>{{ snippet["code"] }}</code></pre>
+            </div>
+
+            <!-- View Snippet Button -->
+            <div class="buttons mt-3">
+              <a href="{{ url_for('view_snippet', snippet_id=snippet['id']) }}" class="button is-link">View</a>
+            </div>
           </div>
+        </div>
         {% endfor %}
-      {% else %}
-        <p>No snippets found. Create one!</p>
-      {% endif %}
-    </div>
-  </section>
+      </div>
+    {% else %}
+      <p class="has-text-centered">No snippets found. Create one!</p>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='search.js') }}"></script>
+  <script>
+    function copySnippet(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        alert("Snippet copied!");
+      });
+    }
+
+    function toggleSnippet(id, button) {
+      let content = document.getElementById(id);
+      let arrow = button.querySelector("svg");
+      if (content.style.display === "none") {
+        content.style.display = "block";
+        arrow.style.transform = "rotate(180deg)";
+      } else {
+        content.style.display = "none";
+        arrow.style.transform = "rotate(0deg)";
+      }
+    }
+  </script>
 {% endblock %}
