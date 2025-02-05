@@ -15,6 +15,7 @@
   <div class="field">
     <div class="control">
       <button class="button is-link" id="copyButton">Copy Code</button>
+      <button class="button is-link" id="editButton">Edit Code</button>
     </div>
   </div>
   
@@ -34,4 +35,5 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='copy.js') }}"></script>
+<script src="{{ url_for('static', filename='edit.js') }}"></script>
 {% endblock %}

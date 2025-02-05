@@ -227,11 +227,11 @@ def createSnippet():
     return flask.render_template("createSnippet.html")
 
 # Handles Editing Snippet (TJ Wong)
-@app.route("/editSnippet/<int:snippet_id>")
+@app.route("/editSnippet/<int:snippet_id>", methods=["GET", "POST"])
 @flask_login.login_required
 def edit_snippet(snippet_id):
     snippet = data.get_snippet(snippet_id)
-    tags = data.get_tags(snippet_id)
+    oldTags = data.get_tags(snippet_id)
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
         code = flask.request.form.get("code")
@@ -245,13 +245,21 @@ def edit_snippet(snippet_id):
 
         if tags is not None:
             tags = set(tags.replace(" ", "").split(","))
+        
+        if oldTags is not None:
+            oldTags = set(tag["name"] for tag in oldTags)
+            delete_tags = oldTags - tags
+            new_tags = tags - oldTags
+        
+        
 
-        data.create_snippet(name, code, user_id, description, tags)
+        data.update_snippet(snippet_id, user_id, name, code, description, snippet["description"], delete_tags, new_tags)
 
-        flask.flash("Snippet created successfully!")
-        return flask.render_template("snippetDetail.html", snippet=snippet)
+        flask.flash("Snippet Edited successfully!")
+        #need delay to wait for server update
+        return flask.render_template("snippetDetail.html", snippet=data.get_snippet(snippet_id))
     elif snippet:
-        return flask.render_template("editSnippet.html", snippet=snippet, tags = tags)
+        return flask.render_template("editSnippet.html", snippet=snippet, tags=oldTags)
     else:
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))
