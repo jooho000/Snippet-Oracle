@@ -7,6 +7,7 @@ import random
 import sqlite3
 import sqlite_vec
 import os
+import uuid  # For generating unique shareable links
 import mock_data
 
 _desc_transformer = None
@@ -57,7 +58,9 @@ def _init_db():
             Description TEXT,
             UserID INTEGER,
             ParentSnippetID INTEGER,
-            Date
+            Date,
+            IsPublic BOOLEAN DEFAULT 0,
+            ShareableLink TEXT UNIQUE
         );
         CREATE TABLE IF NOT EXISTS TagUse (
             SnippetID INTEGER,
@@ -205,70 +208,67 @@ def create_user(name, password_hash):
 ## SNIPPETS ###
 
 
-def create_snippet(name, code, user_id, description=None, tags=None):
+def create_snippet(name, code, user_id, description=None, tags=None, is_public=False):
     """Creates a new snippet, returning its integer ID."""
     cur = _db.cursor()
+
+    shareable_link = str(uuid.uuid4())  # Generate unique link
 
     # Create the snippet
     cur.execute(
         """
-        INSERT INTO Snippet (Name, Code, Description, UserID, Date)
-        VALUES (?, ?, ?, ?, datetime('now'))
+        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink)
+        VALUES (?, ?, ?, ?, datetime('now'), ?, ?)
         """,
-        [name, code, description or "", user_id],
+        [name, code, description or "", user_id, int(is_public), shareable_link],
     )
-    id = cur.lastrowid
+    snippet_id = cur.lastrowid
 
     # Add its entries to the tag table
-    if tags is not None:
+    if tags:
         cur.executemany(
             """
             INSERT INTO TagUse (SnippetID, TagName)
             VALUES (?, ?)
             """,
-            [(id, tag) for tag in tags],
+            [(snippet_id, tag) for tag in tags],
         )
 
     # Create a "summary" of the snippet description for smart search
-    if description is not None:
+    if description:
         embedding = _get_transformer().encode(description)
         cur.execute(
             "INSERT INTO SnippetEmbedding(SnippetID, Embedding) VALUES (?, ?)",
-            [id, embedding],
+            [snippet_id, embedding],
         )
 
     _db.commit()
-    return id
+    return snippet_id
 
 
-def get_snippet(id):
-    """
-    Gets a snippet by integer ID.
-
-    - "name": The name of the snippet.
-    - "code": The content of the snippet.
-    - "description": The user-provided description.
-    - "user_id": The author's integer ID.
-    - "parent_snippet_id": The integer ID of the parent snippet or `None`.
-    - "date": The date and time of this snippet's creation.
-    """
+def get_snippet(snippet_id, user_id=None):
     cur = _db.cursor()
-    cur.execute(
-        "SELECT Name, Code, Description, UserID, ParentSnippetID, Date FROM Snippet WHERE id = ?",
-        [id],
-    )
-    snippet = cur.fetchone()
-    if snippet is None:
-        return None
 
-    return {
-        "name": snippet[0],
-        "code": snippet[1],
-        "description": snippet[2],
-        "user_id": snippet[3],
-        "parent_snippet_id": snippet[4],
-        "date": snippet[5],
-    }
+    if user_id:
+        cur.execute("SELECT * FROM Snippet WHERE ID = ? AND (UserID = ? OR IsPublic = 1)", (snippet_id, user_id))
+    else:
+        cur.execute("SELECT * FROM Snippet WHERE ID = ? AND IsPublic = 1", (snippet_id,))
+
+    snippet = cur.fetchone()
+    
+    if snippet:  # Ensure snippet is not None
+        return {
+            "id": snippet[0],
+            "name": snippet[1],
+            "code": snippet[2],
+            "description": snippet[3],
+            "user_id": snippet[4],
+            "date": snippet[6],
+            "is_public": bool(snippet[7]),  # Explicit conversion
+            "shareable_link": snippet[8]
+        }
+
+    return None
 
 
 def get_user_snippets(user_id):
@@ -293,7 +293,8 @@ def get_user_snippets(user_id):
             Description,
             UserID,
             ParentSnippetID,
-            Date
+            Date,
+            IsPublic
         FROM Snippet
         WHERE UserID = ?
         ORDER BY Date DESC
@@ -311,9 +312,51 @@ def get_user_snippets(user_id):
             "user_id": snippet[4],
             "parent_snippet_id": snippet[5],
             "date": snippet[6],
+            "is_public": snippet[7]
         }
         for snippet in snippets
     ]
+
+
+def set_snippet_visibility(snippet_id, is_public):
+    """
+    Set a snippet's visibility and removes shareable link if it becomes public
+    """
+    
+    cur = _db.cursor()
+    cur.execute(
+        """
+        UPDATE Snippet
+        SET IsPublic = ?
+        WHERE ID = ?
+        """,
+        [is_public, snippet_id],
+    )
+    _db.commit()
+
+
+def get_snippet_by_shareable_link(link):
+    """
+    Fetches snippet using its unique shareable link
+    """
+
+    cur = _db.cursor()
+    cur.execute(
+        "SELECT ID, Name, Code, Description, UserID, Date, IsPublic FROM Snippet WHERE ShareableLink = ?",
+        [link],
+    )
+    snippet = cur.fetchone()
+    if snippet:
+        return {
+            "id": snippet[0],
+            "name": snippet[1],
+            "code": snippet[2],
+            "description": snippet[3],
+            "user_id": snippet[4],
+            "date": snippet[5],
+            "is_public": bool(snippet[6]),
+        }
+    return None
 
 
 def search_snippets(names=None, tags=None, desc=None):
