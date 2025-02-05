@@ -306,9 +306,13 @@ def search_snippets():
             else:
                 names.add(term)
 
+    user_id = None
+    if flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+
     if len(tags) or len(desc_has) > 0:
-        results = data.search_snippets(names, tags, desc_has)
+        results = data.search_snippets(names, tags, desc_has, user_id)
     else:
-        results = data.smart_search_snippets(query)
+        results = data.smart_search_snippets(query, user_id)
 
     return jsonify({"results": results})

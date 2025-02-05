@@ -59,7 +59,7 @@ def _init_db():
             UserID INTEGER,
             ParentSnippetID INTEGER,
             Date,
-            IsPublic BOOLEAN DEFAULT 0,
+            IsPublic BOOLEAN DEFAULT 0, --0 for private and 1 for public
             ShareableLink TEXT UNIQUE
         );
         CREATE TABLE IF NOT EXISTS TagUse (
@@ -224,6 +224,16 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
     )
     snippet_id = cur.lastrowid
 
+    # If the snippet is private, add the owner to SnippetPermissions
+    if not is_public:
+        cur.execute(
+            """
+            INSERT INTO SnippetPermissions (SnippetID, UserID)
+            VALUES (?, ?)
+            """,
+            [snippet_id, user_id],
+        )
+
     # Add its entries to the tag table
     if tags:
         cur.executemany(
@@ -244,7 +254,6 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
 
     _db.commit()
     return snippet_id
-
 
 def get_snippet(snippet_id, user_id=None):
     cur = _db.cursor()
@@ -359,12 +368,16 @@ def get_snippet_by_shareable_link(link):
     return None
 
 
-def search_snippets(names=None, tags=None, desc=None):
+def search_snippets(names=None, tags=None, desc=None, user_id=None):
     """
-    Returns summaries of all snippets that include the given elements.
+    Returns summaries of all snippets that include the given elements and that
+    the user has permission to view.
 
     - "id": The integer ID of the snippet.
+    - "tags": A list of tags associated with the snippet.
     - "name": The full name of the snippet.
+    - "desc": The user-provided description.
+    - "user_id": The author's integer ID.
     """
 
     if type(names) == str:
@@ -378,47 +391,58 @@ def search_snippets(names=None, tags=None, desc=None):
     params = []
 
     # Snippet name includes any of the given names
-    if names is not None and len(names) > 0:
-        name_match = "(" + " OR ".join(["Name LIKE ?"] * len(names)) + ")"
-        queries.append("SELECT Name, ID FROM Snippet WHERE " + name_match)
+    if names:
+        name_match = "(" + " OR ".join(["S.Name LIKE ?"] * len(names)) + ")"
+        queries.append(name_match)
         params.extend(["%" + name + "%" for name in names])
 
     # Snippet tags include all of the given tags
-    if tags is not None and len(tags) > 0:
+    if tags:
         tags_match = "(" + ",".join(["?"] * len(tags)) + ")"
         queries.append(
+            f"""
+            EXISTS (
+                SELECT 1 FROM TagUse AS T
+                WHERE S.ID = T.SnippetID
+                AND T.TagName IN {tags_match}
+            )
             """
-            SELECT S.Name, S.ID
-            FROM Snippet AS S, TagUse AS T
-            WHERE S.ID = T.SnippetID
-            AND T.Tagname IN 
-            """
-            + tags_match
         )
         params.extend(tags)
 
     # Snippet description includes any of the given description text
-    if desc is not None and len(desc) > 0:
-        desc_match = "(" + " OR ".join(["Description LIKE ?"] * len(desc)) + ")"
-        queries.append("SELECT Name, ID FROM Snippet WHERE " + desc_match)
+    if desc:
+        desc_match = "(" + " OR ".join(["S.Description LIKE ?"] * len(desc)) + ")"
+        queries.append(desc_match)
         params.extend(["%" + desc_term + "%" for desc_term in desc])
 
-    # Intersect all of the above queries
-    if len(queries) == 0:
-        query = "SELECT Name, ID FROM Snippet"
-    else:
-        query = " INTERSECT ".join(queries)
+    # Ensure only accessible snippets are returned
+    access_filter = """
+        (S.IsPublic = 1 OR EXISTS (
+            SELECT 1 FROM SnippetPermissions AS P
+            WHERE P.SnippetID = S.ID AND P.UserID = ?
+        ))
+    """
+    queries.append(access_filter)
+    params.append(user_id)
+
+    # Final query with filters applied
+    query = f"""
+        SELECT S.ID, S.Name
+        FROM Snippet AS S
+        WHERE {" AND ".join(queries)}
+        ORDER BY S.Date DESC
+    """
 
     cur = _db.cursor()
     results = cur.execute(query, params)
 
-    return [{"name": result[0], "id": result[1]} for result in results]
+    return [{"id": result[0], "name": result[1]} for result in results]
 
-
-def smart_search_snippets(query):
+def smart_search_snippets(query, user_id=None):
     """
-    Leverages AI technology to return summaries of all snippets that kinda fit a query.
-    Verbatim name matches are also returned.
+    Leverages AI to return summaries of all snippets that match a query,
+    but ensures only accessible snippets are returned.
 
     - "id": The integer ID of the snippet.
     - "name": The full name of the snippet.
@@ -426,25 +450,27 @@ def smart_search_snippets(query):
     query_embedding = _get_transformer().encode(query)
     query_terms = ["%" + term.strip() + "%" for term in query.split(" ")]
 
-    # Find snippets that have all query terms in their names
     cur = _db.cursor()
+
+    # Find snippets that have all query terms in their names
     cur.execute(
-        """
+        f"""
         SELECT ID, Name
         FROM Snippet
-        WHERE ("""
-        + " AND ".join(["Name LIKE ?"] * len(query_terms))
-        + """)
+        WHERE ({" AND ".join(["Name LIKE ?"] * len(query_terms))})
+        AND (IsPublic = 1 OR EXISTS (
+            SELECT 1 FROM SnippetPermissions WHERE SnippetID = Snippet.ID AND UserID = ?
+        ))
         ORDER BY length(Name) ASC, Name
         LIMIT 50
         """,
-        query_terms,
+        query_terms + [user_id],
     )
-    name_matches: list[dict] = cur.fetchall()
+    name_matches = cur.fetchall()
 
     # Search by description embedding
     cur.execute(
-        """
+        f"""
         WITH DescMatches AS (
             SELECT SnippetID, distance
             FROM SnippetEmbedding
@@ -454,11 +480,13 @@ def smart_search_snippets(query):
         SELECT
             Snippet.ID,
             Snippet.Name
-        FROM
-            DescMatches,
-            Snippet ON Snippet.ID = DescMatches.SnippetID
+        FROM DescMatches
+        JOIN Snippet ON Snippet.ID = DescMatches.SnippetID
+        WHERE (Snippet.IsPublic = 1 OR EXISTS (
+            SELECT 1 FROM SnippetPermissions WHERE SnippetID = Snippet.ID AND UserID = ?
+        ))
         """,
-        [query_embedding],
+        [query_embedding, user_id],
     )
     desc_matches = cur.fetchall()
 
