@@ -13,6 +13,7 @@ import flask_login
 import click
 import data
 import auth
+import uuid
 from flask import jsonify, request
 from urllib.parse import urlparse
 
@@ -173,7 +174,7 @@ def profile():
         """,
         [flask_login.current_user.id, limit, offset]
     )
-    user_snippets = cur.fetchall()
+    user_snippets = data.get_user_snippets(flask_login.current_user.id)
 
     return flask.render_template("profile.html", user=user, links=user_links, snippets=user_snippets, page=page, get_social_icon=get_social_icon)
 
@@ -208,20 +209,25 @@ def createSnippet():
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
         code = flask.request.form.get("code")
-        description = flask.request.form.get("description")
-        tags = flask.request.form.get("tags")
+        description = flask.request.form.get("description", "")
+        tags = flask.request.form.get("tags", "")
+        
+        # Ensure is_public defaults to False unless explicitly set to "on"
+        is_public = request.form.get("is_public") == "on"
+        
         user_id = flask_login.current_user.id
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
             return flask.redirect(flask.url_for("createSnippet"))
 
-        if tags is not None:
+        if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        data.create_snippet(name, code, user_id, description, tags)
+        # Store snippet with default visibility as private unless toggled
+        data.create_snippet(name, code, user_id, description, tags, is_public)
 
-        flask.flash("Snippet created successfully!")
+        flask.flash("Snippet created successfully!", "success")
         return flask.redirect(flask.url_for("snippets"))
 
     return flask.render_template("createSnippet.html")
@@ -233,19 +239,52 @@ def createSnippet():
 def snippets():
     # Fetch all snippets for the logged-in user
     user_snippets = data.get_user_snippets(flask_login.current_user.id)
+    print(f"Snippet User Data: {user_snippets}")
     return flask.render_template("snippets.html", snippets=user_snippets)
 
 
 # View a Specific Snippet Page (Worked on by Alan Ly)
-@app.route("/snippet/<int:snippet_id>")
+@app.route("/snippet/<int:snippet_id>", methods=["GET"])
 @flask_login.login_required
 def view_snippet(snippet_id):
+    current_user_id = flask_login.current_user.id  # Get the current user's ID
+    snippet = data.get_snippet(snippet_id, current_user_id)  # Pass the user ID to get_snippet
+    
+    if not snippet:
+        flask.flash("Snippet not found or not accessible!", "warning")
+        return flask.redirect(flask.url_for("snippets"))
+    
+    print(f"Snippet Data: {snippet}")
+
+    return flask.render_template("snippetDetail.html", snippet=snippet)
+
+
+# Allows users to toggle snippet visibility (Public/Private)
+@app.route("/snippet/<int:snippet_id>/visibility", methods=["POST"])
+@flask_login.login_required
+def update_snippet_visibility(snippet_id):
+    is_public = request.form.get("is_public") == "on"
+
     snippet = data.get_snippet(snippet_id)
+    if not snippet or snippet["user_id"] != flask_login.current_user.id:
+        flask.flash("Unauthorized or snippet not found!", "danger")
+        return flask.redirect(flask.url_for("snippets"))
+    
+    data.set_snippet_visibility(snippet_id, is_public)
+    flask.flash("Snippet visibility updated!", "success")
+
+    return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+
+
+# Allow users to access private snippets via shareable links
+@app.route("/share/<string:link>")
+def view_snippet_by_link(link):
+    snippet = data.get_snippet_by_shareable_link(link)
     if snippet:
         return flask.render_template("snippetDetail.html", snippet=snippet)
     else:
-        flask.flash("Snippet not found!", "warning")
-        return flask.redirect(flask.url_for("snippets"))
+        flask.flash("Invalid or expired link!", "warning")
+        return flask.redirect(flask.url_for("index"))
 
 
 @app.route("/search", methods=["GET"])
