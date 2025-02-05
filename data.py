@@ -220,6 +220,7 @@ def create_snippet(name, code, user_id, description=None, tags=None):
             VALUES (?, ?)
             """,
             [(id, tag) for tag in tags],
+            # [(id, tag) for tag in tags if tag ],
         )
 
     # Create a "summary" of the snippet description for smart search
@@ -439,6 +440,7 @@ def get_tags(id):
 
     return [
         {
+
             "id": tag[0],
             "name": tag[1],
         }
@@ -501,3 +503,26 @@ def update_snippet(id, user_id, name, code, description=None, old_description=No
 
     _db.commit()
     return id
+
+def delete_snippet(id, user_id):
+    """Delete Snippets and Tags"""
+    cur = _db.cursor()
+
+    # Delete the Snippet
+    cur.execute(
+        """
+        DELETE FROM Snippet
+        WHERE ID = ? AND UserID = ?
+        """,
+        [id, user_id],
+    )
+    cur.execute(
+        """
+        DELETE FROM TagUse
+        WHERE  
+            SnippetID = ?
+        """,
+        [id],
+    )
+
+    _db.commit()

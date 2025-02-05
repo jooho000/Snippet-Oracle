@@ -259,11 +259,16 @@ def edit_snippet(snippet_id):
         #need delay to wait for server update
         return flask.render_template("snippetDetail.html", snippet=data.get_snippet(snippet_id))
     elif snippet:
-        return flask.render_template("editSnippet.html", snippet=snippet, tags=oldTags)
+        return flask.render_template("editSnippet.html", snippet=snippet, tags=oldTags, id=snippet_id)
     else:
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))
 
+@app.route("/deleteSnippet/<int:snippet_id>")
+def delete_Snippet(snippet_id):
+    snippet = data.get_snippet(snippet_id)
+    data.delete_snippet(snippet_id, snippet["user_id"])
+    return snippets()
 
 # View All Personal User Snippets (Worked on by Alan Ly)
 @app.route("/snippets")

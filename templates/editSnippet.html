@@ -31,13 +31,14 @@
 
             <div class="field">
                 <div class="control">
-                    <textarea class="textarea" name="tags">{% for tag in tags %}{{tag["name"]}}, {% endfor %}</textarea>
+                    <textarea class="textarea" name="tags">{% for tag in tags %}{% if tag["name"] %}{{tag["name"]}}, {%endif%}{% endfor %}</textarea>
                 </div>
             </div>
 
             <div class="field">
                 <div class="control">
-                    <button class="button is-link is-fullwidth" type="submit">Edit Snippet</button>
+                    <button class="button is-link" type="submit">Edit Snippet</button>
+                    <a class="button is-light"  href="{{ url_for('delete_Snippet', snippet_id=id) }}">Delete Snippet</a>
                 </div>
             </div>
         </form>
