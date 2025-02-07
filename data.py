@@ -305,7 +305,8 @@ def get_user_snippets(user_id):
             "user_id": snippet[4],
             "parent_snippet_id": snippet[5],
             "date": snippet[6],
-            "is_public": snippet[7]
+            "is_public": snippet[7],
+            "tags": get_tags_for_snippet(snippet[0])
         }
         for snippet in snippets
     ]
@@ -459,3 +460,20 @@ def smart_search_snippets(query):
         {"id": res[0], "name": res[1]}
         for res in itertools.chain(name_matches, desc_matches)
     ]
+
+# Finds the tags by snippetID
+def get_tags_for_snippet(snippet_id):
+    """
+    Fetches all tags associated with a given snippet.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT TagName FROM TagUse WHERE SnippetID = ?
+        """,
+        [snippet_id],
+    )
+    tags = cur.fetchall()
+
+    return [tag[0] for tag in tags]  # Convert tuple list to a simple list
+
