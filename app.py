@@ -249,7 +249,6 @@ def createSnippet():
 def snippets():
     # Fetch all snippets for the logged-in user
     user_snippets = data.get_user_snippets(flask_login.current_user.id)
-    print(f"Snippet User Data: {user_snippets}")
     return flask.render_template("snippets.html", snippets=user_snippets)
 
 
@@ -263,8 +262,6 @@ def view_snippet(snippet_id):
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
-    
-    print(f"Snippet Data: {snippet}")
 
     return flask.render_template("snippetDetail.html", snippet=snippet)
 

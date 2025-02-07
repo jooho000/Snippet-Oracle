@@ -225,7 +225,6 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
 
     if not is_public and permitted_users:
         permitted_users = [int(uid) for uid in permitted_users if str(uid).isdigit()]
-        print(f"Permitted Users Received: {permitted_users}")
         for permitted_user_id in permitted_users:
             if permitted_user_id != user_id:  # Avoid duplicate entry for creator
                 cur.execute(
@@ -235,9 +234,7 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
                     """,
                     [snippet_id, permitted_user_id],
                 )
-            print(f"Permitted User added: {permitted_user_id}")
 
-    # ✅ Save tags
     if tags:
         cur.executemany(
             """
