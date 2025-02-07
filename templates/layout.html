@@ -7,7 +7,16 @@
       
       <!-- Add Font Awesome CDN for icons -->
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
+      <style>
+        .profile-nav-pic {
+          width: 28px;
+          height: 32px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-right: 8px;
+          display: block;
+        }
+      </style>
       <title>
         {% block title %}Snippet Oracle{% endblock %}
       </title>
@@ -52,7 +61,12 @@
             <div class="navbar-item">
               {% if current_user.is_authenticated %}
                 <div class="navbar-item has-dropdown is-hoverable">
-                  <a class="navbar-link">{{ current_user.name }}</a>
+                  <a class="navbar-link">
+                    <img src="{{ user[2] or url_for('static', filename='icons/default_image.png') }}"
+                         class="profile-nav-pic"
+                         alt="Profile Picture">
+                    {{ current_user.name }}
+                  </a>
                   <div class="navbar-dropdown">
                     <a class="navbar-item" href="{{ url_for("profile") }}">Profile</a>
                     <a class="navbar-item" href="{{ url_for("logout") }}">Logout</a>

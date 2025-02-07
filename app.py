@@ -13,7 +13,6 @@ import flask_login
 import click
 import data
 import auth
-import uuid
 from flask import jsonify, request
 from urllib.parse import urlparse
 
@@ -138,6 +137,7 @@ def profile():
             """,
             [bio, profile_picture, flask_login.current_user.id]
         )
+        print(f"Updated Profile Picture URL: {profile_picture}")
 
         # Clear any existing links and insert updated links
         cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
