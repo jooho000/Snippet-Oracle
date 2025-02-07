@@ -14,6 +14,7 @@ import click
 import data
 import auth
 import uuid
+import json
 from flask import jsonify, request
 from urllib.parse import urlparse
 
@@ -202,7 +203,6 @@ def get_social_icon(url):
     # Default icon if no platform match
     return "/static/icons/default_image.png"
 
-# Handles Snippet Creation (Worked on by Alan Ly)
 @app.route("/createSnippet", methods=["GET", "POST"])
 @flask_login.login_required
 def createSnippet():
@@ -211,11 +211,18 @@ def createSnippet():
         code = flask.request.form.get("code")
         description = flask.request.form.get("description", "")
         tags = flask.request.form.get("tags", "")
-        
-        # Ensure is_public defaults to False unless explicitly set to "on"
-        is_public = request.form.get("is_public") == "on"
-        
+        is_public = flask.request.form.get("is_public") == "on"
         user_id = flask_login.current_user.id
+
+        try:
+            permitted_users = flask.request.form.getlist("permitted_users[]")  # Ensure the correct key
+            permitted_users = [int(user_id) for user_id in permitted_users if user_id.isdigit()]  # Convert to integers
+        except (ValueError, TypeError) as e:
+            print(f"Error parsing permitted_users: {e}")
+            permitted_users = []
+
+        if not is_public:
+            permitted_users.append(user_id)
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
@@ -224,13 +231,16 @@ def createSnippet():
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        # Store snippet with default visibility as private unless toggled
-        data.create_snippet(name, code, user_id, description, tags, is_public)
+        snippet_id = data.create_snippet(name, code, user_id, description, tags, is_public, permitted_users)
 
-        flask.flash("Snippet created successfully!", "success")
-        return flask.redirect(flask.url_for("snippets"))
+        if snippet_id:
+            flask.flash("Snippet created successfully!", "success")
+            return flask.redirect(flask.url_for("snippets"))
+        else:
+            flask.flash("Failed to create snippet!", "danger")
 
-    return flask.render_template("createSnippet.html")
+    all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+    return flask.render_template("createSnippet.html", all_users=all_users)
 
 
 # View All Personal User Snippets (Worked on by Alan Ly)

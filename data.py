@@ -208,13 +208,12 @@ def create_user(name, password_hash):
 ## SNIPPETS ###
 
 
-def create_snippet(name, code, user_id, description=None, tags=None, is_public=False):
+def create_snippet(name, code, user_id, description=None, tags=None, is_public=False, permitted_users=None):
     """Creates a new snippet, returning its integer ID."""
     cur = _db.cursor()
 
-    shareable_link = str(uuid.uuid4())  # Generate unique link
+    shareable_link = str(uuid.uuid4())
 
-    # Create the snippet
     cur.execute(
         """
         INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink)
@@ -224,17 +223,21 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
     )
     snippet_id = cur.lastrowid
 
-    # If the snippet is private, add the owner to SnippetPermissions
-    if not is_public:
-        cur.execute(
-            """
-            INSERT INTO SnippetPermissions (SnippetID, UserID)
-            VALUES (?, ?)
-            """,
-            [snippet_id, user_id],
-        )
+    if not is_public and permitted_users:
+        permitted_users = [int(uid) for uid in permitted_users if str(uid).isdigit()]
+        print(f"Permitted Users Received: {permitted_users}")
+        for permitted_user_id in permitted_users:
+            if permitted_user_id != user_id:  # Avoid duplicate entry for creator
+                cur.execute(
+                    """
+                    INSERT OR IGNORE INTO SnippetPermissions (SnippetID, UserID)
+                    VALUES (?, ?)
+                    """,
+                    [snippet_id, permitted_user_id],
+                )
+            print(f"Permitted User added: {permitted_user_id}")
 
-    # Add its entries to the tag table
+    # ✅ Save tags
     if tags:
         cur.executemany(
             """
@@ -244,28 +247,33 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
             [(snippet_id, tag) for tag in tags],
         )
 
-    # Create a "summary" of the snippet description for smart search
-    if description:
-        embedding = _get_transformer().encode(description)
-        cur.execute(
-            "INSERT INTO SnippetEmbedding(SnippetID, Embedding) VALUES (?, ?)",
-            [snippet_id, embedding],
-        )
-
     _db.commit()
+
     return snippet_id
+
 
 def get_snippet(snippet_id, user_id=None):
     cur = _db.cursor()
 
-    if user_id:
-        cur.execute("SELECT * FROM Snippet WHERE ID = ? AND (UserID = ? OR IsPublic = 1)", (snippet_id, user_id))
-    else:
-        cur.execute("SELECT * FROM Snippet WHERE ID = ? AND IsPublic = 1", (snippet_id,))
+    cur.execute(
+        """
+        SELECT * FROM Snippet 
+        WHERE ID = ? 
+        AND (IsPublic = 1 
+             OR UserID = ? 
+             OR EXISTS (
+                 SELECT 1 FROM SnippetPermissions 
+                 WHERE SnippetID = ? 
+                 AND UserID = ?
+             )
+        )
+        """,
+        (snippet_id, user_id, snippet_id, user_id),
+    )
 
     snippet = cur.fetchone()
-    
-    if snippet:  # Ensure snippet is not None
+
+    if snippet:
         return {
             "id": snippet[0],
             "name": snippet[1],
@@ -273,11 +281,11 @@ def get_snippet(snippet_id, user_id=None):
             "description": snippet[3],
             "user_id": snippet[4],
             "date": snippet[6],
-            "is_public": bool(snippet[7]),  # Explicit conversion
-            "shareable_link": snippet[8]
+            "is_public": bool(snippet[7]),
+            "shareable_link": snippet[8],
         }
 
-    return None
+    return None  # Snippet not found or not accessible
 
 
 def get_user_snippets(user_id):
@@ -565,3 +573,35 @@ def get_snippets_user_has_access_to(user_id):
         [user_id],
     )
     return [row[0] for row in cur.fetchall()]
+
+def get_all_users_with_permission(snippet_id):
+    """
+    Returns a list of users who have permission to view a specific snippet.
+    
+    Each entry contains:
+    - "id": The user's integer ID.
+    - "name": The user's name.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT U.ID, U.Name
+        FROM SnippetPermissions AS SP
+        JOIN User AS U ON SP.UserID = U.ID
+        WHERE SP.SnippetID = ?
+        """,
+        [snippet_id],
+    )
+    
+    return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
+def get_all_users_excluding_current(current_user_id):
+    """Fetches all users except the current user."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT ID, Name FROM User WHERE ID != ?
+        """,
+        [current_user_id],
+    )
+    return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
