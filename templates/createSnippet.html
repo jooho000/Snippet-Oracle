@@ -5,139 +5,91 @@
 {% block content %}
 <section class="section">
     <div class="container">
-        <h1 class="title">Create a New Snippet</h1>
-        <p class="subtitle">Easily save and manage your code snippets.</p>
+        <div class="box p-5">
+            <h1 class="title has-text-centered">Create a New Snippet</h1>
+            <p class="subtitle has-text-centered">Save and manage your code snippets efficiently.</p>
 
-        <form method="post" class="box">
-            <div class="field">
-                <label class="label" for="name">Snippet Name</label>
-                <div class="control">
-                    <input class="input" type="text" name="name" placeholder="Enter snippet name" required>
+            <form method="post">
+                <!-- Snippet Name -->
+                <div class="field">
+                    <label class="label">Snippet Name</label>
+                    <div class="control">
+                        <input class="input is-medium is-rounded" type="text" name="name" placeholder="Enter snippet name" required>
+                    </div>
                 </div>
-            </div>
 
-            <div class="field">
-                <label class="label" for="code">Code</label>
-                <div class="control">
-                    <textarea class="textarea" name="code" placeholder="Paste your code here" required></textarea>
+                <!-- Snippet Code -->
+                <div class="field">
+                    <label class="label">Code</label>
+                    <div class="control">
+                        <textarea class="textarea is-medium is-family-code" name="code" placeholder="Paste your code here" rows="6" required></textarea>
+                    </div>
                 </div>
-            </div>
 
-            <div class="field">
-                <label class="label" for="description">Description</label>
-                <div class="control">
-                    <textarea class="textarea" name="description" placeholder="Optional description"></textarea>
+                <!-- Snippet Description -->
+                <div class="field">
+                    <label class="label">Description</label>
+                    <div class="control">
+                        <textarea class="textarea" name="description" placeholder="Optional description"></textarea>
+                    </div>
                 </div>
-            </div>
 
-            <div class="field">
-                <label class="label" for="tags">Tags</label>
-                <div class="control">
-                    <input class="input" type="text" name="tags" placeholder="Enter tags separated by commas">
+                <!-- Snippet Tags -->
+                <div class="field">
+                    <label class="label">Tags</label>
+                    <div class="control">
+                        <input class="input is-rounded" type="text" name="tags" placeholder="Enter tags separated by commas">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Visibility Toggle (Public/Private) -->
-            <div class="field">
-                <label class="label">Visibility</label>
-                <div class="control">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="visibilityToggle" name="is_public">
-                        <span class="slider">
-                            <i class="fas fa-lock"></i> <span class="toggle-text">Private</span>
-                        </span>
-                    </label>
+                <!-- Visibility Toggle as a Button -->
+                <div class="field">
+                    <label class="label">Visibility</label>
+                    <div class="control">
+                        <button type="button" id="visibilityToggle" class="button is-light is-rounded">
+                            <span class="icon">
+                                <i id="visibilityIcon" class="fas fa-lock"></i>
+                            </span>
+                            <span id="toggleText">Private</span>
+                        </button>
+                        <input type="hidden" name="is_public" id="isPublic" value="0">
+                    </div>
                 </div>
-            </div>
 
-            <div class="field">
-                <div class="control">
-                    <button class="button is-link is-fullwidth" type="submit">Create Snippet</button>
+                <!-- User Selection (Only visible if Private) -->
+                <div class="field" id="permittedUsersField" style="display: none;">
+                    <label class="label">Share with Specific Users</label>
+                    <div class="box is-shadowless">
+                        <div class="field">
+                            <input type="text" id="userSearch" class="input is-rounded" placeholder="Search users...">
+                        </div>
+                        <div id="selected-users" class="tags are-medium"></div>
+                        <div id="user-selection" class="box is-light" style="display: none;"></div>
+                    </div>
                 </div>
-            </div>
-        </form>
 
-        <div class="buttons is-centered mt-4">
-            <a class="button is-light" href="{{ url_for('snippets') }}">Back to My Snippets</a>
+                <!-- Submit Button -->
+                <div class="field mt-4">
+                    <div class="control">
+                        <button class="button is-primary is-fullwidth is-medium is-rounded">Create Snippet</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Back Button -->
+            <div class="has-text-centered mt-4">
+                <a class="button is-light is-rounded" href="{{ url_for('snippets') }}">Back to My Snippets</a>
+            </div>
         </div>
     </div>
 </section>
 
-<style>
-/* Custom Switch Style */
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 100px;
-    height: 38px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ddd;
-    transition: 0.4s;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: white;
-    font-weight: bold;
-    padding: 0 12px;
-    width: 100%;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-}
-
-.slider i {
-    margin-right: 8px;
-}
-
-input:checked + .slider {
-    background-color: #3273dc; /* Bulma primary color */
-}
-
-input:checked + .slider i {
-    content: "\f0ac"; /* FontAwesome globe icon */
-}
-
-input:checked + .slider .toggle-text {
-    content: "Public";
-}
-
-/* Smooth Transition */
-.slider, .slider i, .toggle-text {
-    transition: 0.4s;
-}
-</style>
-
-<script>
-// Visibility Toggle Handler
-document.getElementById("visibilityToggle").addEventListener("change", function() {
-    let slider = this.nextElementSibling;
-    let icon = slider.querySelector("i");
-    let text = slider.querySelector(".toggle-text");
-
-    if (this.checked) {
-        icon.classList.remove("fa-lock");
-        icon.classList.add("fa-globe");
-        text.textContent = "Public";
-    } else {
-        icon.classList.remove("fa-globe");
-        icon.classList.add("fa-lock");
-        text.textContent = "Private";
-    }
-});
+<script id="user-data" type="application/json">
+    {{ all_users | tojson | safe }}
 </script>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='userSelection.js') }}"></script>
 {% endblock %}
