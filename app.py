@@ -43,7 +43,6 @@ def index():
     user_snippets = []
     if flask_login.current_user.is_authenticated:
         user_snippets = data.get_user_snippets(flask_login.current_user.id)
-
     return flask.render_template("index.html", snippets=user_snippets)
 
 
@@ -129,7 +128,7 @@ def profile():
         bio = flask.request.form.get("bio", "")
         profile_picture = flask.request.form.get("profile_picture", "")
         links = flask.request.form.getlist("links")
-
+        print(f"Received Profile Picture URL: {profile_picture}")
         # Update user bio and profile picture
         cur.execute(
             """
@@ -139,6 +138,7 @@ def profile():
             """,
             [bio, profile_picture, flask_login.current_user.id]
         )
+        print(f"Updated Profile Picture for User ID {flask_login.current_user.id} with URL: {profile_picture}")
 
         # Clear any existing links and insert updated links
         cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
