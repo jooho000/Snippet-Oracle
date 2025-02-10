@@ -59,7 +59,7 @@ def _init_db():
             UserID INTEGER,
             ParentSnippetID INTEGER,
             Date,
-            IsPublic BOOLEAN DEFAULT 0,
+            IsPublic BOOLEAN DEFAULT 0, --0 for private and 1 for public
             ShareableLink TEXT UNIQUE
         );
         CREATE TABLE IF NOT EXISTS TagUse (
@@ -73,6 +73,13 @@ def _init_db():
             UserID INTEGER,
             Platform TEXT,  -- e.g., "GitHub", "Discord"
             URL TEXT,       -- The actual link
+            FOREIGN KEY (UserID) REFERENCES User(ID)
+        );
+        CREATE TABLE IF NOT EXISTS SnippetPermissions (
+            SnippetID INTEGER,
+            UserID INTEGER,
+            PRIMARY KEY (SnippetID, UserID),
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID),
             FOREIGN KEY (UserID) REFERENCES User(ID)
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
@@ -201,13 +208,12 @@ def create_user(name, password_hash):
 ## SNIPPETS ###
 
 
-def create_snippet(name, code, user_id, description=None, tags=None, is_public=False):
+def create_snippet(name, code, user_id, description=None, tags=None, is_public=False, permitted_users=None):
     """Creates a new snippet, returning its integer ID."""
     cur = _db.cursor()
 
-    shareable_link = str(uuid.uuid4())  # Generate unique link
+    shareable_link = str(uuid.uuid4())
 
-    # Create the snippet
     cur.execute(
         """
         INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink)
@@ -217,7 +223,18 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
     )
     snippet_id = cur.lastrowid
 
-    # Add its entries to the tag table
+    if not is_public and permitted_users:
+        permitted_users = [int(uid) for uid in permitted_users if str(uid).isdigit()]
+        for permitted_user_id in permitted_users:
+            if permitted_user_id != user_id:  # Avoid duplicate entry for creator
+                cur.execute(
+                    """
+                    INSERT OR IGNORE INTO SnippetPermissions (SnippetID, UserID)
+                    VALUES (?, ?)
+                    """,
+                    [snippet_id, permitted_user_id],
+                )
+
     if tags:
         cur.executemany(
             """
@@ -227,29 +244,33 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
             [(snippet_id, tag) for tag in tags],
         )
 
-    # Create a "summary" of the snippet description for smart search
-    if description:
-        embedding = _get_transformer().encode(description)
-        cur.execute(
-            "INSERT INTO SnippetEmbedding(SnippetID, Embedding) VALUES (?, ?)",
-            [snippet_id, embedding],
-        )
-
     _db.commit()
+
     return snippet_id
 
 
 def get_snippet(snippet_id, user_id=None):
     cur = _db.cursor()
 
-    if user_id:
-        cur.execute("SELECT * FROM Snippet WHERE ID = ? AND (UserID = ? OR IsPublic = 1)", (snippet_id, user_id))
-    else:
-        cur.execute("SELECT * FROM Snippet WHERE ID = ? AND IsPublic = 1", (snippet_id,))
+    cur.execute(
+        """
+        SELECT * FROM Snippet 
+        WHERE ID = ? 
+        AND (IsPublic = 1 
+             OR UserID = ? 
+             OR EXISTS (
+                 SELECT 1 FROM SnippetPermissions 
+                 WHERE SnippetID = ? 
+                 AND UserID = ?
+             )
+        )
+        """,
+        (snippet_id, user_id, snippet_id, user_id),
+    )
 
     snippet = cur.fetchone()
-    
-    if snippet:  # Ensure snippet is not None
+
+    if snippet:
         return {
             "id": snippet[0],
             "name": snippet[1],
@@ -262,7 +283,7 @@ def get_snippet(snippet_id, user_id=None):
             "shareable_link": snippet[8]
         }
 
-    return None
+    return None  # Snippet not found or not accessible
 
 
 def get_user_snippets(user_id):
@@ -354,12 +375,16 @@ def get_snippet_by_shareable_link(link):
     return None
 
 
-def search_snippets(names=None, tags=None, desc=None):
+def search_snippets(names=None, tags=None, desc=None, user_id=None):
     """
-    Returns summaries of all snippets that include the given elements.
+    Returns summaries of all snippets that include the given elements and that
+    the user has permission to view.
 
     - "id": The integer ID of the snippet.
+    - "tags": A list of tags associated with the snippet.
     - "name": The full name of the snippet.
+    - "desc": The user-provided description.
+    - "user_id": The author's integer ID.
     """
 
     if type(names) == str:
@@ -373,47 +398,58 @@ def search_snippets(names=None, tags=None, desc=None):
     params = []
 
     # Snippet name includes any of the given names
-    if names is not None and len(names) > 0:
-        name_match = "(" + " OR ".join(["Name LIKE ?"] * len(names)) + ")"
-        queries.append("SELECT Name, ID FROM Snippet WHERE " + name_match)
+    if names:
+        name_match = "(" + " OR ".join(["S.Name LIKE ?"] * len(names)) + ")"
+        queries.append(name_match)
         params.extend(["%" + name + "%" for name in names])
 
     # Snippet tags include all of the given tags
-    if tags is not None and len(tags) > 0:
+    if tags:
         tags_match = "(" + ",".join(["?"] * len(tags)) + ")"
         queries.append(
+            f"""
+            EXISTS (
+                SELECT 1 FROM TagUse AS T
+                WHERE S.ID = T.SnippetID
+                AND T.TagName IN {tags_match}
+            )
             """
-            SELECT S.Name, S.ID
-            FROM Snippet AS S, TagUse AS T
-            WHERE S.ID = T.SnippetID
-            AND T.Tagname IN 
-            """
-            + tags_match
         )
         params.extend(tags)
 
     # Snippet description includes any of the given description text
-    if desc is not None and len(desc) > 0:
-        desc_match = "(" + " OR ".join(["Description LIKE ?"] * len(desc)) + ")"
-        queries.append("SELECT Name, ID FROM Snippet WHERE " + desc_match)
+    if desc:
+        desc_match = "(" + " OR ".join(["S.Description LIKE ?"] * len(desc)) + ")"
+        queries.append(desc_match)
         params.extend(["%" + desc_term + "%" for desc_term in desc])
 
-    # Intersect all of the above queries
-    if len(queries) == 0:
-        query = "SELECT Name, ID FROM Snippet"
-    else:
-        query = " INTERSECT ".join(queries)
+    # Ensure only accessible snippets are returned
+    access_filter = """
+        (S.IsPublic = 1 OR EXISTS (
+            SELECT 1 FROM SnippetPermissions AS P
+            WHERE P.SnippetID = S.ID AND P.UserID = ?
+        ))
+    """
+    queries.append(access_filter)
+    params.append(user_id)
+
+    # Final query with filters applied
+    query = f"""
+        SELECT S.ID, S.Name
+        FROM Snippet AS S
+        WHERE {" AND ".join(queries)}
+        ORDER BY S.Date DESC
+    """
 
     cur = _db.cursor()
     results = cur.execute(query, params)
 
-    return [{"name": result[0], "id": result[1]} for result in results]
+    return [{"id": result[0], "name": result[1]} for result in results]
 
-
-def smart_search_snippets(query):
+def smart_search_snippets(query, user_id=None):
     """
-    Leverages AI technology to return summaries of all snippets that kinda fit a query.
-    Verbatim name matches are also returned.
+    Leverages AI to return summaries of all snippets that match a query,
+    but ensures only accessible snippets are returned.
 
     - "id": The integer ID of the snippet.
     - "name": The full name of the snippet.
@@ -421,25 +457,27 @@ def smart_search_snippets(query):
     query_embedding = _get_transformer().encode(query)
     query_terms = ["%" + term.strip() + "%" for term in query.split(" ")]
 
-    # Find snippets that have all query terms in their names
     cur = _db.cursor()
+
+    # Find snippets that have all query terms in their names
     cur.execute(
-        """
+        f"""
         SELECT ID, Name
         FROM Snippet
-        WHERE ("""
-        + " AND ".join(["Name LIKE ?"] * len(query_terms))
-        + """)
+        WHERE ({" AND ".join(["Name LIKE ?"] * len(query_terms))})
+        AND (IsPublic = 1 OR EXISTS (
+            SELECT 1 FROM SnippetPermissions WHERE SnippetID = Snippet.ID AND UserID = ?
+        ))
         ORDER BY length(Name) ASC, Name
         LIMIT 50
         """,
-        query_terms,
+        query_terms + [user_id],
     )
-    name_matches: list[dict] = cur.fetchall()
+    name_matches = cur.fetchall()
 
     # Search by description embedding
     cur.execute(
-        """
+        f"""
         WITH DescMatches AS (
             SELECT SnippetID, distance
             FROM SnippetEmbedding
@@ -449,11 +487,13 @@ def smart_search_snippets(query):
         SELECT
             Snippet.ID,
             Snippet.Name
-        FROM
-            DescMatches,
-            Snippet ON Snippet.ID = DescMatches.SnippetID
+        FROM DescMatches
+        JOIN Snippet ON Snippet.ID = DescMatches.SnippetID
+        WHERE (Snippet.IsPublic = 1 OR EXISTS (
+            SELECT 1 FROM SnippetPermissions WHERE SnippetID = Snippet.ID AND UserID = ?
+        ))
         """,
-        [query_embedding],
+        [query_embedding, user_id],
     )
     desc_matches = cur.fetchall()
 
@@ -461,6 +501,110 @@ def smart_search_snippets(query):
         {"id": res[0], "name": res[1]}
         for res in itertools.chain(name_matches, desc_matches)
     ]
+
+
+def grant_snippet_permission(snippet_id, user_id):
+    """
+    Grants a user permission to view a snippet.
+    
+    Returns True if permission was granted, False if it already exists.
+    """
+    cur = _db.cursor()
+    try:
+        cur.execute(
+            """
+            INSERT INTO SnippetPermissions (SnippetID, UserID)
+            VALUES (?, ?)
+            """,
+            [snippet_id, user_id],
+        )
+        _db.commit()
+        return True
+    except sqlite3.IntegrityError:
+        # Permission already exists
+        return False
+
+
+def revoke_snippet_permission(snippet_id, user_id):
+    """
+    Revokes a user's permission to view a snippet.
+    
+    Returns True if permission was revoked, False if the permission did not exist.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        DELETE FROM SnippetPermissions
+        WHERE SnippetID = ? AND UserID = ?
+        """,
+        [snippet_id, user_id],
+    )
+    if cur.rowcount > 0:
+        _db.commit()
+        return True
+    return False
+
+def user_has_permission(snippet_id, user_id):
+    """
+    Checks if a user has permission to view a snippet.
+    
+    Returns True if the user has access, False otherwise.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT 1 FROM SnippetPermissions
+        WHERE SnippetID = ? AND UserID = ?
+        """,
+        [snippet_id, user_id],
+    )
+    return cur.fetchone() is not None
+
+def get_snippets_user_has_access_to(user_id):
+    """
+    Returns a list of snippet IDs that a user has access to.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT SnippetID FROM SnippetPermissions
+        WHERE UserID = ?
+        """,
+        [user_id],
+    )
+    return [row[0] for row in cur.fetchall()]
+
+def get_all_users_with_permission(snippet_id):
+    """
+    Returns a list of users who have permission to view a specific snippet.
+    
+    Each entry contains:
+    - "id": The user's integer ID.
+    - "name": The user's name.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT U.ID, U.Name
+        FROM SnippetPermissions AS SP
+        JOIN User AS U ON SP.UserID = U.ID
+        WHERE SP.SnippetID = ?
+        """,
+        [snippet_id],
+    )
+    
+    return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
+def get_all_users_excluding_current(current_user_id):
+    """Fetches all users except the current user."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT ID, Name FROM User WHERE ID != ?
+        """,
+        [current_user_id],
+    )
+    return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
 
 # Finds the tags by snippetID
 def get_tags_for_snippet(snippet_id):

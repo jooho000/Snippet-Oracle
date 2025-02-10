@@ -14,6 +14,7 @@ import click
 import data
 import auth
 import uuid
+import json
 from flask import jsonify, request
 from urllib.parse import urlparse
 
@@ -42,7 +43,6 @@ def index():
     user_snippets = []
     if flask_login.current_user.is_authenticated:
         user_snippets = data.get_user_snippets(flask_login.current_user.id)
-
     return flask.render_template("index.html", snippets=user_snippets)
 
 
@@ -128,7 +128,7 @@ def profile():
         bio = flask.request.form.get("bio", "")
         profile_picture = flask.request.form.get("profile_picture", "")
         links = flask.request.form.getlist("links")
-
+        print(f"Received Profile Picture URL: {profile_picture}")
         # Update user bio and profile picture
         cur.execute(
             """
@@ -138,6 +138,7 @@ def profile():
             """,
             [bio, profile_picture, flask_login.current_user.id]
         )
+        print(f"Updated Profile Picture for User ID {flask_login.current_user.id} with URL: {profile_picture}")
 
         # Clear any existing links and insert updated links
         cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
@@ -202,7 +203,6 @@ def get_social_icon(url):
     # Default icon if no platform match
     return "/static/icons/default_image.png"
 
-# Handles Snippet Creation (Worked on by Alan Ly)
 @app.route("/createSnippet", methods=["GET", "POST"])
 @flask_login.login_required
 def createSnippet():
@@ -213,11 +213,18 @@ def createSnippet():
         code = flask.request.form.get("code")
         description = flask.request.form.get("description", "")
         tags = flask.request.form.get("tags", "")
-        
-        # Ensure is_public defaults to False unless explicitly set to "on"
-        is_public = request.form.get("is_public") == "on"
-        
+        is_public = flask.request.form.get("is_public") == "on"
         user_id = flask_login.current_user.id
+
+        try:
+            permitted_users = flask.request.form.getlist("permitted_users[]")  # Ensure the correct key
+            permitted_users = [int(user_id) for user_id in permitted_users if user_id.isdigit()]  # Convert to integers
+        except (ValueError, TypeError) as e:
+            print(f"Error parsing permitted_users: {e}")
+            permitted_users = []
+
+        if not is_public:
+            permitted_users.append(user_id)
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
@@ -226,13 +233,16 @@ def createSnippet():
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        # Store snippet with default visibility as private unless toggled
-        data.create_snippet(name, code, user_id, description, tags, is_public)
+        snippet_id = data.create_snippet(name, code, user_id, description, tags, is_public, permitted_users)
 
-        flask.flash("Snippet created successfully!", "success")
-        return flask.redirect(flask.url_for("snippets"))
+        if snippet_id:
+            flask.flash("Snippet created successfully!", "success")
+            return flask.redirect(flask.url_for("snippets"))
+        else:
+            flask.flash("Failed to create snippet!", "danger")
 
-    return flask.render_template("createSnippet.html",  preset_tags=preset_tags)
+    all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+    return flask.render_template("createSnippet.html", all_users=all_users, preset_tags=preset_tags)
 
 
 # View All Personal User Snippets (Worked on by Alan Ly)
@@ -241,7 +251,6 @@ def createSnippet():
 def snippets():
     # Fetch all snippets for the logged-in user
     user_snippets = data.get_user_snippets(flask_login.current_user.id)
-    print(f"Snippet User Data: {user_snippets}")
     return flask.render_template("snippets.html", snippets=user_snippets)
 
 
@@ -255,8 +264,6 @@ def view_snippet(snippet_id):
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
-    
-    print(f"Snippet Data: {snippet}")
 
     return flask.render_template("snippetDetail.html", snippet=snippet)
 
@@ -308,9 +315,13 @@ def search_snippets():
             else:
                 names.add(term)
 
+    user_id = None
+    if flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+
     if len(tags) or len(desc_has) > 0:
-        results = data.search_snippets(names, tags, desc_has)
+        results = data.search_snippets(names, tags, desc_has, user_id)
     else:
-        results = data.smart_search_snippets(query)
+        results = data.smart_search_snippets(query, user_id)
 
     return jsonify({"results": results})
