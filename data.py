@@ -521,7 +521,6 @@ def grant_snippet_permission(snippet_id, user_id):
         # Permission already exists
         return False
 
-
 def revoke_snippet_permission(snippet_id, user_id):
     """
     Revokes a user's permission to view a snippet.
@@ -602,3 +601,33 @@ def get_all_users_excluding_current(current_user_id):
         [current_user_id],
     )
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
+def get_tags(id):
+    """
+    Gets a Snippet's tags by integer ID.
+
+    - "id": The id of the snippet.
+    - "name": The name of the tag.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT
+            *
+        FROM TagUse
+        WHERE SnippetID = ?
+        ORDER BY TagName
+        """,
+        [id],
+    )
+    tags = cur.fetchall()
+
+    return [
+        {
+
+            "id": tag[0],
+            "name": tag[1],
+        }
+        for tag in tags
+    ]
+

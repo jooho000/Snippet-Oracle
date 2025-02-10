@@ -45,6 +45,10 @@
                 </button>
                 
                 <!-- Edit Button -->
+                <div>
+                  {{snippet["is_public"]}}
+                </div>
+
                 {%set id = current_user.id | int %}
                 {% if snippet["user_id"] == id %}
                     <a class="button is-small is-info ml-2"

@@ -273,7 +273,7 @@ def update_snippet_visibility(snippet_id):
     is_public = request.form.get("is_public") == "on"
 
     snippet = data.get_snippet(snippet_id)
-    if not snippet or snippet["user_id"] != flask_login.current_user.id:
+    if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("snippets"))
     
@@ -323,3 +323,17 @@ def search_snippets():
         results = data.smart_search_snippets(query, user_id)
 
     return jsonify({"results": results})
+
+@app.route("/editSnippet/<int:snippet_id>", methods=["GET", "POST"])
+@flask_login.login_required
+def edit_snippet(snippet_id):
+    current_user_id = flask_login.current_user.id  # Get the current user's ID
+    snippet = data.get_snippet(snippet_id, current_user_id)
+    oldTags = data.get_tags(snippet["id"])
+    if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
+        flask.flash("Unauthorized or snippet not found!", "danger")
+        return flask.redirect(flask.url_for("snippets"))
+    
+    all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+    return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags)
+
