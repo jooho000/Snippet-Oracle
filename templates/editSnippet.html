@@ -76,7 +76,7 @@
 
             <!-- Back Button -->
             <div class="has-text-centered mt-4">
-                <a class="button is-light is-rounded" href="{{ url_for('snippets') }}">Back to My Snippets</a>
+                <a class="button is-light is-rounded" id="cancel">Cancel</a>
             </div>
         </div>
     </div>
@@ -89,6 +89,6 @@
 {% endblock %}
 
 {% block scripts %}
-
+<script src="{{ url_for('static', filename='cancel.js') }}"></script>
 <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
 {% endblock %}

@@ -272,7 +272,7 @@ def view_snippet(snippet_id):
 @app.route("/snippet/<int:snippet_id>/visibility", methods=["POST"])
 @flask_login.login_required
 def update_snippet_visibility(snippet_id):
-    is_public = request.form.get("is_public") == "on"
+    is_public = request.form.get("is_public")
 
     snippet = data.get_snippet(snippet_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
@@ -331,6 +331,7 @@ def search_snippets():
 def edit_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)
+    print(snippet)
     oldTags = data.get_tags(snippet["id"])
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
@@ -342,6 +343,7 @@ def edit_snippet(snippet_id):
         description = flask.request.form.get("description")
         tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
+        is_public = request.form.get("is_public")
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
@@ -355,13 +357,13 @@ def edit_snippet(snippet_id):
             delete_tags = oldTags - tags
             new_tags = tags - oldTags
         
-        
+        data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags)
 
-        data.update_snippet(snippet_id, user_id, name, code, description, snippet["description"], delete_tags, new_tags)
+        if (is_public):
+            data.set_snippet_visibility(snippet_id, is_public)
 
         flask.flash("Snippet Edited successfully!")
-        #need delay to wait for server update
-        return view_snippet(snippet_id)
+        return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
     elif snippet:
         all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
         return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags)
