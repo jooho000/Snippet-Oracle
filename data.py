@@ -614,7 +614,7 @@ def get_tags(id):
     cur.execute(
         """
         SELECT
-            *
+            TagName
         FROM TagUse
         WHERE SnippetID = ?
         ORDER BY TagName
@@ -624,11 +624,7 @@ def get_tags(id):
     tags = cur.fetchall()
 
     return [
-        {
-
-            "id": tag[0],
-            "name": tag[1],
-        }
+            tag[0]
         for tag in tags
     ]
 

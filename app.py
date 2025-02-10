@@ -353,9 +353,8 @@ def edit_snippet(snippet_id):
             tags = set(tags.replace(" ", "").split(","))
         
         if oldTags is not None:
-            oldTags = set(tag["name"] for tag in oldTags)
-            delete_tags = oldTags - tags
-            new_tags = tags - oldTags
+            delete_tags = set(oldTags) - tags
+            new_tags = tags - set(oldTags)
         
         data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags)
 

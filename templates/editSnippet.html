@@ -35,8 +35,9 @@
 
                 <!-- Snippet Tags -->
                 <div class="field">
+                    <label class="label">Tags</label>
                     <div class="control">
-                        <textarea class="textarea" name="tags">{% for tag in tags %}{% if tag["name"] %}{{tag["name"]}}, {%endif%}{% endfor %}</textarea>
+                        <input class="input is-rounded" name="tags" value={{tags|join(',')}}>
                     </div>
                 </div>
 
