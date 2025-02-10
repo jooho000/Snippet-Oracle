@@ -127,6 +127,7 @@ def populate():
                 user_id=user_id,
                 description=mock_data.paragraph(),
                 tags=mock_data.tags(),
+                is_public = random.choice([True, False]),
             )
 
 
