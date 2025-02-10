@@ -109,148 +109,65 @@ function copySnippet(code) {
     });
 }
 
+// Global Set to track selected tags
+let selectedTags = new Set();
+
 function filterByTag(tag) {
-  const searchInput = document.getElementById("search-input");
   const selectedTagsContainer = document.getElementById("selected-tags");
 
-  // Get the current query
-  let currentQuery = searchInput.value.trim();
-
-  // Check if the tag is already selected
-  if (currentQuery.includes(`:${tag}`)) {
-      // Remove the tag from the search query
-      currentQuery = currentQuery.replace(new RegExp(`:?${tag}`, "g"), "").trim();
-
-      // Remove the tag from the selected tags section
-      const tagElement = document.getElementById(`selected-tag-${tag}`);
-      if (tagElement) tagElement.remove();
-  } else {
-      // Add the tag to the search query
-      currentQuery += ` :${tag}`;
-
-      // Create a removable tag button
-      const tagElement = document.createElement("span");
-      tagElement.className = "tag is-primary is-rounded";
-      tagElement.id = `selected-tag-${tag}`;
-      tagElement.innerHTML = `${tag} <button class="delete is-small" onclick="removeTag('${tag}')"></button>`;
-
-      // Append to the selected tags container
-      selectedTagsContainer.appendChild(tagElement);
+  if (selectedTags.has(tag)) {
+    return; // Avoid adding duplicates
   }
 
-  // Update the search input field
-  searchInput.value = currentQuery.trim();
+  selectedTags.add(tag);
 
-  // If no tags or search text, clear results
-  if (!searchInput.value) {
-      document.getElementById("search-results").innerHTML = "";
-      return;
-  }
+  // Create a removable tag button
+  const tagElement = document.createElement("span");
+  tagElement.className = "tag is-primary is-rounded";
+  tagElement.id = `selected-tag-${tag}`;
+  tagElement.innerHTML = `${tag} <button class="delete is-small" onclick="removeTag('${tag}')"></button>`;
 
-  // Trigger search
-  fetch(`/search?q=${encodeURIComponent(searchInput.value)}`)
-      .then(response => response.json())
-      .then(data => {
-          displaySearchResults(data.results);
-      })
-      .catch(error => console.error("Error:", error));
+  // Append to the selected tags container
+  selectedTagsContainer.appendChild(tagElement);
+
+  console.log("Selected Tags:", Array.from(selectedTags));
+  updateSnippetGrid();
+  console.log("reached updateSnippetGrid intial");
 }
 
-// Function to remove a tag and update results
+
 function removeTag(tag) {
-  const searchInput = document.getElementById("search-input");
-  let currentQuery = searchInput.value.trim();
+  if (!selectedTags.has(tag)) return;
 
-  // Remove the tag from the search query
-  currentQuery = currentQuery.replace(new RegExp(`:?${tag}`, "g"), "").trim();
+  selectedTags.delete(tag);
 
-  // Update search input
-  searchInput.value = currentQuery;
-
-  // Remove the tag from the selected tags section
+  // Remove the tag from the UI
   const tagElement = document.getElementById(`selected-tag-${tag}`);
   if (tagElement) tagElement.remove();
 
-  // If no tags or search text, clear results
-  if (!searchInput.value) {
-      document.getElementById("search-results").innerHTML = "";
-      return;
-  }
-
-  // Re-run the search
-  fetch(`/search?q=${encodeURIComponent(searchInput.value)}`)
-      .then(response => response.json())
-      .then(data => {
-          displaySearchResults(data.results);
-      })
-      .catch(error => console.error("Error:", error));
+  // Ensure correct filtering happens after tag removal
+  updateSnippetGrid();
+  console.log("reached updateSnippetGrid remove");
 }
 
 
-function displaySearchResults(snippets) {
-  let resultsContainer = document.getElementById("search-results");
-  resultsContainer.innerHTML = ""; // Clear previous results
+function updateSnippetGrid() {
+  const snippets = document.querySelectorAll(".box[data-snippet-id]");
 
-  if (snippets.length === 0) {
-      resultsContainer.innerHTML = "<p class='has-text-centered'>No snippets found.</p>";
-      return;
-  }
+  snippets.forEach(snippet => {
+      const tagsContainer = snippet.querySelector(".tags-container");
+      const snippetTags = Array.from(tagsContainer.getElementsByClassName("tag"))
+                              .map(tagElement => tagElement.textContent.trim());
 
-  let uniqueSnippets = new Map(); // Store snippets by ID to avoid duplicates
+      // Check if the snippet has all selected tags
+      // chnage it to the parent element
+      const matchesAllTags = [...selectedTags].every(tag => snippetTags.includes(tag));
 
-  snippets.forEach((snippet) => {
-      if (!uniqueSnippets.has(snippet.id)) {
-          uniqueSnippets.set(snippet.id, snippet); // Add to Map if not already present
-      }
+      if (matchesAllTags) {
+        snippet.parentElement.style.display = "";
+    } else {
+        snippet.parentElement.style.display = "none";
+    }
+    
   });
-
-  let gridHtml = '<div class="columns is-multiline">';
-
-  uniqueSnippets.forEach((snippet) => {
-      // Try to find the snippet in the existing page content
-      let existingSnippet = document.querySelector(`[data-snippet-id="${snippet.id}"]`);
-
-      let description = existingSnippet 
-          ? existingSnippet.querySelector(".snippet-description").textContent.trim()
-          : "No description available.";
-
-      let visibilityTag = existingSnippet 
-          ? existingSnippet.querySelector(".snippet-visibility").outerHTML
-          : '<span class="tag is-danger"><i class="fas fa-lock"></i> Private</span>';
-
-      gridHtml += `
-          <div class="column is-4-desktop is-6-tablet is-12-mobile">
-              <div class="box">
-                  <!-- Top Section: Name (Left) + Copy & Visibility (Right) -->
-                  <div class="columns is-vcentered">
-                      <div class="column has-text-left">
-                          <h2 class="title is-5">${snippet.name}</h2>
-                      </div>
-                      <div class="column has-text-right">
-                          <!-- Visibility Tag (Top Right) -->
-                          ${visibilityTag}
-
-                          <!-- Copy Button (Top Right) -->
-                          <button class="button is-small is-info ml-2" onclick="copySnippet(\`${snippet.code}\`)">
-                              <span class="icon">
-                                  <i class="fas fa-copy"></i>
-                              </span>
-                          </button>
-                      </div>
-                  </div>
-
-                  <!-- Snippet Description -->
-                  <p class="is-italic snippet-description">${description}</p>
-
-                  <!-- View Snippet Button (Bottom Left) -->
-                  <div class="buttons mt-3">
-                      <a href="/snippet/${snippet.id}" class="button is-link">View</a>
-                  </div>
-              </div>
-          </div>`;
-  });
-
-  gridHtml += '</div>';
-  resultsContainer.innerHTML = gridHtml;
 }
-

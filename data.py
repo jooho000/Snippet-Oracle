@@ -258,6 +258,7 @@ def get_snippet(snippet_id, user_id=None):
             "user_id": snippet[4],
             "date": snippet[6],
             "is_public": bool(snippet[7]),  # Explicit conversion
+            "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags
             "shareable_link": snippet[8]
         }
 
