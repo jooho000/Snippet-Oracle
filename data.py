@@ -128,6 +128,7 @@ def populate():
                 user_id=user_id,
                 description=mock_data.paragraph(),
                 tags=mock_data.tags(),
+                is_public = random.choice([True, False]),
             )
 
 
@@ -279,8 +280,9 @@ def get_snippet(snippet_id, user_id=None):
             "description": snippet[3],
             "user_id": snippet[4],
             "date": snippet[6],
-            "is_public": bool(snippet[7]),
-            "shareable_link": snippet[8],
+            "is_public": bool(snippet[7]),  # Explicit conversion
+            "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags
+            "shareable_link": snippet[8]
         }
 
     return None  # Snippet not found or not accessible
@@ -327,7 +329,8 @@ def get_user_snippets(user_id):
             "user_id": snippet[4],
             "parent_snippet_id": snippet[5],
             "date": snippet[6],
-            "is_public": snippet[7]
+            "is_public": snippet[7],
+            "tags": get_tags_for_snippet(snippet[0])
         }
         for snippet in snippets
     ]
@@ -501,6 +504,7 @@ def smart_search_snippets(query, user_id=None):
         for res in itertools.chain(name_matches, desc_matches)
     ]
 
+
 def grant_snippet_permission(snippet_id, user_id):
     """
     Grants a user permission to view a snippet.
@@ -602,6 +606,22 @@ def get_all_users_excluding_current(current_user_id):
         [current_user_id],
     )
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
+# Finds the tags by snippetID
+def get_tags_for_snippet(snippet_id):
+    """
+    Fetches all tags associated with a given snippet.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT TagName FROM TagUse WHERE SnippetID = ?
+        """,
+        [snippet_id],
+    )
+    tags = cur.fetchall()
+
+    return [tag[0] for tag in tags]  # Convert tuple list to a simple list
 
 def get_tags(id):
     """

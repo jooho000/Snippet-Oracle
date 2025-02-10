@@ -108,3 +108,66 @@ function copySnippet(code) {
       console.error("Failed to copy text: ", err);
     });
 }
+
+// Global Set to track selected tags
+let selectedTags = new Set();
+
+function filterByTag(tag) {
+  const selectedTagsContainer = document.getElementById("selected-tags");
+
+  if (selectedTags.has(tag)) {
+    return; // Avoid adding duplicates
+  }
+
+  selectedTags.add(tag);
+
+  // Create a removable tag button
+  const tagElement = document.createElement("span");
+  tagElement.className = "tag is-primary is-rounded";
+  tagElement.id = `selected-tag-${tag}`;
+  tagElement.innerHTML = `${tag} <button class="delete is-small" onclick="removeTag('${tag}')"></button>`;
+
+  // Append to the selected tags container
+  selectedTagsContainer.appendChild(tagElement);
+
+  console.log("Selected Tags:", Array.from(selectedTags));
+  updateSnippetGrid();
+  console.log("reached updateSnippetGrid intial");
+}
+
+
+function removeTag(tag) {
+  if (!selectedTags.has(tag)) return;
+
+  selectedTags.delete(tag);
+
+  // Remove the tag from the UI
+  const tagElement = document.getElementById(`selected-tag-${tag}`);
+  if (tagElement) tagElement.remove();
+
+  // Ensure correct filtering happens after tag removal
+  updateSnippetGrid();
+  console.log("reached updateSnippetGrid remove");
+}
+
+
+function updateSnippetGrid() {
+  const snippets = document.querySelectorAll(".box[data-snippet-id]");
+
+  snippets.forEach(snippet => {
+      const tagsContainer = snippet.querySelector(".tags-container");
+      const snippetTags = Array.from(tagsContainer.getElementsByClassName("tag"))
+                              .map(tagElement => tagElement.textContent.trim());
+
+      // Check if the snippet has all selected tags
+      // chnage it to the parent element
+      const matchesAllTags = [...selectedTags].every(tag => snippetTags.includes(tag));
+
+      if (matchesAllTags) {
+        snippet.parentElement.style.display = "";
+    } else {
+        snippet.parentElement.style.display = "none";
+    }
+    
+  });
+}
