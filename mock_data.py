@@ -101,12 +101,13 @@ def paragraph():
 
 
 def tags():
-    list = []
+    new_tags = set()
     for _ in range(random.randint(0, 6)):
         if random.random() < 0.2:
-            list.append(fake.word("adjective").capitalize())
+            new_tags.add(fake.word("adjective").capitalize())
         else:
-            list.append(random.choice(langs))
+            new_tags.add(random.choice(langs))
+    return list(new_tags)
 
 
 def time():

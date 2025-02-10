@@ -12,6 +12,7 @@ import mock_data
 
 _desc_transformer = None
 
+preset_tags = ["HTML", "CSS", "JavaScript", "Python", "Flask", "Django", "React", "Vue.js", "Code Snippet"]
 
 def _get_transformer():
     from sentence_transformers import SentenceTransformer
@@ -66,21 +67,22 @@ def _init_db():
             SnippetID INTEGER,
             TagName TEXT,
             PRIMARY KEY (SnippetID, TagName),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID)
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS Links (
             ID INTEGER PRIMARY KEY,
             UserID INTEGER,
             Platform TEXT,  -- e.g., "GitHub", "Discord"
             URL TEXT,       -- The actual link
-            FOREIGN KEY (UserID) REFERENCES User(ID)
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS SnippetPermissions (
             SnippetID INTEGER,
             UserID INTEGER,
             PRIMARY KEY (SnippetID, UserID),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID),
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
             FOREIGN KEY (UserID) REFERENCES User(ID)
+            
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
             SnippetID INTEGER PRIMARY KEY,
@@ -127,6 +129,7 @@ def populate():
                 user_id=user_id,
                 description=mock_data.paragraph(),
                 tags=mock_data.tags(),
+                is_public = random.choice([True, False]),
             )
 
 
@@ -222,11 +225,16 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
         [name, code, description or "", user_id, int(is_public), shareable_link],
     )
     snippet_id = cur.lastrowid
+    print("hello there")
 
+    print((type(is_public)))
     if not is_public and permitted_users:
+        print("Adding Users")
         permitted_users = [int(uid) for uid in permitted_users if str(uid).isdigit()]
+        print(permitted_users)
         for permitted_user_id in permitted_users:
             if permitted_user_id != user_id:  # Avoid duplicate entry for creator
+                print("adding")
                 cur.execute(
                     """
                     INSERT OR IGNORE INTO SnippetPermissions (SnippetID, UserID)
@@ -278,8 +286,9 @@ def get_snippet(snippet_id, user_id=None):
             "description": snippet[3],
             "user_id": snippet[4],
             "date": snippet[6],
-            "is_public": bool(snippet[7]),
-            "shareable_link": snippet[8],
+            "is_public": bool(snippet[7]),  # Explicit conversion
+            "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags
+            "shareable_link": snippet[8]
         }
 
     return None  # Snippet not found or not accessible
@@ -326,7 +335,8 @@ def get_user_snippets(user_id):
             "user_id": snippet[4],
             "parent_snippet_id": snippet[5],
             "date": snippet[6],
-            "is_public": snippet[7]
+            "is_public": snippet[7],
+            "tags": get_tags_for_snippet(snippet[0])
         }
         for snippet in snippets
     ]
@@ -371,7 +381,6 @@ def get_snippet_by_shareable_link(link):
             "is_public": bool(snippet[6]),
         }
     return None
-
 
 def search_snippets(names=None, tags=None, desc=None, user_id=None):
     """
@@ -500,6 +509,7 @@ def smart_search_snippets(query, user_id=None):
         for res in itertools.chain(name_matches, desc_matches)
     ]
 
+
 def grant_snippet_permission(snippet_id, user_id):
     """
     Grants a user permission to view a snippet.
@@ -520,7 +530,6 @@ def grant_snippet_permission(snippet_id, user_id):
     except sqlite3.IntegrityError:
         # Permission already exists
         return False
-
 
 def revoke_snippet_permission(snippet_id, user_id):
     """
@@ -602,3 +611,137 @@ def get_all_users_excluding_current(current_user_id):
         [current_user_id],
     )
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
+# Finds the tags by snippetID
+def get_tags_for_snippet(snippet_id):
+    """
+    Fetches all tags associated with a given snippet.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT TagName FROM TagUse WHERE SnippetID = ?
+        """,
+        [snippet_id],
+    )
+    tags = cur.fetchall()
+
+    return [tag[0] for tag in tags]  # Convert tuple list to a simple list
+
+def get_tags(id):
+    """
+    Gets a Snippet's tags by integer ID.
+
+    - "id": The id of the snippet.
+    - "name": The name of the tag.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT
+            TagName
+        FROM TagUse
+        WHERE SnippetID = ?
+        ORDER BY TagName
+        """,
+        [id],
+    )
+    tags = cur.fetchall()
+
+    return [
+            tag[0]
+        for tag in tags
+    ]
+
+def update_snippet(id, user_id, name, code, description=None, old_description=None, delete_tags=None, new_tags=None, is_public=False, new_users=None, del_users=None):
+    cur = _db.cursor()
+    # Update the Snippet
+    cur.execute(
+        """
+        UPDATE Snippet
+        SET 
+            Name = ?,
+            Code = ?,
+            Description = ?,
+            Date = datetime('now')
+        WHERE ID = ? AND UserID = ?
+        """,
+        [name, code, description or "", id, user_id],
+    )
+
+    # Delete old tags
+    print("befor delete tag")
+    if delete_tags is not None:
+        cur.executemany(
+            """
+            DELETE FROM TagUse
+            WHERE  
+                SnippetID = ? AND 
+                TagName = ?
+            """,
+            [(id, tag) for tag in delete_tags],
+        )
+
+    print("before new tag")
+    if new_tags is not None:
+        cur.executemany(
+            """
+                INSERT INTO TagUse (SnippetID, TagName)
+                VALUES (?, ?)
+                """,
+                [(id, tag) for tag in new_tags],
+        )
+
+    # Create a "summary" of the snippet description for smart searchs
+    print("before desc")
+    if description is not None and old_description is not None and description == old_description:
+        embedding = _get_transformer().encode(description)
+        cur.execute(
+            """UPDATE SnippetEmbedding
+            SET
+                Embedding = ?
+            WHERE SnippetID = ?
+            """,
+            [embedding, id],
+        )
+
+    _db.commit()
+
+    print("before pub")
+    if is_public:
+        set_snippet_visibility(id, is_public)
+
+    print("before del_user")
+    if del_users:
+        for i in del_users:
+            revoke_snippet_permission(id, i)
+    if new_users:
+        for i in new_users:
+            grant_snippet_permission(id, i)
+
+    
+    return id
+
+def delete_snippet(id, user_id):
+    """Delete Snippets and Tags"""
+    cur = _db.cursor()
+
+    # Delete the Snippet
+    cur.execute(
+        """
+        DELETE FROM Snippet
+        WHERE ID = ? AND UserID = ?
+        """,
+        [id, user_id],
+    )
+    cur.execute(
+        """
+        DELETE FROM TagUse
+        WHERE  
+            SnippetID = ?
+        """,
+        [id],
+    )
+
+    _db.commit()
+

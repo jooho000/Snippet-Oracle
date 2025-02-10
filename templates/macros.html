@@ -47,6 +47,13 @@
           </span>
         </button>
       </div>
+      
+      <!-- Tags Section (Bottom Right) -->
+      <div class="tags-container">
+        {% for tag in snippet["tags"][:5] %}  <!-- Show max 5 tags -->
+          <span class="tag is-info">{{ tag }}</span>
+        {% endfor %}
+      </div>
     </div>
   </div>
 {%- endmacro %}
