@@ -371,3 +371,12 @@ def edit_snippet(snippet_id):
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))
 
+@app.route("/deleteSnippet/<int:snippet_id>")
+def delete_Snippet(snippet_id):
+    current_user_id = flask_login.current_user.id  # Get the current user's ID
+    snippet = data.get_snippet(snippet_id, current_user_id)
+    if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
+        flask.flash("Unauthorized or snippet not found!", "danger")
+        return flask.redirect(flask.url_for("snippets"))
+    data.delete_snippet(snippet_id, snippet["user_id"])
+    return flask.redirect(flask.url_for("snippets"))

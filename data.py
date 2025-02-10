@@ -66,21 +66,22 @@ def _init_db():
             SnippetID INTEGER,
             TagName TEXT,
             PRIMARY KEY (SnippetID, TagName),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID)
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS Links (
             ID INTEGER PRIMARY KEY,
             UserID INTEGER,
             Platform TEXT,  -- e.g., "GitHub", "Discord"
             URL TEXT,       -- The actual link
-            FOREIGN KEY (UserID) REFERENCES User(ID)
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS SnippetPermissions (
             SnippetID INTEGER,
             UserID INTEGER,
             PRIMARY KEY (SnippetID, UserID),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID),
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
             FOREIGN KEY (UserID) REFERENCES User(ID)
+            
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
             SnippetID INTEGER PRIMARY KEY,
@@ -687,3 +688,26 @@ def update_snippet(id, user_id, name, code, description=None, old_description=No
 
     _db.commit()
     return id
+
+def delete_snippet(id, user_id):
+    """Delete Snippets and Tags"""
+    cur = _db.cursor()
+
+    # Delete the Snippet
+    cur.execute(
+        """
+        DELETE FROM Snippet
+        WHERE ID = ? AND UserID = ?
+        """,
+        [id, user_id],
+    )
+    cur.execute(
+        """
+        DELETE FROM TagUse
+        WHERE  
+            SnippetID = ?
+        """,
+        [id],
+    )
+
+    _db.commit()
