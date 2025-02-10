@@ -1,0 +1,52 @@
+{% macro snippetCard(elementId, snippetId=0, title='', public=None, description='', code='') -%}
+  <div {% if elementId %} id="{{ elementId }}" {% endif %}
+       class="snippet-card box"
+       data-code="{{ code }}"
+       data-description="{{ description }}">
+    <!-- Snippet Header: Name + Buttons + Visibility -->
+    <div class="columns is-vcentered">
+      <!-- Snippet Name (Left) -->
+      <a class="snippet-card-link column has-text-left is-narrow"
+         href="{{ url_for('view_snippet', snippet_id=snippetId) }}">
+        <h2 class="snippet-card-name title is-5">{{ title }}</h2>
+      </a>
+      <!-- Snippet Description (Middle) -->
+      <p class="snippet-card-summary column is-italic">{{ description | truncate(100) }}</p>
+      <!-- Buttons + Visibility (Right) -->
+      <div class="column has-text-right is-narrow">
+        <!-- Visibility Status -->
+        {% if public == None or public == True %}
+          <span class="snippet-card-public tag is-medium is-success">
+            <i class="fas fa-globe mr-2"></i> Public
+          </span>
+        {% endif %}
+        {% if public == None or public == False %}
+          <span class="snippet-card-private tag is-medium is-danger">
+            <i class="fas fa-lock mr-2"></i> Private
+          </span>
+        {% endif %}
+        <!-- Copy Button -->
+        <button class="snippet-card-copy button is-small is-info ml-2"
+                onclick="copySnippet($(this).closest('.snippet-card'))">
+          <span class="icon">
+            <i class="fas fa-copy"></i>
+          </span>
+        </button>
+        <!-- Expand Button -->
+        <button class="snippet-card-expand button is-small is-primary ml-2"
+                onclick="toggleSnippet($(this).closest('.snippet-card'))">
+          <span class="snippet-card-arrow icon">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor"
+                 width="20"
+                 height="20">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+{%- endmacro %}

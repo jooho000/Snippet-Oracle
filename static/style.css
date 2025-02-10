@@ -1,0 +1,7 @@
+.snippet-card-arrow {
+    transition: transform 0.5s
+}
+
+.snippet-card-arrow-open {
+    transform: rotate(180deg);
+}

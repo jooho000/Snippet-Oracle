@@ -1,109 +1,21 @@
 {% extends "layout.html" %}
+{% import "macros.html" as macros %}
 {% block title %}Your Snippets - Snippet Oracle{% endblock %}
-
 {% block content %}
-<section class="section">
-  <div class="container">
-    <h1 class="title">Your Snippets</h1>
-
-    <!-- Buttons to navigate -->
-    <div class="field is-grouped">
-      <div class="control">
-        <a class="button is-light" href="{{ url_for('createSnippet') }}">Create New Snippet</a>
-      </div>
-    </div>
-
-    {% if snippets %}
-      <!-- Snippet Grid Layout -->
-      <div class="columns is-multiline">
-        {% for snippet in snippets %}
-        <div class="column is-4-desktop is-6-tablet is-12-mobile"> 
-          <div class="box">
-            <!-- Snippet Header: Name + Buttons + Visibility -->
-            <div class="columns is-vcentered">
-              <!-- Snippet Name (Left) -->
-              <div class="column has-text-left">
-                <h2 class="title is-5">{{ snippet["name"] }}</h2>
-              </div>
-              <!-- Buttons + Visibility (Right) -->
-              <div class="column has-text-right">
-                <!-- Visibility Status -->
-                <span class="tag is-medium {% if snippet['is_public'] %}is-success{% else %}is-danger{% endif %}">
-                  {% if snippet["is_public"] %}
-                    <i class="fas fa-globe"></i> Public
-                  {% else %}
-                    <i class="fas fa-lock"></i> Private
-                  {% endif %}
-                </span>
-
-                <!-- Copy Button -->
-                <button class="button is-small is-info ml-2"
-                        onclick="copySnippet(`{{ snippet['code'] }}`)">
-                  <span class="icon">
-                    <i class="fas fa-copy"></i>
-                  </span>
-                </button>
-
-                <!-- Expand Button -->
-                <button class="button is-small is-primary ml-2"
-                        onclick="toggleSnippet('snippet-{{ loop.index }}', this)">
-                  <span class="icon">
-                    <svg id="arrow-icon-{{ loop.index }}"
-                         xmlns="http://www.w3.org/2000/svg"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor"
-                         width="20"
-                         height="20">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Snippet Description -->
-            <p class="is-italic">{{ snippet["description"][:100] }}...</p>
-
-            <!-- Hidden Snippet Code (Toggles on Button Click) -->
-            <div id="snippet-{{ loop.index }}" style="display: none;">
-              <pre><code>{{ snippet["code"] }}</code></pre>
-            </div>
-
-            <!-- View Button -->
-            <div class="buttons mt-3">
-              <a href="{{ url_for('view_snippet', snippet_id=snippet['id']) }}" class="button is-link">View</a>
-            </div>
-          </div>
+  <section class="section">
+      <h1 class="title">Your Snippets</h1>
+      <!-- Buttons to navigate -->
+      <div class="field is-grouped">
+        <div class="control">
+          <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
         </div>
-        {% endfor %}
       </div>
-    {% else %}
-      <p>You haven't created any snippets yet!</p>
-    {% endif %}
-  </div>
-</section>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
-  <script>
-    function copySnippet(code) {
-      navigator.clipboard.writeText(code).then(() => {
-        alert("Snippet copied!");
-      });
-    }
-  
-    function toggleSnippet(id, button) {
-      let content = document.getElementById(id);
-      let arrow = button.querySelector("svg");
-      if (content.style.display === "none") {
-        content.style.display = "block";
-        arrow.style.transform = "rotate(180deg)";
-      } else {
-        content.style.display = "none";
-        arrow.style.transform = "rotate(0deg)";
-      }
-    }
-  </script>
+      {% if snippets %}
+        {% for s in snippets %}
+          {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"]) }}
+        {% endfor %}
+      {% else %}
+        <p>You haven't created any snippets yet!</p>
+      {% endif %}
+  </section>
 {% endblock %}
