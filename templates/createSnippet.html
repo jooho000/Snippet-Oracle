@@ -36,17 +36,20 @@
 
             <!-- Tags Input Section -->
             <div class="field">
+                <label class="label">Tags</label>
                 <div class="control">
-                    <label class="label">Tags</label>
-                    <div class="tagsfield field input is-grouped is-grouped-multiline">
-                        <div id="tags-container" class="tags is-flex is-flex-wrap-wrap">
-                            <input type="hidden" name="tags" id="hidden-tags">
-                            <span id="tag-input" class="tag-input" placeholder="Type tags and press Enter" contenteditable></span>
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div id="tags-container" class="tags is-flex is-flex-wrap-wrap is-flex-grow-1">
+                                <input type="hidden" name="tags" id="hidden-tags">
+                                <span id="tag-input" class="input tag-input is-flex-grow-1" placeholder="Type tags and press Enter" contenteditable="true"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
+            
 
                 <!-- Dropdown for Preset Tags -->
+                
                 <div class="control">
                     <div class="dropdown" id="tag-dropdown">
                         <div class="dropdown-trigger">
