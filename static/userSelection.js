@@ -17,6 +17,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const users = JSON.parse(document.getElementById("user-data").textContent);
     let selectedUsers = new Set(); // Store selected users
 
+    if (document.getElementById("edit")){
+        const existingUsers = JSON.parse(document.getElementById("shared-users").textContent);
+        existingUsers.forEach(user => selectedUsers.add(user))
+    }
+
     function updateVisibility() {
         if (isPublicField.value === "1") {
             // Public
@@ -53,8 +58,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Remove old hidden inputs
         document.querySelectorAll(".hidden-user-input").forEach(input => input.remove());
-
+        console.log("hello")
         selectedUsers.forEach(user => {
+            console.log("Inside Selected")
+            console.log(user)
             const tag = document.createElement("span");
             tag.classList.add("tag", "is-info", "is-medium", "mr-2");
             tag.textContent = user.name;
@@ -121,7 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
             userSelection.appendChild(label);
         });
     }
-
+    
     // Listen to search input
     userSearch.addEventListener("input", function () {
         renderUserList(userSearch.value.trim());
@@ -132,5 +139,6 @@ document.addEventListener("DOMContentLoaded", function () {
         updateSelectedUsers();
     });
 
+    updateSelectedUsers();
     renderUserList(); // Initial render
 });
