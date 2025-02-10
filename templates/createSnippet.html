@@ -36,13 +36,36 @@
 
             <!-- Tags Input Section -->
             <div class="field">
-                <label class="label has-text-primary" for="tags">Tags</label>
                 <div class="control">
+                    <label class="label">Tags</label>
                     <div class="tagsfield field input is-grouped is-grouped-multiline">
                         <div id="tags-container" class="tags is-flex is-flex-wrap-wrap">
                             <input type="hidden" name="tags" id="hidden-tags">
                             <span id="tag-input" class="tag-input" placeholder="Type tags and press Enter" contenteditable></span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Dropdown for Preset Tags -->
+                <div class="control">
+                    <div class="dropdown" id="tag-dropdown">
+                        <div class="dropdown-trigger">
+                            <button type="button" class="button is-primary mt-3 mb-3" id="dropdown-button" aria-haspopup="true" aria-controls="dropdown-menu">
+                                <span>Select a Tag</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                {% for tag in preset_tags %}
+                                    <a href="#" class="dropdown-item preset-tag">{{ tag }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Visibility Toggle as a Button -->
                 <div class="field">
@@ -70,31 +93,6 @@
                     </div>
                 </div>
 
-                <!-- Dropdown for Preset Tags -->
-                <div class="control">
-                    <div class="dropdown" id="tag-dropdown">
-                        <div class="dropdown-trigger">
-                            <button type="button" class="button is-primary" id="dropdown-button" aria-haspopup="true" aria-controls="dropdown-menu">
-                                <span>Select a Tag</span>
-                                <span class="icon is-small">
-                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
-                                </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                            <div class="dropdown-content">
-                                {% for tag in preset_tags %}
-                                    <a href="#" class="dropdown-item preset-tag">{{ tag }}</a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="control">
-                    <button class="button is-link is-fullwidth" type="submit">Create Snippet</button>
                 <!-- Submit Button -->
                 <div class="field mt-4">
                     <div class="control">
@@ -118,9 +116,6 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
-{% endblock %}
-              
-{% block scripts %}
 <script src="{{ url_for('static', filename='tag_handler.js') }}"></script>
 {% endblock %}
 
