@@ -62,7 +62,22 @@
                     <i class="fas fa-copy"></i>
                   </span>
                 </button>
-
+                
+                {%set id = current_user.id | int %}
+                {% if snippet["user_id"] == id %}
+                    <a class="button is-small is-info ml-2"
+                        href="{{ url_for('edit_snippet', snippet_id=snippet["id"]) }}">
+                        <span class="icon">
+                      <i class="fas fa-edit"></i>
+                    </span>
+                   </a>
+                   <a class="button is-small is-info ml-2">
+                        <span class="icon">
+                      <i class="fas fa-trash"></i>
+                    </span>
+                   </a> 
+                {% endif %}
+                
                 <!-- Expand Button -->
                 <button class="button is-small is-primary ml-2"
                         onclick="toggleSnippet('snippet-{{ loop.index }}', this)">
