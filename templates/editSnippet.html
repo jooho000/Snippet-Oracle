@@ -62,7 +62,8 @@
                         <div class="field">
                             <input type="text" id="userSearch" class="input is-rounded" placeholder="Search users...">
                         </div>
-                        <div id="selected-users" class="tags are-medium"></div>
+                        <div id="selected-users" class="tags are-medium">
+                        </div>
                         <div id="user-selection" class="box is-light" style="display: none;"></div>
                     </div>
                 </div>
@@ -87,9 +88,15 @@
     {{ all_users | tojson | safe }}
 </script>
 
+<script id="shared-users" type="application/json">
+    {{ users | tojson | safe }}
+</script>
+
 {% endblock %}
 
 {% block scripts %}
+{{super()}}
+<script src="{{ url_for('static', filename='selection.js') }}"></script>
 <script src="{{ url_for('static', filename='cancel.js') }}"></script>
 <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
 {% endblock %}

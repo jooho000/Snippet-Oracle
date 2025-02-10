@@ -111,7 +111,6 @@ def signup():
     else:
         return flask.render_template("signup.html")
 
-
 @app.route("/logout")
 def logout():
     flask_login.logout_user()
@@ -267,7 +266,6 @@ def view_snippet(snippet_id):
 
     return flask.render_template("snippetDetail.html", snippet=snippet)
 
-
 # Allows users to toggle snippet visibility (Public/Private)
 @app.route("/snippet/<int:snippet_id>/visibility", methods=["POST"])
 @flask_login.login_required
@@ -333,6 +331,7 @@ def edit_snippet(snippet_id):
     snippet = data.get_snippet(snippet_id, current_user_id)
     oldTags = data.get_tags(snippet["id"])
     prev_users = data.get_all_users_with_permission(snippet_id)
+    print(prev_users)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
