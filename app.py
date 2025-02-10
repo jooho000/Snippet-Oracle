@@ -211,7 +211,7 @@ def createSnippet():
         code = flask.request.form.get("code")
         description = flask.request.form.get("description", "")
         tags = flask.request.form.get("tags", "")
-        is_public = flask.request.form.get("is_public") == "on"
+        is_public = flask.request.form.get("is_public")
         user_id = flask_login.current_user.id
 
         try:
@@ -222,12 +222,14 @@ def createSnippet():
             permitted_users = []
 
         if not is_public:
+            print("not Public")
             permitted_users.append(user_id)
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
             return flask.redirect(flask.url_for("createSnippet"))
-
+        
+        print(permitted_users)
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
