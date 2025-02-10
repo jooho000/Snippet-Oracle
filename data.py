@@ -224,11 +224,16 @@ def create_snippet(name, code, user_id, description=None, tags=None, is_public=F
         [name, code, description or "", user_id, int(is_public), shareable_link],
     )
     snippet_id = cur.lastrowid
+    print("hello there")
 
+    print((type(is_public)))
     if not is_public and permitted_users:
+        print("Adding Users")
         permitted_users = [int(uid) for uid in permitted_users if str(uid).isdigit()]
+        print(permitted_users)
         for permitted_user_id in permitted_users:
             if permitted_user_id != user_id:  # Avoid duplicate entry for creator
+                print("adding")
                 cur.execute(
                     """
                     INSERT OR IGNORE INTO SnippetPermissions (SnippetID, UserID)
@@ -375,7 +380,6 @@ def get_snippet_by_shareable_link(link):
             "is_public": bool(snippet[6]),
         }
     return None
-
 
 def search_snippets(names=None, tags=None, desc=None, user_id=None):
     """
@@ -648,10 +652,8 @@ def get_tags(id):
         for tag in tags
     ]
 
-def update_snippet(id, user_id, name, code, description=None, old_description=None, delete_tags=None, new_tags=None):
-    """updates Snippets and Tags"""
+def update_snippet(id, user_id, name, code, description=None, old_description=None, delete_tags=None, new_tags=None, is_public=False, new_users=None, del_users=None):
     cur = _db.cursor()
-
     # Update the Snippet
     cur.execute(
         """
@@ -667,6 +669,7 @@ def update_snippet(id, user_id, name, code, description=None, old_description=No
     )
 
     # Delete old tags
+    print("befor delete tag")
     if delete_tags is not None:
         cur.executemany(
             """
@@ -678,6 +681,7 @@ def update_snippet(id, user_id, name, code, description=None, old_description=No
             [(id, tag) for tag in delete_tags],
         )
 
+    print("before new tag")
     if new_tags is not None:
         cur.executemany(
             """
@@ -687,11 +691,9 @@ def update_snippet(id, user_id, name, code, description=None, old_description=No
                 [(id, tag) for tag in new_tags],
         )
 
-
-    # Create a "summary" of the snippet description for smart search
-    if description is not None:
-        if  old_description is not None and description == old_description:
-            return
+    # Create a "summary" of the snippet description for smart searchs
+    print("before desc")
+    if description is not None and old_description is not None and description == old_description:
         embedding = _get_transformer().encode(description)
         cur.execute(
             """UPDATE SnippetEmbedding
@@ -703,6 +705,20 @@ def update_snippet(id, user_id, name, code, description=None, old_description=No
         )
 
     _db.commit()
+
+    print("before pub")
+    if is_public:
+        set_snippet_visibility(id, is_public)
+
+    print("before del_user")
+    if del_users:
+        for i in del_users:
+            revoke_snippet_permission(id, i)
+    if new_users:
+        for i in new_users:
+            grant_snippet_permission(id, i)
+
+    
     return id
 
 def delete_snippet(id, user_id):
