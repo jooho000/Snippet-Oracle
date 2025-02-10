@@ -6,7 +6,7 @@
 <section class="section">
     <div class="container">
         <div class="box p-5">
-            <h1 class="title has-text-centered">Edit</h1>
+            <h1 id="edit" class="title has-text-centered">Edit</h1>
 
             <form method="post">
                 <!-- Snippet Name -->
@@ -96,7 +96,6 @@
 
 {% block scripts %}
 {{super()}}
-<script src="{{ url_for('static', filename='selection.js') }}"></script>
 <script src="{{ url_for('static', filename='cancel.js') }}"></script>
 <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
 {% endblock %}

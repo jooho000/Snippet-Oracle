@@ -210,7 +210,7 @@ def createSnippet():
         code = flask.request.form.get("code")
         description = flask.request.form.get("description", "")
         tags = flask.request.form.get("tags", "")
-        is_public = flask.request.form.get("is_public")
+        is_public = flask.request.form.get("is_public") == "1"
         user_id = flask_login.current_user.id
 
         try:
@@ -228,7 +228,6 @@ def createSnippet():
             flask.flash("Name and Code are required fields!", "warning")
             return flask.redirect(flask.url_for("createSnippet"))
         
-        print(permitted_users)
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
@@ -259,7 +258,6 @@ def snippets():
 def view_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)  # Pass the user ID to get_snippet
-    
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
@@ -331,6 +329,7 @@ def edit_snippet(snippet_id):
     snippet = data.get_snippet(snippet_id, current_user_id)
     oldTags = data.get_tags(snippet["id"])
     prev_users = data.get_all_users_with_permission(snippet_id)
+
     print(prev_users)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
@@ -343,7 +342,19 @@ def edit_snippet(snippet_id):
         description = flask.request.form.get("description")
         tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
-        is_public = request.form.get("is_public")
+        is_public = flask.request.form.get("is_public") == "1"
+
+        try:
+            permitted_users = flask.request.form.getlist("permitted_users[]")  # Ensure the correct key
+            permitted_users = [int(user_id) for user_id in permitted_users if user_id.isdigit()]  # Convert to integers
+            prev_permissions = set([int(user_id['id']) for user_id in prev_users])
+        except (ValueError, TypeError) as e:
+            print(f"Error parsing permitted_users: {e}")
+            permitted_users = []
+
+        if not is_public:
+            permitted_users.append(int(user_id))
+            permitted_users = set(permitted_users)
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
@@ -356,10 +367,20 @@ def edit_snippet(snippet_id):
             delete_tags = set(oldTags) - tags
             new_tags = tags - set(oldTags)
         
-        data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags)
+        if (permitted_users != prev_permissions):
+            #print("inside the beast")
+            #print(f"Curr {permitted_users}\nPrev {prev_permissions}")
+            
+            delete_users = prev_permissions - permitted_users
+            new_users = permitted_users - prev_permissions
+            #print(f"Delete {delete_users} \nAdd {new_users}")
+            data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public, new_users, delete_users)
+        else:
+            data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public)
 
-        if (is_public):
-            data.set_snippet_visibility(snippet_id, is_public)
+        
+
+        
 
         flask.flash("Snippet Edited successfully!")
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
