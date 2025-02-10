@@ -336,6 +336,36 @@ def edit_snippet(snippet_id):
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("snippets"))
     
-    all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-    return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags)
+    if flask.request.method == "POST":
+        name = flask.request.form.get("name")
+        code = flask.request.form.get("code")
+        description = flask.request.form.get("description")
+        tags = flask.request.form.get("tags")
+        user_id = flask_login.current_user.id
+
+        if not name or not code:
+            flask.flash("Name and Code are required fields!", "warning")
+            return flask.redirect(flask.url_for("createSnippet"))
+
+        if tags is not None:
+            tags = set(tags.replace(" ", "").split(","))
+        
+        if oldTags is not None:
+            oldTags = set(tag["name"] for tag in oldTags)
+            delete_tags = oldTags - tags
+            new_tags = tags - oldTags
+        
+        
+
+        data.update_snippet(snippet_id, user_id, name, code, description, snippet["description"], delete_tags, new_tags)
+
+        flask.flash("Snippet Edited successfully!")
+        #need delay to wait for server update
+        return view_snippet(snippet_id)
+    elif snippet:
+        all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+        return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags)
+    else:
+        flask.flash("Snippet not found!", "warning")
+        return flask.redirect(flask.url_for("snippets"))
 

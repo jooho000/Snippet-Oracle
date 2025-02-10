@@ -631,3 +631,59 @@ def get_tags(id):
         for tag in tags
     ]
 
+def update_snippet(id, user_id, name, code, description=None, old_description=None, delete_tags=None, new_tags=None):
+    """updates Snippets and Tags"""
+    cur = _db.cursor()
+
+    # Update the Snippet
+    cur.execute(
+        """
+        UPDATE Snippet
+        SET 
+            Name = ?,
+            Code = ?,
+            Description = ?,
+            Date = datetime('now')
+        WHERE ID = ? AND UserID = ?
+        """,
+        [name, code, description or "", id, user_id],
+    )
+
+    # Delete old tags
+    if delete_tags is not None:
+        cur.executemany(
+            """
+            DELETE FROM TagUse
+            WHERE  
+                SnippetID = ? AND 
+                TagName = ?
+            """,
+            [(id, tag) for tag in delete_tags],
+        )
+
+    if new_tags is not None:
+        cur.executemany(
+            """
+                INSERT INTO TagUse (SnippetID, TagName)
+                VALUES (?, ?)
+                """,
+                [(id, tag) for tag in new_tags],
+        )
+
+
+    # Create a "summary" of the snippet description for smart search
+    if description is not None:
+        if  old_description is not None and description == old_description:
+            return
+        embedding = _get_transformer().encode(description)
+        cur.execute(
+            """UPDATE SnippetEmbedding
+            SET
+                Embedding = ?
+            WHERE SnippetID = ?
+            """,
+            [embedding, id],
+        )
+
+    _db.commit()
+    return id
