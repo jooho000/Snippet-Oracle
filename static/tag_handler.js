@@ -13,8 +13,8 @@ document.addEventListener("DOMContentLoaded", function () {
             tags.push(tagText);
 
             let tag = document.createElement("span");
-            tag.className = "tag is-info is-light";
-            tag.innerText = tagText;
+            tag.classList.add("tag", "is-info", "is-medium", "mr-2");
+            tag.textContent = tagText;
 
             let deleteBtn = document.createElement("button");
             deleteBtn.className = "delete is-small";
@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-
     dropdownButton.addEventListener("click", function (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -58,6 +57,11 @@ document.addEventListener("DOMContentLoaded", function () {
             dropdown.classList.remove("is-active");
         }
     });
+
+    if(document.getElementById('edit')){
+        const existingTags = JSON.parse(document.getElementById("tags").textContent);
+        existingTags.forEach(tag => addTag(tag))
+    }
 });
 
 

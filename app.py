@@ -205,7 +205,6 @@ def get_social_icon(url):
 @app.route("/createSnippet", methods=["GET", "POST"])
 @flask_login.login_required
 def createSnippet():
-    preset_tags = ["HTML", "CSS", "JavaScript", "Python", "Flask", "Django", "React", "Vue.js", "Code Snippet"]
 
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
@@ -242,7 +241,7 @@ def createSnippet():
             flask.flash("Failed to create snippet!", "danger")
 
     all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-    return flask.render_template("createSnippet.html", all_users=all_users, preset_tags=preset_tags)
+    return flask.render_template("createSnippet.html", all_users=all_users, preset_tags=data.preset_tags)
 
 
 # View All Personal User Snippets (Worked on by Alan Ly)
@@ -388,7 +387,7 @@ def edit_snippet(snippet_id):
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
     elif snippet:
         all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-        return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags, users=prev_users)
+        return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags, users=prev_users, preset_tags=data.preset_tags)
     else:
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))

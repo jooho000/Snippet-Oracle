@@ -12,6 +12,7 @@ import mock_data
 
 _desc_transformer = None
 
+preset_tags = ["HTML", "CSS", "JavaScript", "Python", "Flask", "Django", "React", "Vue.js", "Code Snippet"]
 
 def _get_transformer():
     from sentence_transformers import SentenceTransformer
@@ -743,3 +744,4 @@ def delete_snippet(id, user_id):
     )
 
     _db.commit()
+
