@@ -122,6 +122,7 @@
   <script id="user-data" type="application/json">{{ all_users | tojson | safe }}</script>
 {% endblock %}
 {% block scripts %}
+  {{ super() }}
   <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
   <script src="{{ url_for('static', filename='tag_handler.js') }}"></script>
 {% endblock %}

@@ -3,30 +3,31 @@
  * @param {JQuery} card
  */
 function toggleSnippet(card) {
-  let code = card.children(".snippet-card-code");
+  let codeDiv = card.children(".snippet-card-code");
   const icon = card.find(".snippet-card-arrow");
   const summary = card.find(".snippet-card-summary");
 
-  if (!code.length) {
+  if (!codeDiv.length) {
     // Create snippet content dynamically
-    code = $(document.createElement("div"));
-    code.addClass("snippet-card-code mt-3");
+    codeDiv = $(document.createElement("div")).appendTo(card);
+    const pre = $(document.createElement("pre")).appendTo(codeDiv);
+    const code = $(document.createElement("code")).appendTo(pre);
+    const desc = $(document.createElement("p")).appendTo(codeDiv);
+    desc.text(card.data("description") || "No description available.");
+    const strong = $(document.createElement("strong")).prependTo(desc);
 
-    // Add snippet content and description (no Copy button)
-    const content = card.data("code");
-    const desc = card.data("description") || "No description available.";
-    code.html(`
-              <pre class="code-snippet mb-4">${content}</pre>
-              <p><strong>Description:</strong> ${desc}</p>
-          `);
-    card.append(code);
+    codeDiv.addClass("snippet-card-code mt-3");
+    pre.addClass("mb-4");
+
+    code.html(hljs.highlightAuto(card.data("code")).value);
+    strong.text("Description: ");
 
     // Update icon to up arrow
     icon.addClass("snippet-card-arrow-open");
     summary.addClass("is-invisible");
   } else {
     // Destroy snippet content dynamically
-    code.remove();
+    codeDiv.remove();
     icon.removeClass("snippet-card-arrow-open");
     summary.removeClass("is-invisible");
   }
@@ -47,8 +48,11 @@ function copySnippet(card) {
     });
 }
 
-// Manage dark and light themes
 $(function () {
+  // Apply code highlighting
+  hljs.highlightAll();
+
+  // Manage dark and light themes
   const themeButton = $("#theme-button");
   const themeIcon = themeButton.children("span");
   let theme = null;

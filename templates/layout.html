@@ -15,6 +15,9 @@
       <!-- Controls dark mode, so should be loaded early to prevent flashing -->
       <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
       <script src="{{ url_for('static', filename='site.js') }}"></script>
+      <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     {% endblock %}
   </head>
   <body>

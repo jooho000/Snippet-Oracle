@@ -1,8 +1,8 @@
 {% macro snippetCard(elementId, snippetId=0, title='', public=None, description='', code='', tags=[], editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
        class="snippet-card box has-text-left"
-       data-code="{{ code }}"
-       data-description="{{ description }}">
+       data-code="{{ code | e }}"
+       data-description="{{ description | e }}">
     <!-- Snippet Header: Name + Buttons + Visibility -->
     <div class="columns is-vcentered">
       <!-- Snippet Name (Left) -->
