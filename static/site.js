@@ -17,10 +17,10 @@ function toggleSnippet(card) {
     const strong = $(document.createElement("strong")).prependTo(desc);
 
     codeDiv.addClass("snippet-card-code mt-3");
-    pre.addClass("mb-4");
 
-    code.html(hljs.highlightAuto(card.data("code")).value);
+    code.text(card.data("code"));
     strong.text("Description: ");
+    hljs.highlightElement(pre[0]);
 
     // Update icon to up arrow
     icon.addClass("snippet-card-arrow-open");

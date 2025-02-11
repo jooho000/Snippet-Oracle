@@ -17,6 +17,10 @@
   transform: rotate(180deg);
 }
 
+.snippet-card-code > pre {
+  border-radius: 6px;
+}
+
 #flashes {
   position: absolute;
   top: 60px;
