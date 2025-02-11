@@ -111,10 +111,12 @@ def signup():
     else:
         return flask.render_template("signup.html")
 
+
 @app.route("/logout")
 def logout():
     flask_login.logout_user()
     return flask.redirect(flask.url_for("index"))
+
 
 # Add Route for Profile Page
 @app.route("/profile", methods=["GET", "POST"])
@@ -135,9 +137,11 @@ def profile():
             SET Bio = ?, ProfilePicture = ?
             WHERE ID = ?
             """,
-            [bio, profile_picture, flask_login.current_user.id]
+            [bio, profile_picture, flask_login.current_user.id],
         )
-        print(f"Updated Profile Picture for User ID {flask_login.current_user.id} with URL: {profile_picture}")
+        print(
+            f"Updated Profile Picture for User ID {flask_login.current_user.id} with URL: {profile_picture}"
+        )
 
         # Clear any existing links and insert updated links
         cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
@@ -148,19 +152,25 @@ def profile():
                     INSERT INTO Links (UserID, Platform, URL)
                     VALUES (?, ?, ?)
                     """,
-                    [flask_login.current_user.id, "Custom", link]
+                    [flask_login.current_user.id, "Custom", link],
                 )
-            
+
         data._db.commit()
         flask.flash("Profile updated successfully!", "info")
 
     # Fetch user details and links
-    cur.execute("SELECT Name, Bio, ProfilePicture FROM User WHERE ID = ?", [flask_login.current_user.id])
+    cur.execute(
+        "SELECT Name, Bio, ProfilePicture FROM User WHERE ID = ?",
+        [flask_login.current_user.id],
+    )
     user = cur.fetchone()
 
     profile_picture = user[2] if user[2] else ""
 
-    cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [flask_login.current_user.id])
+    cur.execute(
+        "SELECT Platform, URL FROM Links WHERE UserID = ?",
+        [flask_login.current_user.id],
+    )
     user_links = cur.fetchall()
 
     # Fetch Snippets with Pagination
@@ -172,11 +182,19 @@ def profile():
         SELECT ID, Name, Description FROM Snippet
         WHERE UserID = ? ORDER BY Date DESC LIMIT ? OFFSET ?
         """,
-        [flask_login.current_user.id, limit, offset]
+        [flask_login.current_user.id, limit, offset],
     )
     user_snippets = data.get_user_snippets(flask_login.current_user.id)
 
-    return flask.render_template("profile.html", user=user, links=user_links, snippets=user_snippets, page=page, get_social_icon=get_social_icon)
+    return flask.render_template(
+        "profile.html",
+        user=user,
+        links=user_links,
+        snippets=user_snippets,
+        page=page,
+        get_social_icon=get_social_icon,
+    )
+
 
 # Helper function to get social media platform icon
 def get_social_icon(url):
@@ -188,7 +206,7 @@ def get_social_icon(url):
         "linkedin.com": "/static/icons/linkedin.png",
         "facebook.com": "/static/icons/facebook.png",
         "instagram.com": "/static/icons/instagram.png",
-        "youtube.com": "/static/icons/youtube.png"
+        "youtube.com": "/static/icons/youtube.png",
     }
 
     # Check the domain of the URL to match with social platforms
@@ -198,9 +216,10 @@ def get_social_icon(url):
     for platform, icon_url in icon_map.items():
         if platform in domain:
             return icon_url
-        
+
     # Default icon if no platform match
     return "/static/icons/default_image.png"
+
 
 @app.route("/createSnippet", methods=["GET", "POST"])
 @flask_login.login_required
@@ -215,24 +234,29 @@ def createSnippet():
         user_id = flask_login.current_user.id
 
         try:
-            permitted_users = flask.request.form.getlist("permitted_users[]")  # Ensure the correct key
-            permitted_users = [int(user_id) for user_id in permitted_users if user_id.isdigit()]  # Convert to integers
+            permitted_users = flask.request.form.getlist(
+                "permitted_users[]"
+            )  # Ensure the correct key
+            permitted_users = [
+                int(user_id) for user_id in permitted_users if user_id.isdigit()
+            ]  # Convert to integers
         except (ValueError, TypeError) as e:
             print(f"Error parsing permitted_users: {e}")
             permitted_users = []
 
         if not is_public:
-            print("not Public")
             permitted_users.append(user_id)
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
             return flask.redirect(flask.url_for("createSnippet"))
-        
+
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        snippet_id = data.create_snippet(name, code, user_id, description, tags, is_public, permitted_users)
+        snippet_id = data.create_snippet(
+            name, code, user_id, description, tags, is_public, permitted_users
+        )
 
         if snippet_id:
             flask.flash("Snippet created successfully!", "success")
@@ -241,7 +265,9 @@ def createSnippet():
             flask.flash("Failed to create snippet!", "danger")
 
     all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-    return flask.render_template("createSnippet.html", all_users=all_users, preset_tags=data.preset_tags)
+    return flask.render_template(
+        "createSnippet.html", all_users=all_users, preset_tags=data.preset_tags
+    )
 
 
 # View All Personal User Snippets (Worked on by Alan Ly)
@@ -258,12 +284,15 @@ def snippets():
 @flask_login.login_required
 def view_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
-    snippet = data.get_snippet(snippet_id, current_user_id)  # Pass the user ID to get_snippet
+    snippet = data.get_snippet(
+        snippet_id, current_user_id
+    )  # Pass the user ID to get_snippet
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
 
     return flask.render_template("snippetDetail.html", snippet=snippet)
+
 
 # Allows users to toggle snippet visibility (Public/Private)
 @app.route("/snippet/<int:snippet_id>/visibility", methods=["POST"])
@@ -275,7 +304,7 @@ def update_snippet_visibility(snippet_id):
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("snippets"))
-    
+
     data.set_snippet_visibility(snippet_id, is_public)
     flask.flash("Snippet visibility updated!", "success")
 
@@ -323,20 +352,18 @@ def search_snippets():
 
     return jsonify({"results": results})
 
+
 @app.route("/editSnippet/<int:snippet_id>", methods=["GET", "POST"])
 @flask_login.login_required
 def edit_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)
-    oldTags = data.get_tags(snippet["id"])
     prev_users = data.get_all_users_with_permission(snippet_id)
-
-    print(prev_users)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("snippets"))
-    
+
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
         code = flask.request.form.get("code")
@@ -346,9 +373,13 @@ def edit_snippet(snippet_id):
         is_public = flask.request.form.get("is_public") == "1"
 
         try:
-            permitted_users = flask.request.form.getlist("permitted_users[]")  # Ensure the correct key
-            permitted_users = [int(user_id) for user_id in permitted_users if user_id.isdigit()]  # Convert to integers
-            prev_permissions = set([int(user_id['id']) for user_id in prev_users])
+            permitted_users = flask.request.form.getlist(
+                "permitted_users[]"
+            )  # Ensure the correct key
+            permitted_users = [
+                int(user_id) for user_id in permitted_users if user_id.isdigit()
+            ]  # Convert to integers
+            prev_permissions = set([int(user_id["id"]) for user_id in prev_users])
         except (ValueError, TypeError) as e:
             print(f"Error parsing permitted_users: {e}")
             permitted_users = []
@@ -363,34 +394,34 @@ def edit_snippet(snippet_id):
 
         if tags is not None:
             tags = set(tags.replace(" ", "").split(","))
-        
-        if oldTags is not None:
-            delete_tags = set(oldTags) - tags
-            new_tags = tags - set(oldTags)
-        
-        if (permitted_users != prev_permissions):
-            #print("inside the beast")
-            #print(f"Curr {permitted_users}\nPrev {prev_permissions}")
-            
-            delete_users = prev_permissions - permitted_users
-            new_users = permitted_users - prev_permissions
-            #print(f"Delete {delete_users} \nAdd {new_users}")
-            data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public, new_users, delete_users)
-        else:
-            data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public)
 
-        
-
-        
+        data.update_snippet(
+            snippet_id,
+            user_id,
+            name,
+            code,
+            description,
+            tags,
+            is_public,
+            permitted_users,
+        )
 
         flask.flash("Snippet Edited successfully!")
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
     elif snippet:
         all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-        return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags, users=prev_users, preset_tags=data.preset_tags)
+        return flask.render_template(
+            "editSnippet.html",
+            all_users=all_users,
+            snippet=snippet,
+            tags=snippet["tags"],
+            users=prev_users,
+            preset_tags=data.preset_tags,
+        )
     else:
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))
+
 
 @app.route("/deleteSnippet/<int:snippet_id>")
 def delete_Snippet(snippet_id):
