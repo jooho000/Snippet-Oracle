@@ -23,23 +23,19 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          {% set category_class = {
-                      'warning': 'is-danger',
-                      'info': 'is-info',
-                      'success': 'is-success'
+          {% set cat_info = {
+                      'warning': ['is-danger', 'Warning'],
+                      'info': ['is-info', 'Info'],
+                      'success': ['is-success', 'Success'],
+                      'message': ['is-info', 'Info'],
+                      'danger': ['is-danger', 'Warning']
                     }.get(category, '') %}
-          <div id="flashes"
-               style="position: absolute;
-                      top: 60px;
-                      z-index: 1;
-                      left: 10vw;
-                      right: 10vw">
+          <div id="flashes">
             <div class="container">
-              <div class="notification {{ category_class }}"
-                   style="box-shadow: 12px 12px 5px rgba(0, 0, 0, .2)">
-                <p class="Message-card-title">{{ category.capitalize() }}</p>
+              <div class="flashes-box notification {{ cat_info[0] }}">
+                <h1 class="title is-3">{{ cat_info[1] }}</h1>
                 <button id="closeFlashes" class="delete" aria-label="close"></button>
-                <p class="help is-{{ category_class }}" style="color: black;">{{ message }}</p>
+                <p class="help">{{ message }}</p>
               </div>
             </div>
           </div>

@@ -42,16 +42,48 @@ async function doSearch() {
 
       // If there are results, display them as buttons
       const baseHref = snippetTemplate.find(".snippet-card-link").attr("href") + "/../"
+      let anyDescMatches = false;
       for (const snippet of data.results) {
-        const url = new URL(baseHref + snippet.id, location.href);
+        // Add a disclaimer that these are only description matches
+        if (!anyDescMatches && snippet.is_description_match) {
+          anyDescMatches = true;
+          $(document.createElement("br")).appendTo(resultsContainer);
+          const disclaimer = $(document.createElement("h5"));
+          disclaimer.addClass("subtitle mt-5 is-5");
+          disclaimer.text("Similar public snippets");
+          disclaimer.appendTo(resultsContainer);
+        }
 
+        // Create a blank snippet card
         const elem = snippetTemplate.clone();
-        elem.find(".snippet-card-public, .snippet-card-private, .snippet-card-copy, .snippet-card-expand").remove();
+        
+        // Update attributes
         elem.removeAttr("id");
+        elem.data("code", snippet.code);
+        elem.data("description", snippet.description);
         elem.find(".snippet-card-name").text(snippet.name);
-        elem.find(".snippet-card-link").attr("href", url.href);
+        elem.find(".snippet-card-link").attr("href", new URL(baseHref + snippet.id, location.href).href);
+        
+        // Remove whichever public/private label isn't relevant
+        if (snippet.is_public)
+          elem.find(".snippet-card-private").remove();
+        else
+          elem.find(".snippet-card-public").remove();
+
+        // Remove edit and delete buttons if the current user doesn't own this snippet
+        if (snippet.user_id !== current_user_id) {
+          elem.find(".snippet-card-edit, .snippet-card-delete").remove();
+        }
+
+        // Update summary
+        let summary = (snippet.description || "").trim();
+        if (summary.length > 100-3)
+          summary = summary.substring(0, 100-3).trim() + "...";
+        elem.find(".snippet-card-summary").text(summary);
+
         elem.appendTo(resultsContainer);
       }
+
       if (data.results.length === 0) {
         resultsContainer.text("No snippets found.");
       }
@@ -65,17 +97,6 @@ async function doSearch() {
         pendingSearchUrl = null;
         searchInput.parent().removeClass("is-loading");
       }
-    });
-}
-
-function copySnippet(code) {
-  navigator.clipboard
-    .writeText(code)
-    .then(() => {
-      alert("Code snippet copied to clipboard!");
-    })
-    .catch((err) => {
-      console.error("Failed to copy text: ", err);
     });
 }
 
@@ -100,9 +121,7 @@ function filterByTag(tag) {
   // Append to the selected tags container
   selectedTagsContainer.appendChild(tagElement);
 
-  console.log("Selected Tags:", Array.from(selectedTags));
   updateSnippetGrid();
-  console.log("reached updateSnippetGrid intial");
 }
 
 
@@ -117,7 +136,6 @@ function removeTag(tag) {
 
   // Ensure correct filtering happens after tag removal
   updateSnippetGrid();
-  console.log("reached updateSnippetGrid remove");
 }
 
 

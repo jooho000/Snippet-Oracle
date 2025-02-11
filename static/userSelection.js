@@ -1,6 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
-    console.log("Script Loaded!");
-
+$(function () {
     // Get all necessary elements
     const visibilityToggle = document.getElementById("visibilityToggle");
     const visibilityIcon = document.getElementById("visibilityIcon");
@@ -58,10 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Remove old hidden inputs
         document.querySelectorAll(".hidden-user-input").forEach(input => input.remove());
-        console.log("hello")
         selectedUsers.forEach(user => {
-            console.log("Inside Selected")
-            console.log(user)
             const tag = document.createElement("span");
             tag.classList.add("tag", "is-info", "is-medium", "mr-2");
             tag.textContent = user.name;
@@ -86,8 +81,6 @@ document.addEventListener("DOMContentLoaded", function () {
             hiddenInput.classList.add("hidden-user-input");
             form.appendChild(hiddenInput);
         });
-
-        console.log("Selected Users for Submission:", Array.from(selectedUsers).map(u => u.id));
     }
 
     /** 

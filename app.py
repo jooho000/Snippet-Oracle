@@ -222,7 +222,6 @@ def createSnippet():
             permitted_users = []
 
         if not is_public:
-            print("not Public")
             permitted_users.append(user_id)
 
         if not name or not code:
@@ -328,10 +327,7 @@ def search_snippets():
 def edit_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)
-    oldTags = data.get_tags(snippet["id"])
     prev_users = data.get_all_users_with_permission(snippet_id)
-
-    print(prev_users)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
@@ -364,30 +360,13 @@ def edit_snippet(snippet_id):
         if tags is not None:
             tags = set(tags.replace(" ", "").split(","))
         
-        if oldTags is not None:
-            delete_tags = set(oldTags) - tags
-            new_tags = tags - set(oldTags)
-        
-        if (permitted_users != prev_permissions):
-            #print("inside the beast")
-            #print(f"Curr {permitted_users}\nPrev {prev_permissions}")
-            
-            delete_users = prev_permissions - permitted_users
-            new_users = permitted_users - prev_permissions
-            #print(f"Delete {delete_users} \nAdd {new_users}")
-            data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public, new_users, delete_users)
-        else:
-            data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public)
-
-        
-
-        
+        data.update_snippet(snippet_id, user_id, name, code, description, tags, is_public, permitted_users)
 
         flask.flash("Snippet Edited successfully!")
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
     elif snippet:
         all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-        return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=oldTags, users=prev_users, preset_tags=data.preset_tags)
+        return flask.render_template("editSnippet.html", all_users=all_users, snippet=snippet, tags=snippet["tags"], users=prev_users, preset_tags=data.preset_tags)
     else:
         flask.flash("Snippet not found!", "warning")
         return flask.redirect(flask.url_for("snippets"))

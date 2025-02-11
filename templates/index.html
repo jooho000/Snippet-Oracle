@@ -1,60 +1,65 @@
 {% extends "layout.html" %}
 {% import "macros.html" as macros %}
 {% block title %}Welcome - Snippet Oracle{% endblock %}
-
 {% block content %}
-<section class="section">
-  <div class="container has-text-centered">
-    <h1 class="title">Welcome to Snippet Oracle</h1>
-    <p class="subtitle">Effortlessly manage, search, and share your code snippets.</p>
-
-    <!-- Navigation Buttons -->
-    <div class="control is-centered mt-5">
-      <a class="button is-primary is-large" href="{{ url_for('createSnippet') }}">Create Snippet</a>
-      <a class="button is-link is-large" href="{{ url_for('snippets') }}">View My Snippets</a>
-    </div>
-
-    <!-- Search Bar -->
-    <div class="field mt-5">
-      <div class="control has-icons-left has-icons-right is-large">
-        <input class="input is-large is-primary"
-               id="search-input"
-               type="text"
-               maxlength="300"
-               placeholder="Search for snippets...(name | -desc | :tag)" />
-        <span class="icon is-small is-left">
-          <i class="fas fa-search"></i>
-        </span>
+  <section class="section">
+    <div class="container has-text-centered">
+      <h1 class="title">Welcome to Snippet Oracle</h1>
+      <p class="subtitle">Effortlessly manage, search, and share your code snippets.</p>
+      <!-- Navigation Buttons -->
+      <div class="control is-centered mt-5">
+        <a class="button is-primary is-large"
+           href="{{ url_for("createSnippet") }}">Create Snippet</a>
+        <a class="button is-link is-large" href="{{ url_for("snippets") }}">View My Snippets</a>
       </div>
+      <!-- Search Bar -->
+      <div class="field mt-5">
+        <div class="control has-icons-left has-icons-right is-large">
+          <input class="input is-large is-primary"
+                 id="search-input"
+                 type="text"
+                 maxlength="300"
+                 placeholder="Search for snippets...(name | -desc | :tag)" />
+          <span class="icon is-small is-left">
+            <i class="fas fa-search"></i>
+          </span>
+        </div>
+      </div>
+      <div hidden>{{ macros.snippetCard("snippet-template") }}</div>
+      <!-- Selected Tags Display (Tags that were clicked will appear here) -->
+      <div id="selected-tags" class="tags are-medium mt-3"></div>
+      <!-- Search Results -->
+      <div id="search-results" class="mt-5"></div>
     </div>
-
-    <div hidden>
-      {{ macros.snippetCard("snippet-template") }}
-    </div>
-
-    <!-- Selected Tags Display (Tags that were clicked will appear here) -->
-<div id="selected-tags" class="tags are-medium mt-3"></div>
-
-    <!-- Search Results -->
-    <div id="search-results" class="mt-5">
-    </div>
-  </div>
-</section>
-
-<!-- Snippet Grid -->
-<section class="section">
-  <h1 class="title">Your Snippets</h1>
-  {% if snippets %}
+  </section>
+  <!-- Snippet Grid -->
+  <section class="section">
+    <h1 class="title">Your Snippets</h1>
+    {% if snippets %}
       {% for s in snippets %}
-        {{ macros.snippetCard(None, s["id"], s["name"], s["is_public"], s["description"], s["code"]) }}
+        {{ macros.snippetCard(None,
+                s["id"],
+                s["name"],
+                s["is_public"],
+                s["description"],
+                s["code"],
+                s["tags"],
+                True)
+        }}
       {% endfor %}
-  {% else %}
-    <p class="has-text-centered">No snippets found. Create one!</p>
-  {% endif %}
-</section>
+    {% else %}
+      <p class="has-text-centered">No snippets found. Create one!</p>
+    {% endif %}
+  </section>
 {% endblock %}
-
 {% block scripts %}
   {{ super() }}
+  <script>
+    {% if current_user.is_authenticated %}
+    const current_user_id = {{ current_user.id | int }};
+    {% else %}
+    const current_user_id = null;
+    {% endif %}
+  </script>
   <script src="{{ url_for('static', filename='search.js') }}"></script>
 {% endblock %}

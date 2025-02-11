@@ -1,12 +1,6 @@
 $(function () {
-    console.log("Script 1!");
-    if (document.getElementById("edit")){
-        console.log("hello there")
-    }
-    console.log(!(document.getElementById("edit")))
     const preUsers = JSON.parse(document.getElementById("shared-users").textContent);
     const selectedUsersContainer = document.getElementById("selected-users");
-    console.log(preUsers);
     function selected() {
         selectedUsersContainer.innerHTML = ""; // Clear old selected users
 
@@ -32,8 +26,6 @@ $(function () {
 
             
         });
-
-        console.log("Selected Users for Submission:", Array.from(users).map(u => u.id));
     }
     selected();
 });

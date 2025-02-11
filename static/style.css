@@ -1,7 +1,31 @@
+.snippet-card {
+    position: relative;
+}
+
+.snippet-card-tags {
+    position: absolute;
+    bottom: 0;
+    left: 30px;
+    transform: translate(0, 50%)
+}
+
 .snippet-card-arrow {
     transition: transform 0.5s
 }
 
 .snippet-card-arrow-open {
     transform: rotate(180deg);
+}
+
+#flashes {
+    position: absolute;
+    top: 60px;
+    z-index: 1;
+    left: 10vw;
+    right: 10vw;
+}
+
+.flashes-box {
+    box-shadow: 12px 12px 5px rgba(0, 0, 0, .2);
+    color: black;
 }

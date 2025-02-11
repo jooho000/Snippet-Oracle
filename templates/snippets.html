@@ -12,7 +12,7 @@
       </div>
       {% if snippets %}
         {% for s in snippets %}
-          {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"]) }}
+          {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
         {% endfor %}
       {% else %}
         <p>You haven't created any snippets yet!</p>
