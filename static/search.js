@@ -6,7 +6,7 @@ const searchDelayMs = 250;
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
-$(function() {
+$(function () {
   searchInput.on("input", function () {
     if (searchTimeout !== null) {
       clearTimeout(searchTimeout);
@@ -41,7 +41,8 @@ async function doSearch() {
       resultsContainer.empty(); // Clear previous results
 
       // If there are results, display them as buttons
-      const baseHref = snippetTemplate.find(".snippet-card-link").attr("href") + "/../"
+      const baseHref =
+        snippetTemplate.find(".snippet-card-link").attr("href") + "/../";
       let anyDescMatches = false;
       for (const snippet of data.results) {
         // Add a disclaimer that these are only description matches
@@ -56,19 +57,19 @@ async function doSearch() {
 
         // Create a blank snippet card
         const elem = snippetTemplate.clone();
-        
+
         // Update attributes
         elem.removeAttr("id");
         elem.data("code", snippet.code);
         elem.data("description", snippet.description);
         elem.find(".snippet-card-name").text(snippet.name);
-        elem.find(".snippet-card-link").attr("href", new URL(baseHref + snippet.id, location.href).href);
-        
+        elem
+          .find(".snippet-card-link")
+          .attr("href", new URL(baseHref + snippet.id, location.href).href);
+
         // Remove whichever public/private label isn't relevant
-        if (snippet.is_public)
-          elem.find(".snippet-card-private").remove();
-        else
-          elem.find(".snippet-card-public").remove();
+        if (snippet.is_public) elem.find(".snippet-card-private").remove();
+        else elem.find(".snippet-card-public").remove();
 
         // Remove edit and delete buttons if the current user doesn't own this snippet
         if (snippet.user_id !== current_user_id) {
@@ -77,8 +78,8 @@ async function doSearch() {
 
         // Update summary
         let summary = (snippet.description || "").trim();
-        if (summary.length > 100-3)
-          summary = summary.substring(0, 100-3).trim() + "...";
+        if (summary.length > 100 - 3)
+          summary = summary.substring(0, 100 - 3).trim() + "...";
         elem.find(".snippet-card-summary").text(summary);
 
         elem.appendTo(resultsContainer);
@@ -124,7 +125,6 @@ function filterByTag(tag) {
   updateSnippetGrid();
 }
 
-
 function removeTag(tag) {
   if (!selectedTags.has(tag)) return;
 
@@ -138,24 +138,25 @@ function removeTag(tag) {
   updateSnippetGrid();
 }
 
-
 function updateSnippetGrid() {
   const snippets = document.querySelectorAll(".box[data-snippet-id]");
 
-  snippets.forEach(snippet => {
-      const tagsContainer = snippet.querySelector(".tags-container");
-      const snippetTags = Array.from(tagsContainer.getElementsByClassName("tag"))
-                              .map(tagElement => tagElement.textContent.trim());
+  snippets.forEach((snippet) => {
+    const tagsContainer = snippet.querySelector(".tags-container");
+    const snippetTags = Array.from(
+      tagsContainer.getElementsByClassName("tag")
+    ).map((tagElement) => tagElement.textContent.trim());
 
-      // Check if the snippet has all selected tags
-      // chnage it to the parent element
-      const matchesAllTags = [...selectedTags].every(tag => snippetTags.includes(tag));
+    // Check if the snippet has all selected tags
+    // chnage it to the parent element
+    const matchesAllTags = [...selectedTags].every((tag) =>
+      snippetTags.includes(tag)
+    );
 
-      if (matchesAllTags) {
-        snippet.parentElement.style.display = "";
+    if (matchesAllTags) {
+      snippet.parentElement.style.display = "";
     } else {
-        snippet.parentElement.style.display = "none";
+      snippet.parentElement.style.display = "none";
     }
-    
   });
 }

@@ -1,5 +1,5 @@
 {% macro snippetCard(elementId, snippetId=0, title='', public=None, description='', code='', tags=[], editable=True) -%}
-  <div {% if elementId %} id="{{ elementId }}" {% endif %}
+  <div {% if elementId %}id="{{ elementId }}"{% endif %}
        class="snippet-card box has-text-left"
        data-code="{{ code }}"
        data-description="{{ description }}">
@@ -32,7 +32,6 @@
             <i class="fas fa-copy"></i>
           </span>
         </button>
-        
         {% if editable %}
           <!-- Edit Button -->
           <a class="snippet-card-edit button is-small is-info ml-2"
@@ -41,7 +40,6 @@
               <i class="fas fa-edit"></i>
             </span>
           </a>
-          
           <!-- Delete Button -->
           <a class="snippet-card-delete button is-small is-info ml-2"
              href="{{ url_for('delete_Snippet', snippet_id=snippetId) }}">
@@ -50,7 +48,6 @@
             </span>
           </a>
         {% endif %}
-
         <!-- Expand Button -->
         <button class="snippet-card-expand button is-small is-primary ml-2"
                 onclick="toggleSnippet($(this).closest('.snippet-card'))">
@@ -66,10 +63,10 @@
           </span>
         </button>
       </div>
-      
       <!-- Tags Section (Bottom Left) -->
       <div class="snippet-card-tags tags-container">
-        {% for tag in tags[:10] %}  <!-- Limit number of tags shown -->
+        {% for tag in tags[:10] %}
+          <!-- Limit number of tags shown -->
           <span class="tag is-info">{{ tag }}</span>
         {% endfor %}
       </div>

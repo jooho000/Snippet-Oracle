@@ -1,71 +1,60 @@
 {% extends "layout.html" %}
-
 {% block title %}Log In - Snippet Oracle{% endblock %}
 {% block content %}
-
-<section class="section">
-  <div class="container">
-    <div class="columns is-centered">
-      <div class="column is-half">
-        <div class="box">
-          <h1 class="title has-text-centered">Log In</h1>
-          <p class="subtitle has-text-centered">Welcome back! Please log in to your account.</p>
-
-          <form method="post">
-
-            <!-- Username Field -->
-            <div class="field">
-              <label class="label" for="username">Username</label>
-              <div class="control has-icons-left">
-                <input
-                  class="input"
-                  name="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value="{{ username }}"
-                  required
-                  maxlength="20"
-                />
-                <span class="icon is-small is-left">
-                  <i class="fas fa-user"></i>
-                </span>
+  <section class="section">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-half">
+          <div class="box">
+            <h1 class="title has-text-centered">Log In</h1>
+            <p class="subtitle has-text-centered">Welcome back! Please log in to your account.</p>
+            <form method="post">
+              <!-- Username Field -->
+              <div class="field">
+                <label class="label" for="username">Username</label>
+                <div class="control has-icons-left">
+                  <input class="input"
+                         name="username"
+                         type="text"
+                         placeholder="Enter your username"
+                         value="{{ username }}"
+                         required
+                         maxlength="20" />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
               </div>
-            </div>
-
-            <!-- Password Field -->
-            <div class="field">
-              <label class="label" for="password">Password</label>
-              <div class="control has-icons-left">
-                <input
-                  class="input"
-                  name="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  required
-                  minlength="8"
-                  maxlength="60"
-                />
-                <span class="icon is-small is-left">
-                  <i class="fas fa-lock"></i>
-                </span>
+              <!-- Password Field -->
+              <div class="field">
+                <label class="label" for="password">Password</label>
+                <div class="control has-icons-left">
+                  <input class="input"
+                         name="password"
+                         type="password"
+                         placeholder="Enter your password"
+                         required
+                         minlength="8"
+                         maxlength="60" />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
               </div>
-            </div>
-
-            <!-- Login and Signup Buttons -->
-            <div class="field is-grouped is-grouped-centered mt-4">
-              <div class="control">
-                <button type="submit" class="button is-primary is-fullwidth">Login</button>
+              <!-- Login and Signup Buttons -->
+              <div class="field is-grouped is-grouped-centered mt-4">
+                <div class="control">
+                  <button type="submit" class="button is-primary is-fullwidth">Login</button>
+                </div>
+                <div class="control">
+                  <a href="{{ url_for("signup") }}"
+                     class="button is-link is-light is-fullwidth">Sign Up</a>
+                </div>
               </div>
-              <div class="control">
-                <a href="{{ url_for('signup') }}" class="button is-link is-light is-fullwidth">Sign Up</a>
-              </div>
-            </div>
-
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
-
+  </section>
 {% endblock %}

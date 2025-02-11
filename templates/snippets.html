@@ -3,19 +3,19 @@
 {% block title %}Your Snippets - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
-      <h1 class="title">Your Snippets</h1>
-      <!-- Buttons to navigate -->
-      <div class="field is-grouped">
-        <div class="control">
-          <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
-        </div>
+    <h1 class="title">Your Snippets</h1>
+    <!-- Buttons to navigate -->
+    <div class="field is-grouped">
+      <div class="control">
+        <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
       </div>
-      {% if snippets %}
-        {% for s in snippets %}
-          {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
-        {% endfor %}
-      {% else %}
-        <p>You haven't created any snippets yet!</p>
-      {% endif %}
+    </div>
+    {% if snippets %}
+      {% for s in snippets %}
+        {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
+      {% endfor %}
+    {% else %}
+      <p>You haven't created any snippets yet!</p>
+    {% endif %}
   </section>
 {% endblock %}

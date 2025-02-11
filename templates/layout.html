@@ -3,16 +3,15 @@
   <head>
     {% block head %}
       <meta charset="UTF-8" />
-      <link rel="stylesheet" href="{{ url_for('static', filename='lib/bulma.min.css') }}" />
+      <link rel="stylesheet"
+            href="{{ url_for('static', filename='lib/bulma.min.css') }}" />
       <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-      
       <!-- Add Font Awesome CDN for icons -->
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
+      <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
       <title>
         {% block title %}Snippet Oracle{% endblock %}
       </title>
-
       <!-- Controls dark mode, so should be loaded early to prevent flashing -->
       <script src="{{ url_for('static', filename='lib/jquery.js') }}"></script>
       <script src="{{ url_for('static', filename='site.js') }}"></script>
@@ -42,7 +41,6 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-    
     {% block navbar %}
       <nav class="navbar" role="navigation" aria-label="main navigation">
         <div class="navbar-menu">
@@ -72,11 +70,7 @@
         </div>
       </nav>
     {% endblock %}
-
     {% block content %}{% endblock %}
-    
-    {% block scripts %}
-      <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
-    {% endblock %}
+    {% block scripts %}<script src="{{ url_for('static', filename='warningMessage.js') }}"></script>{% endblock %}
   </body>
 </html>

@@ -72,7 +72,7 @@ def load_user(user_id):
     if res is None:
         return None
     else:
-        return User(user_id, res['name'], res['password_hash'])
+        return User(user_id, res["name"], res["password_hash"])
 
 
 def try_login(username, password):
