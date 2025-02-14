@@ -1,17 +1,15 @@
 {% macro snippetCard(elementId, snippetId=0, title='', public=None, description='', code='', tags=[], editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
-       class="snippet-card box has-text-left"
+       class="snippet-card box has-text-left cell"
        data-code="{{ code | e }}"
        data-description="{{ description | e }}">
     <!-- Snippet Header: Name + Buttons + Visibility -->
-    <div class="columns is-vcentered">
+    <div class="columns">
       <!-- Snippet Name (Left) -->
-      <a class="snippet-card-link column has-text-left is-narrow"
+      <a class="snippet-card-link column has-text-left"
          href="{{ url_for('view_snippet', snippet_id=snippetId) }}">
         <h2 class="snippet-card-name title is-5">{{ title }}</h2>
       </a>
-      <!-- Snippet Description (Middle) -->
-      <p class="snippet-card-summary column is-italic">{{ description | truncate(150) }}</p>
       <!-- Buttons + Visibility (Right) -->
       <div class="column has-text-right is-narrow">
         <!-- Visibility Status -->
@@ -63,13 +61,15 @@
           </span>
         </button>
       </div>
-      <!-- Tags Section (Bottom Left) -->
-      <div class="snippet-card-tags tags-container">
-        {% for tag in tags[:10] %}
-          <!-- Limit number of tags shown -->
-          <span class="tag is-info">{{ tag }}</span>
-        {% endfor %}
-      </div>
+    </div>
+    <!-- Snippet Description (Middle) -->
+    <p class="snippet-card-summary column is-italic">{{ description | truncate(150) }}</p>
+    <!-- Tags Section (Bottom Left) -->
+    <div class="snippet-card-tags tags-container">
+      {% for tag in tags[:10] %}
+        <!-- Limit number of tags shown -->
+        <span class="tag is-info">{{ tag }}</span>
+      {% endfor %}
     </div>
   </div>
 {%- endmacro %}
