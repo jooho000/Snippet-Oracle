@@ -285,7 +285,7 @@ def get_user_details():
             user_details = {
                 'name': name,
                 'bio': bio,
-                'profile_picture': profile_picture or "default_image.png",
+                'profile_picture': profile_picture if profile_picture else "default_image.png",
             }
 
     return user_details
