@@ -378,11 +378,6 @@ def edit_snippet(snippet_id):
             data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public, new_users, delete_users)
         else:
             data.update_snippet(snippet_id, user_id, name, code, description, snippet['description'], delete_tags, new_tags, is_public)
-
-        
-
-        
-
         flask.flash("Snippet Edited successfully!")
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
     elif snippet:
