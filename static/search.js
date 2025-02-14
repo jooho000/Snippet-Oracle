@@ -1,5 +1,6 @@
 const searchInput = $("#search-input");
 const resultsContainer = $("#search-results");
+const descResultsContainer = $("#search-results-desc");
 const snippetTemplate = $("#snippet-template");
 const searchDelayMs = 250;
 
@@ -22,6 +23,8 @@ async function doSearch() {
   // Don't search if input is empty
   if (!query.trim()) {
     resultsContainer.empty();
+    descResultsContainer.empty();
+    $(".search-disclaimer").remove();
     return;
   }
 
@@ -39,6 +42,8 @@ async function doSearch() {
       if (searchUrl !== pendingSearchUrl) return;
 
       resultsContainer.empty(); // Clear previous results
+      descResultsContainer.empty();
+      $(".search-disclaimer").remove();
 
       // If there are results, display them as buttons
       const baseHref =
@@ -48,11 +53,10 @@ async function doSearch() {
         // Add a disclaimer that these are only description matches
         if (!anyDescMatches && snippet.is_description_match) {
           anyDescMatches = true;
-          $(document.createElement("br")).appendTo(resultsContainer);
           const disclaimer = $(document.createElement("h5"));
-          disclaimer.addClass("subtitle mt-5 is-5");
+          disclaimer.addClass("subtitle mt-6 is-5 search-disclaimer");
           disclaimer.text("Similar public snippets");
-          disclaimer.appendTo(resultsContainer);
+          descResultsContainer.before(disclaimer);
         }
 
         // Create a blank snippet card
@@ -82,7 +86,9 @@ async function doSearch() {
           summary = summary.substring(0, 100 - 3).trim() + "...";
         elem.find(".snippet-card-summary").text(summary);
 
-        elem.appendTo(resultsContainer);
+        elem.appendTo(
+          snippet.is_description_match ? descResultsContainer : resultsContainer
+        );
       }
 
       if (data.results.length === 0) {
