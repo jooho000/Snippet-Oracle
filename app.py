@@ -15,6 +15,8 @@ import data
 import auth
 import uuid
 import json
+import os
+from werkzeug.utils import secure_filename
 from flask import jsonify, request
 from urllib.parse import urlparse
 
@@ -22,6 +24,17 @@ from urllib.parse import urlparse
 app = flask.Flask("snippet_oracle")
 auth.init(app, "login")
 app.secret_key = auth.get_secret_key()
+
+
+# Configure file upload settings
+UPLOAD_FOLDER = 'static/profile_pictures'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file size to 16 MB
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.cli.command("reset-db")
@@ -40,10 +53,11 @@ def index():
     """
     Render the homepage with the list of snippets.
     """
+    user_details = get_user_details()  # Get user details
     user_snippets = []
     if flask_login.current_user.is_authenticated:
         user_snippets = data.get_user_snippets(flask_login.current_user.id)
-    return flask.render_template("index.html", snippets=user_snippets)
+    return flask.render_template("index.html", snippets=user_snippets, user=user_details)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -122,25 +136,52 @@ def logout():
 @app.route("/profile", methods=["GET", "POST"])
 @flask_login.login_required
 def profile():
+    user_details = get_user_details()
     cur = data._db.cursor()
 
     if flask.request.method == "POST":
         # Handle Any Profile Edits
         bio = flask.request.form.get("bio", "")
-        profile_picture = flask.request.form.get("profile_picture", "")
         links = flask.request.form.getlist("links")
-        print(f"Received Profile Picture URL: {profile_picture}")
-        # Update user bio and profile picture
+        profile_picture = flask.request.files.get("profile_picture")
+
+        # Handle the profile picture upload
+        if profile_picture and allowed_file(profile_picture.filename):
+            filename = secure_filename(profile_picture.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            cur.execute(
+                "SELECT ProfilePicture FROM User WHERE ID = ?",
+                [flask_login.current_user.id]
+            )
+            old_profile_picture = cur.fetchone()[0]
+
+            if old_profile_picture:
+                old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], old_profile_picture)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+            
+            # Save the new profile picture
+            profile_picture.save(file_path)
+
+            # Update the user's profile picture in the database
+            cur.execute(
+                """
+                UPDATE User
+                SET ProfilePicture = ?
+                WHERE ID = ?
+                """,
+                [filename, flask_login.current_user.id],
+            )
+            
+        # Update the user's bio
         cur.execute(
             """
             UPDATE User
-            SET Bio = ?, ProfilePicture = ?
+            SET Bio = ?
             WHERE ID = ?
             """,
-            [bio, profile_picture, flask_login.current_user.id],
-        )
-        print(
-            f"Updated Profile Picture for User ID {flask_login.current_user.id} with URL: {profile_picture}"
+            [bio, flask_login.current_user.id],
         )
 
         # Clear any existing links and insert updated links
@@ -188,7 +229,7 @@ def profile():
 
     return flask.render_template(
         "profile.html",
-        user=user,
+        user=user_details,
         links=user_links,
         snippets=user_snippets,
         page=page,
@@ -221,10 +262,39 @@ def get_social_icon(url):
     return "/static/icons/default_image.png"
 
 
+# Helper function to get profile image across all pages
+def get_user_details():
+    """
+    Fetch the details of the currently logged-in user.
+    This includes user name, bio, and profile picture.
+    """
+    user_details = None
+    if flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+        cur = data._db.cursor()
+
+        # Fetch the user's name, bio, and profile picture
+        cur.execute(
+            "SELECT Name, Bio, ProfilePicture FROM User WHERE ID = ?",
+            [user_id],
+        )
+        user_details = cur.fetchone()
+
+        if user_details:
+            name, bio, profile_picture = user_details
+            user_details = {
+                'name': name,
+                'bio': bio,
+                'profile_picture': profile_picture or "",
+            }
+
+    return user_details
+
+
 @app.route("/createSnippet", methods=["GET", "POST"])
 @flask_login.login_required
 def createSnippet():
-
+    user_details = get_user_details()
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
         code = flask.request.form.get("code")
@@ -266,7 +336,10 @@ def createSnippet():
 
     all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
     return flask.render_template(
-        "createSnippet.html", all_users=all_users, preset_tags=data.preset_tags
+        "createSnippet.html",
+        user=user_details,
+        all_users=all_users,
+        preset_tags=data.preset_tags,
     )
 
 
@@ -275,14 +348,16 @@ def createSnippet():
 @flask_login.login_required
 def snippets():
     # Fetch all snippets for the logged-in user
+    user_details = get_user_details()
     user_snippets = data.get_user_snippets(flask_login.current_user.id)
-    return flask.render_template("snippets.html", snippets=user_snippets)
+    return flask.render_template("snippets.html", user=user_details, snippets=user_snippets)
 
 
 # View a Specific Snippet Page (Worked on by Alan Ly)
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 @flask_login.login_required
 def view_snippet(snippet_id):
+    user_details = get_user_details()
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(
         snippet_id, current_user_id
@@ -291,7 +366,7 @@ def view_snippet(snippet_id):
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
 
-    return flask.render_template("snippetDetail.html", snippet=snippet)
+    return flask.render_template("snippetDetail.html", user=user_details, snippet=snippet)
 
 
 # Allows users to toggle snippet visibility (Public/Private)
@@ -314,9 +389,10 @@ def update_snippet_visibility(snippet_id):
 # Allow users to access private snippets via shareable links
 @app.route("/share/<string:link>")
 def view_snippet_by_link(link):
+    user_details = get_user_details()
     snippet = data.get_snippet_by_shareable_link(link)
     if snippet:
-        return flask.render_template("snippetDetail.html", snippet=snippet)
+        return flask.render_template("snippetDetail.html", user=user_details, snippet=snippet)
     else:
         flask.flash("Invalid or expired link!", "warning")
         return flask.redirect(flask.url_for("index"))
@@ -356,6 +432,7 @@ def search_snippets():
 @app.route("/editSnippet/<int:snippet_id>", methods=["GET", "POST"])
 @flask_login.login_required
 def edit_snippet(snippet_id):
+    user_details = get_user_details()
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)
     prev_users = data.get_all_users_with_permission(snippet_id)
@@ -407,11 +484,12 @@ def edit_snippet(snippet_id):
         )
 
         flask.flash("Snippet Edited successfully!")
-        return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+        return flask.redirect(flask.url_for("view_snippet", user=user_details, snippet_id=snippet_id))
     elif snippet:
         all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
         return flask.render_template(
             "editSnippet.html",
+            user=user_details,
             all_users=all_users,
             snippet=snippet,
             tags=snippet["tags"],

@@ -56,7 +56,11 @@
             <div class="navbar-item">
               {% if current_user.is_authenticated %}
                 <div class="navbar-item has-dropdown is-hoverable">
-                  <a class="navbar-link">{{ current_user.name }}</a>
+                  <a class="navbar-link">
+                    <img src="{{ url_for('static', filename='profile_pictures/' + user.profile_picture) }}"
+                        alt="Profile Picture" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;">
+                    {{ current_user.name }}
+                  </a>
                   <div class="navbar-dropdown">
                     <a class="navbar-item" href="{{ url_for("profile") }}">Profile</a>
                     <a class="navbar-item" href="{{ url_for("logout") }}">Logout</a>

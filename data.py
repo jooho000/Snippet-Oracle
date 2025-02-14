@@ -59,7 +59,7 @@ def _init_db():
             ID INTEGER PRIMARY KEY,
             Name TEXT UNIQUE,
             PasswordHash TEXT,
-            ProfilePicture TEXT,    -- For storing profile picture URLs/paths
+            ProfilePicture BLOB,    -- For storing profile picture BLOB (binary large object)
             Bio TEXT,               -- User biography
             Description VARCHAR(250)
         );
@@ -153,12 +153,13 @@ def get_user_by_id(user_id):
 
     - "name": The user's name.
     - "password_hash": An argon2 hash of the user's password.
+    - "profile_picture": The user's profile picture
     """
 
     cur = _db.cursor()
     cur.execute(
         """
-        SELECT Name, PasswordHash
+        SELECT Name, PasswordHash, ProfilePicture
         FROM User
         WHERE ID == ?
         """,
@@ -170,7 +171,7 @@ def get_user_by_id(user_id):
     if res is None:
         return None
     else:
-        return {"name": res[0], "password_hash": res[1]}
+        return {"name": res[0], "password_hash": res[1], "profile_picture": res[2]}
 
 
 def get_user_by_name(name):
