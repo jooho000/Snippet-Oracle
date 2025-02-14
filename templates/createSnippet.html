@@ -4,8 +4,10 @@
   <section class="section">
     <div class="container">
       <div class="box p-5">
-        <h1 class="title has-text-centered">Create a New Snippet</h1>
-        <p class="subtitle has-text-centered">Save and manage your code snippets efficiently.</p>
+        {% block heading %}
+          <h1 class="title has-text-centered">Create a New Snippet</h1>
+          <p class="subtitle has-text-centered">Save and manage your code snippets efficiently.</p>
+        {% endblock %}
         <form method="post">
           <!-- Snippet Name -->
           <div class="field">
@@ -15,6 +17,7 @@
                      type="text"
                      name="name"
                      placeholder="Enter snippet name"
+                     {% block snippetName %}{% endblock %}
                      required>
             </div>
           </div>
@@ -22,20 +25,20 @@
           <div class="field">
             <label class="label">Code</label>
             <div class="control">
-              <textarea class="textarea is-medium is-family-code"
-                        name="code"
-                        placeholder="Paste your code here"
-                        rows="6"
-                        required></textarea>
+              <textarea class="textarea is-medium is-family-code" 
+                        name="code" 
+                        placeholder="Paste your code here" 
+                        rows="6" 
+                        required>{% block snippetCode %}
+                        {% endblock %}</textarea>
             </div>
           </div>
           <!-- Snippet Description -->
           <div class="field">
             <label class="label">Description</label>
             <div class="control">
-              <textarea class="textarea"
-                        name="description"
-                        placeholder="Optional description"></textarea>
+              <textarea class="textarea" name="description" placeholder="Optional description">{% block snippetDesc %}{% endblock %}
+                      </textarea>
             </div>
           </div>
           <!-- Tags Input Section -->
@@ -105,28 +108,26 @@
               <div id="user-selection" class="box is-light" style="display: none;"></div>
             </div>
           </div>
-          <!-- Submit Button -->
-          <div class="field mt-4">
-            <div class="control">
-              <button class="button is-primary is-fullwidth is-medium is-rounded">Create Snippet</button>
+          {% block buttons %}
+            <!-- Submit Button -->
+            <div class="field mt-4">
+              <div class="control">
+                <button class="button is-primary is-fullwidth is-medium is-rounded">Create Snippet</button>
+              </div>
             </div>
+          </form>
+          <!-- Back Button -->
+          <div class="has-text-centered mt-4">
+            <a class="button is-light is-rounded" href="{{ url_for("snippets") }}">Back to My Snippets</a>
           </div>
-        </form>
-        <!-- Back Button -->
-        <div class="has-text-centered mt-4">
-          <a class="button is-light is-rounded" href="{{ url_for("snippets") }}">Back to My Snippets</a>
-        </div>
+        {% endblock %}
       </div>
     </div>
-</section>
-
-<script id="user-data" type="application/json">
-    {{ all_users | tojson | safe }}
-</script>
+  </section>
+  {% block data %}<script id="user-data" type="application/json">{{ all_users | tojson | safe }}</script>{% endblock %}
 {% endblock %}
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
   <script src="{{ url_for('static', filename='tag_handler.js') }}"></script>
 {% endblock %}
-
