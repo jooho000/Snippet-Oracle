@@ -42,7 +42,7 @@
           </a>
           <!-- Delete Button -->
           <a class="snippet-card-delete button is-small is-info ml-2"
-             href="{{ url_for('delete_Snippet', snippet_id=snippetId) }}">
+              onclick="confirmDelete({{snippetId}})">
             <span class="icon">
               <i class="fas fa-trash"></i>
             </span>

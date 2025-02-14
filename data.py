@@ -52,8 +52,10 @@ def _init_db():
     cur = _db.cursor()
 
     # Create tables
+
     cur.executescript(
         """
+        PRAGMA foreign_keys = 1;
         BEGIN;
         CREATE TABLE IF NOT EXISTS User (
             ID INTEGER PRIMARY KEY,
@@ -68,8 +70,8 @@ def _init_db():
             Name TEXT,
             Code TEXT,
             Description TEXT,
-            UserID INTEGER,
-            ParentSnippetID INTEGER,
+            UserID INTEGER REFERENCES User(ID) ON DELETE SET NULL,
+            ParentSnippetID INTEGER REFERENCES Snippet(ID) ON DELETE SET NULL,
             Date,
             IsPublic BOOLEAN DEFAULT 0, --0 for private and 1 for public
             ShareableLink TEXT UNIQUE
@@ -78,7 +80,7 @@ def _init_db():
             SnippetID INTEGER,
             TagName TEXT,
             PRIMARY KEY (SnippetID, TagName),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID) ON DELETE CASCADE
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS Links (
             ID INTEGER PRIMARY KEY,
@@ -92,7 +94,7 @@ def _init_db():
             UserID INTEGER,
             PRIMARY KEY (SnippetID, UserID),
             FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
-            FOREIGN KEY (UserID) REFERENCES User(ID)
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE
             
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
@@ -115,10 +117,12 @@ def reset():
     cur.executescript(
         """
         BEGIN;
+        DROP TABLE IF EXISTS SnippetEmbedding;
+        DROP TABLE IF EXISTS SnippetPermissions;
+        DROP TABLE IF EXISTS Links;
         DROP TABLE IF EXISTS TagUse;
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
-        DROP TABLE IF EXISTS SnippetEmbedding;
         COMMIT;
         """
     )
@@ -219,6 +223,22 @@ def create_user(name, password_hash):
         return False
 
 
+def delete_user(id):
+    """Deletes a user account. Returns `True` if the account was deleted, `False` otherwise."""
+
+    cur = _db.cursor()
+    cur.execute(
+        """
+        DELETE 
+        FROM User
+        WHERE ID = ?
+        """,
+        [id],
+    )
+    _db.commit()
+    return True
+
+
 ## SNIPPETS ###
 
 
@@ -230,6 +250,7 @@ def create_snippet(
     tags=None,
     is_public=False,
     permitted_users=None,
+    parent_id=None,
 ):
     """Creates a new snippet, returning its integer ID."""
     cur = _db.cursor()
@@ -238,10 +259,18 @@ def create_snippet(
 
     cur.execute(
         """
-        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink)
-        VALUES (?, ?, ?, ?, datetime('now'), ?, ?)
+        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink, ParentSnippetID)
+        VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?)
         """,
-        [name, code, description or "", user_id, int(is_public), shareable_link],
+        [
+            name,
+            code,
+            description or "",
+            user_id,
+            int(is_public),
+            shareable_link,
+            parent_id,
+        ],
     )
     snippet_id = cur.lastrowid
 
@@ -310,6 +339,7 @@ def get_snippet(snippet_id, user_id=None):
             "code": snippet[2],
             "description": snippet[3],
             "user_id": snippet[4],
+            "parent_snippet_id": snippet[5],
             "date": snippet[6],
             "is_public": bool(snippet[7]),  # Explicit conversion
             "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags
@@ -686,6 +716,7 @@ def get_all_users_with_permission(snippet_id):
 
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
 
+
 def get_all_other_users_with_permission(snippet_id, user_id):
     """
     Returns a list of users who have permission to view a specific snippet.
@@ -707,6 +738,7 @@ def get_all_other_users_with_permission(snippet_id, user_id):
     )
 
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
 
 def get_all_users_excluding_current(current_user_id):
     """Fetches all users except the current user."""
