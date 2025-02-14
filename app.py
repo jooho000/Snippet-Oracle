@@ -136,7 +136,6 @@ def logout():
 @app.route("/profile", methods=["GET", "POST"])
 @flask_login.login_required
 def profile():
-    user_details = get_user_details()
     cur = data._db.cursor()
 
     if flask.request.method == "POST":
@@ -229,7 +228,7 @@ def profile():
 
     return flask.render_template(
         "profile.html",
-        user=user_details,
+        user=get_user_details(),
         links=user_links,
         snippets=user_snippets,
         page=page,
