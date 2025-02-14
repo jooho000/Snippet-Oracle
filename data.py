@@ -230,6 +230,7 @@ def create_snippet(
     tags=None,
     is_public=False,
     permitted_users=None,
+    parent_snippet_id=None,
 ):
     """Creates a new snippet, returning its integer ID."""
     cur = _db.cursor()
@@ -238,10 +239,10 @@ def create_snippet(
 
     cur.execute(
         """
-        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink)
-        VALUES (?, ?, ?, ?, datetime('now'), ?, ?)
+        INSERT INTO Snippet (Name, Code, Description, UserID, ParentSnippetID, Date, IsPublic, ShareableLink)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?)
         """,
-        [name, code, description or "", user_id, int(is_public), shareable_link],
+        [name, code, description or "", user_id, parent_snippet_id, int(is_public), shareable_link],
     )
     snippet_id = cur.lastrowid
 
@@ -266,7 +267,6 @@ def create_snippet(
             [(snippet_id, tag) for tag in tags],
         )
 
-    # Only generate embeddings for public snippets
     if description is not None and is_public:
         embedding = _get_transformer().encode(description)
         cur.execute(
@@ -280,6 +280,7 @@ def create_snippet(
     _db.commit()
 
     return snippet_id
+
 
 
 def get_snippet(snippet_id, user_id=None):
@@ -310,6 +311,7 @@ def get_snippet(snippet_id, user_id=None):
             "code": snippet[2],
             "description": snippet[3],
             "user_id": snippet[4],
+            "parent_snippet_id": snippet[5],
             "date": snippet[6],
             "is_public": bool(snippet[7]),  # Explicit conversion
             "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags

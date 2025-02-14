@@ -222,8 +222,18 @@ def get_social_icon(url):
 
 
 @app.route("/createSnippet", methods=["GET", "POST"])
+@app.route("/remixSnippet/<int:snippet_id>", methods=["GET", "POST"])
 @flask_login.login_required
-def createSnippet():
+def createSnippet(snippet_id=None):
+    """Handles both creating new snippets and remixing existing ones."""
+    
+    # Fetch original snippet if remixing
+    original_snippet = None
+    if snippet_id:
+        original_snippet = data.get_snippet(snippet_id, flask_login.current_user.id)
+        if not original_snippet:
+            flask.flash("Original snippet not found or inaccessible!", "danger")
+            return flask.redirect(flask.url_for("snippets"))
 
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
@@ -234,41 +244,41 @@ def createSnippet():
         user_id = flask_login.current_user.id
 
         try:
-            permitted_users = flask.request.form.getlist(
-                "permitted_users[]"
-            )  # Ensure the correct key
-            permitted_users = [
-                int(user_id) for user_id in permitted_users if user_id.isdigit()
-            ]  # Convert to integers
+            permitted_users = flask.request.form.getlist("permitted_users[]")
+            permitted_users = [int(uid) for uid in permitted_users if uid.isdigit()]
         except (ValueError, TypeError) as e:
             print(f"Error parsing permitted_users: {e}")
             permitted_users = []
 
         if not is_public:
-            permitted_users.append(user_id)
+            permitted_users.append(user_id)  # Ensure owner has permission
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
-            return flask.redirect(flask.url_for("createSnippet"))
+            return flask.redirect(flask.url_for("createSnippet", snippet_id=snippet_id))
 
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        snippet_id = data.create_snippet(
-            name, code, user_id, description, tags, is_public, permitted_users
+        new_snippet_id = data.create_snippet(
+            name, code, user_id, description, tags, is_public, permitted_users, 
+            parent_snippet_id=snippet_id  # Set parent snippet if remixing
         )
 
-        if snippet_id:
+        if new_snippet_id:
             flask.flash("Snippet created successfully!", "success")
             return flask.redirect(flask.url_for("snippets"))
         else:
             flask.flash("Failed to create snippet!", "danger")
 
     all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
-    return flask.render_template(
-        "createSnippet.html", all_users=all_users, preset_tags=data.preset_tags
-    )
 
+    return flask.render_template(
+        "createSnippet.html",
+        all_users=all_users,
+        preset_tags=data.preset_tags,
+        snippet=original_snippet  # Pass original snippet if remixing
+    )
 
 # View All Personal User Snippets (Worked on by Alan Ly)
 @app.route("/snippets")
