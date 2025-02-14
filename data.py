@@ -686,6 +686,27 @@ def get_all_users_with_permission(snippet_id):
 
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
 
+def get_all_other_users_with_permission(snippet_id, user_id):
+    """
+    Returns a list of users who have permission to view a specific snippet.
+
+    Each entry contains:
+    - "id": The user's integer ID.
+    - "name": The user's name.
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT U.ID, U.Name
+        FROM SnippetPermissions AS SP
+        JOIN User AS U ON SP.UserID = U.ID
+        WHERE SP.SnippetID = ?
+        AND U.ID != ?
+        """,
+        [snippet_id, user_id],
+    )
+
+    return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
 
 def get_all_users_excluding_current(current_user_id):
     """Fetches all users except the current user."""
