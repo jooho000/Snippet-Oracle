@@ -1,102 +1,105 @@
 {% extends "layout.html" %}
-
 {% block title %}{{ snippet["name"] }} - Snippet Oracle{% endblock %}
-
 {% block content %}
-<section class="section">
-  <div class="columns is-mobile">
-    <div class="column is-narrow">
-      <h1 class="title">{{ snippet["name"] }}</h1>  <!-- Snippet Name -->
+  <section class="section">
+    <div class="columns is-mobile">
+      <div class="column is-narrow">
+        <h1 class="title">{{ snippet["name"] }}</h1>
+        <!-- Snippet Name -->
+      </div>
+      <div class="column is-narrow has-text-right">
+        <!-- Visibility Status (Lock for private, Globe for public) -->
+        {% if snippet["is_public"] %}
+          <span class="icon is-small">
+            <i class="fas fa-globe"></i> <!-- Globe icon for public -->
+          </span>
+          <span>Public</span>
+        {% else %}
+          <span class="icon is-small">
+            <i class="fas fa-lock"></i> <!-- Lock icon for private -->
+          </span>
+          <span>Private</span>
+        {% endif %}
+      </div>
     </div>
-    <div class="column is-narrow has-text-right">
-      <!-- Visibility Status (Lock for private, Globe for public) -->
-      {% if snippet["is_public"] %}
-        <span class="icon is-small">
-          <i class="fas fa-globe"></i> <!-- Globe icon for public -->
-        </span>
-        <span>Public</span>
-      {% else %}
-        <span class="icon is-small">
-          <i class="fas fa-lock"></i> <!-- Lock icon for private -->
-        </span>
-        <span>Private</span>
-      {% endif %}
+    <!-- Snippet Content -->
+    <pre><code id="snippet-code">{{ snippet["code"] }}</code></pre><!-- Snippet Code -->
+    <p>
+      <strong>Description:</strong> {{ snippet["description"] }}
+    </p>
+    <!-- Snippet Description -->
+    <p>
+      <strong>Created at:</strong> {{ snippet["date"] }}
+    </p>
+    <!-- Snippet Date -->
+    <!-- Copy to Clipboard Button -->
+    <div class="field">
+      <div class="control">
+        <button class="button is-link" id="copyButton">Copy Code</button>
+        {% set id = current_user.id | int %}
+        {% if snippet["user_id"] == id %}
+          <a class="button is-link"
+             href="{{ url_for('edit_snippet', snippet_id=snippet["id"]) }}">
+            <span class="icon">
+              <i class="fas fa-edit"></i>
+            </span>
+          </a>
+          <a class="button is-link"
+             href="{{ url_for('delete_Snippet', snippet_id=snippet["id"]) }}">
+            <span class="icon">
+              <i class="fas fa-trash"></i>
+            </span>
+          </a>
+        {% endif %}
+      </div>
     </div>
-  </div>
-
-  <!-- Snippet Content -->
-  <pre><code id="snippet-code">{{ snippet["code"] }}</code></pre><!-- Snippet Code -->
-  <p><strong>Description:</strong> {{ snippet["description"] }}</p>  <!-- Snippet Description -->
-  <p><strong>Created at:</strong> {{ snippet["date"] }}</p>  <!-- Snippet Date -->
-
-  <!-- Copy to Clipboard Button -->
-  <div class="field">
-    <div class="control">
-      <button class="button is-link" id="copyButton">Copy Code</button>
-      {%set id = current_user.id | int %}
-      {% if snippet["user_id"] == id %}
-                      <a class="button is-link"
-                          href="{{ url_for('edit_snippet', snippet_id=snippet["id"]) }}">
-                          <span class="icon">
-                        <i class="fas fa-edit"></i>
-                      </span>
-                    </a>
-                    <a class="button is-link"
-                        href="{{ url_for('delete_Snippet', snippet_id=snippet["id"]) }}">
-                          <span class="icon">
-                        <i class="fas fa-trash"></i>
-                      </span>
-                    </a> 
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Shareable Link -->
-  {% if not request.path.startswith('/share/') %}
-  <div class="box">
-    <p><strong>Shareable Link:</strong></p>
-    <div class="field has-addons">
-      <div class="control is-expanded">
-        <input class="input" type="text" id="shareableLink" value="{{ request.host_url }}share/{{ snippet['shareable_link'] }}" readonly>
+    <!-- Shareable Link -->
+    {% if not request.path.startswith('/share/') %}
+      <div class="box">
+        <p>
+          <strong>Shareable Link:</strong>
+        </p>
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input class="input"
+                   type="text"
+                   id="shareableLink"
+                   value="{{ request.host_url }}share/{{ snippet['shareable_link'] }}"
+                   readonly>
+          </div>
+          <div class="control">
+            <button class="button is-info" id="copyShareLink">Copy Link</button>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <!-- Message for users viewing a shared snippet -->
+    {% if request.path.startswith('/share/') %}
+      <div class="notification is-info">
+        <p>You are viewing this snippet from a shareable link.</p>
+        <a href="{{ url_for("index") }}" class="button is-primary">Go to Homepage</a>
+      </div>
+    {% endif %}
+    <!-- Buttons for navigation -->
+    <div class="field is-grouped">
+      <div class="control">
+        <a class="button is-light" href="{{ url_for("snippets") }}">Back to All Snippets</a>
       </div>
       <div class="control">
-        <button class="button is-info" id="copyShareLink">Copy Link</button>
+        <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
       </div>
     </div>
-  </div>
-  {% endif %}
-  
-  <!-- Message for users viewing a shared snippet -->
-  {% if request.path.startswith('/share/') %}
-  <div class="notification is-info">
-      <p>You are viewing this snippet from a shareable link.</p>
-      <a href="{{ url_for('index') }}" class="button is-primary">Go to Homepage</a>
-  </div>
-  {% endif %}
-
-  <!-- Buttons for navigation -->
-  <div class="field is-grouped">
-    <div class="control">
-      <a class="button is-light" href="{{ url_for('snippets') }}">Back to All Snippets</a>
-    </div>
-    <div class="control">
-      <a class="button is-light" href="{{ url_for('createSnippet') }}">Create New Snippet</a>
-    </div>
-  </div>
-</section>
-
+  </section>
 {% endblock %}
-
 {% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='copy.js') }}"></script>
-
-<script>
+  {{ super() }}
+  <script src="{{ url_for('static', filename='copy.js') }}"></script>
+  <script>
   document.getElementById("copyShareLink")?.addEventListener("click", function() {
       const input = document.getElementById("shareableLink");
       input.select();
       document.execCommand("copy");
       alert("Shareable link copied!");
   });
-</script>
+  </script>
 {% endblock %}

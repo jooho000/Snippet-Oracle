@@ -1,11 +1,12 @@
 const searchInput = $("#search-input");
 const resultsContainer = $("#search-results");
+const snippetTemplate = $("#snippet-template");
 const searchDelayMs = 250;
 
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
-$(function() {
+$(function () {
   searchInput.on("input", function () {
     if (searchTimeout !== null) {
       clearTimeout(searchTimeout);
@@ -40,14 +41,50 @@ async function doSearch() {
       resultsContainer.empty(); // Clear previous results
 
       // If there are results, display them as buttons
+      const baseHref =
+        snippetTemplate.find(".snippet-card-link").attr("href") + "/../";
+      let anyDescMatches = false;
       for (const snippet of data.results) {
-        $("<a/>", {
-          href: `/snippet/${snippet.id}`,
-          class: "button is-primary is-large mt-2 mr-2",
-        })
-          .text(snippet.name)
-          .appendTo(resultsContainer);
+        // Add a disclaimer that these are only description matches
+        if (!anyDescMatches && snippet.is_description_match) {
+          anyDescMatches = true;
+          $(document.createElement("br")).appendTo(resultsContainer);
+          const disclaimer = $(document.createElement("h5"));
+          disclaimer.addClass("subtitle mt-5 is-5");
+          disclaimer.text("Similar public snippets");
+          disclaimer.appendTo(resultsContainer);
+        }
+
+        // Create a blank snippet card
+        const elem = snippetTemplate.clone();
+
+        // Update attributes
+        elem.removeAttr("id");
+        elem.data("code", snippet.code);
+        elem.data("description", snippet.description);
+        elem.find(".snippet-card-name").text(snippet.name);
+        elem
+          .find(".snippet-card-link")
+          .attr("href", new URL(baseHref + snippet.id, location.href).href);
+
+        // Remove whichever public/private label isn't relevant
+        if (snippet.is_public) elem.find(".snippet-card-private").remove();
+        else elem.find(".snippet-card-public").remove();
+
+        // Remove edit and delete buttons if the current user doesn't own this snippet
+        if (snippet.user_id !== current_user_id) {
+          elem.find(".snippet-card-edit, .snippet-card-delete").remove();
+        }
+
+        // Update summary
+        let summary = (snippet.description || "").trim();
+        if (summary.length > 100 - 3)
+          summary = summary.substring(0, 100 - 3).trim() + "...";
+        elem.find(".snippet-card-summary").text(summary);
+
+        elem.appendTo(resultsContainer);
       }
+
       if (data.results.length === 0) {
         resultsContainer.text("No snippets found.");
       }
@@ -61,51 +98,6 @@ async function doSearch() {
         pendingSearchUrl = null;
         searchInput.parent().removeClass("is-loading");
       }
-    });
-}
-
-function toggleSnippet(id, button, snippetContent, snippetDescription) {
-  const container = document.getElementById(id);
-  const icon = button.querySelector("svg");
-
-  if (!container.hasChildNodes()) {
-    // Create snippet content dynamically
-    const contentDiv = document.createElement("div");
-    contentDiv.className = "mt-3";
-
-    // Add snippet content and description (no Copy button)
-    contentDiv.innerHTML = `
-            <hr>
-            <pre class="code-snippet">${snippetContent}</pre>
-            <p><strong>Description:</strong> ${
-              snippetDescription || "No description available."
-            }</p>
-        `;
-    container.appendChild(contentDiv);
-
-    // Show the container
-    container.style.display = "block";
-
-    // Update icon to up arrow
-    icon.setAttribute("d", "M5 15l7-7 7 7");
-  } else {
-    // Destroy snippet content dynamically
-    container.innerHTML = ""; // Remove child nodes
-    container.style.display = "none"; // Hide the container
-
-    // Update icon to down arrow
-    icon.setAttribute("d", "M19 9l-7 7-7-7");
-  }
-}
-
-function copySnippet(code) {
-  navigator.clipboard
-    .writeText(code)
-    .then(() => {
-      alert("Code snippet copied to clipboard!");
-    })
-    .catch((err) => {
-      console.error("Failed to copy text: ", err);
     });
 }
 
@@ -130,11 +122,8 @@ function filterByTag(tag) {
   // Append to the selected tags container
   selectedTagsContainer.appendChild(tagElement);
 
-  console.log("Selected Tags:", Array.from(selectedTags));
   updateSnippetGrid();
-  console.log("reached updateSnippetGrid intial");
 }
-
 
 function removeTag(tag) {
   if (!selectedTags.has(tag)) return;
@@ -147,27 +136,27 @@ function removeTag(tag) {
 
   // Ensure correct filtering happens after tag removal
   updateSnippetGrid();
-  console.log("reached updateSnippetGrid remove");
 }
-
 
 function updateSnippetGrid() {
   const snippets = document.querySelectorAll(".box[data-snippet-id]");
 
-  snippets.forEach(snippet => {
-      const tagsContainer = snippet.querySelector(".tags-container");
-      const snippetTags = Array.from(tagsContainer.getElementsByClassName("tag"))
-                              .map(tagElement => tagElement.textContent.trim());
+  snippets.forEach((snippet) => {
+    const tagsContainer = snippet.querySelector(".tags-container");
+    const snippetTags = Array.from(
+      tagsContainer.getElementsByClassName("tag")
+    ).map((tagElement) => tagElement.textContent.trim());
 
-      // Check if the snippet has all selected tags
-      // chnage it to the parent element
-      const matchesAllTags = [...selectedTags].every(tag => snippetTags.includes(tag));
+    // Check if the snippet has all selected tags
+    // chnage it to the parent element
+    const matchesAllTags = [...selectedTags].every((tag) =>
+      snippetTags.includes(tag)
+    );
 
-      if (matchesAllTags) {
-        snippet.parentElement.style.display = "";
+    if (matchesAllTags) {
+      snippet.parentElement.style.display = "";
     } else {
-        snippet.parentElement.style.display = "none";
+      snippet.parentElement.style.display = "none";
     }
-    
   });
 }

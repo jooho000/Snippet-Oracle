@@ -1,83 +1,70 @@
 {% extends "layout.html" %}
-
 {% block title %}Sign Up - Snippet Oracle{% endblock %}
 {% block content %}
-
-<section class="section">
-  <div class="container">
-    <div class="columns is-centered">
-      <div class="column is-half">
-        <div class="box">
-          <h1 class="title has-text-centered">Sign Up</h1>
-          <p class="subtitle has-text-centered">Create your account to get started with Snippet Oracle.</p>
-
-          <form method="post">
-            <!-- Username Field -->
-            <div class="field">
-              <label class="label" for="username">Username</label>
-              <div class="control has-icons-left">
-                <input
-                  class="input"
-                  name="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value="{{ username }}"
-                  required
-                  maxlength="20"
-                />
-                <span class="icon is-small is-left">
-                  <i class="fas fa-user"></i>
-                </span>
+  <section class="section">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-half">
+          <div class="box">
+            <h1 class="title has-text-centered">Sign Up</h1>
+            <p class="subtitle has-text-centered">Create your account to get started with Snippet Oracle.</p>
+            <form method="post">
+              <!-- Username Field -->
+              <div class="field">
+                <label class="label" for="username">Username</label>
+                <div class="control has-icons-left">
+                  <input class="input"
+                         name="username"
+                         type="text"
+                         placeholder="Enter your username"
+                         value="{{ username }}"
+                         required
+                         maxlength="20" />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
               </div>
-            </div>
-
-            <!-- Password Field -->
-            <div class="field">
-              <label class="label" for="password">Password</label>
-              <div class="control has-icons-left">
-                <input
-                  class="input"
-                  name="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  required
-                  minlength="8"
-                  maxlength="60"
-                />
-                <span class="icon is-small is-left">
-                  <i class="fas fa-lock"></i>
-                </span>
+              <!-- Password Field -->
+              <div class="field">
+                <label class="label" for="password">Password</label>
+                <div class="control has-icons-left">
+                  <input class="input"
+                         name="password"
+                         type="password"
+                         placeholder="Enter your password"
+                         required
+                         minlength="8"
+                         maxlength="60" />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
               </div>
-            </div>
-
-            <!-- Repeat Password Field -->
-            <div class="field">
-              <label class="label" for="repeatPassword">Repeat Password</label>
-              <div class="control has-icons-left">
-                <input
-                  class="input"
-                  name="repeatPassword"
-                  type="password"
-                  placeholder="Re-enter your password"
-                  required
-                />
-                <span class="icon is-small is-left">
-                  <i class="fas fa-lock"></i>
-                </span>
+              <!-- Repeat Password Field -->
+              <div class="field">
+                <label class="label" for="repeatPassword">Repeat Password</label>
+                <div class="control has-icons-left">
+                  <input class="input"
+                         name="repeatPassword"
+                         type="password"
+                         placeholder="Re-enter your password"
+                         required />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
               </div>
-            </div>
-
-            <!-- Sign Up Button -->
-            <div class="field">
-              <div class="control">
-                <button type="submit" class="button is-primary is-fullwidth">Sign Up</button>
+              <!-- Sign Up Button -->
+              <div class="field">
+                <div class="control">
+                  <button type="submit" class="button is-primary is-fullwidth">Sign Up</button>
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
-
+  </section>
 {% endblock %}
