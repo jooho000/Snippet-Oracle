@@ -220,6 +220,36 @@ def create_user(name, password_hash):
         return False
 
 
+def get_user_details(user_id):
+    """
+    Fetches details of a user by ID.
+    
+    Returns a dictionary with:
+    - "name": The user's name.
+    - "bio": The user's bio.
+    - "profile_picture": The user's profile picture (returns None if not set).
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT Name, Bio, ProfilePicture 
+        FROM User 
+        WHERE ID = ?
+        """,
+        [user_id],
+    )
+
+    res = cur.fetchone()
+    if res is None:
+        return None
+
+    return {
+        "name": res[0],
+        "bio": res[1] if res[1] else "",
+        "profile_picture": res[2],  # Return BLOB (frontend should handle display)
+    }
+
+
 ## SNIPPETS ###
 
 
