@@ -22,3 +22,22 @@
   box-shadow: 12px 12px 5px rgba(0, 0, 0, 0.2);
   color: black;
 }
+
+.social-links-box {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.social-links-box a {
+  display: inline-block;
+  max-width: 90%;
+  white-space: nowrap; /* Prevent line wrapping */
+  overflow: hidden; /* Hide overflowing content */
+  text-overflow: ellipsis; /* Add ellipsis for truncation */
+  vertical-align: middle;
+}
+
+#image-preview-container {
+  display: none;
+}
