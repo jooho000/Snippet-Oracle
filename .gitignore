@@ -1,4 +1,5 @@
 databases/
+static/profile_pictures/
 mock_data/frankenstein.txt
 secret_key.bin
 

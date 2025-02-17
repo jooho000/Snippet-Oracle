@@ -23,7 +23,7 @@
         <div class="control">
           <a class="button is-warning is-light" href="{{ url_for('view_snippet', snippet_id=snippet['parent_snippet_id']) }}">
             <span class="icon"><i class="fas fa-code-branch"></i></span>
-            <span>View Original Snippet</span>
+            <span>Remix of {{ parent_snippet['name']}}</span>
           </a>
         </div>
       </div>

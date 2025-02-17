@@ -11,9 +11,11 @@
       </div>
     </div>
     {% if snippets %}
-      {% for s in snippets %}
-        {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
-      {% endfor %}
+      <div class="grid is-col-min-20 mt-5">
+        {% for s in snippets %}
+          {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
+        {% endfor %}
+      </div>
     {% else %}
       <p>You haven't created any snippets yet!</p>
     {% endif %}

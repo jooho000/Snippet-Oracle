@@ -59,7 +59,7 @@ def _init_db():
             ID INTEGER PRIMARY KEY,
             Name TEXT UNIQUE,
             PasswordHash TEXT,
-            ProfilePicture TEXT,    -- For storing profile picture URLs/paths
+            ProfilePicture BLOB,    -- For storing profile picture BLOB (binary large object)
             Bio TEXT,               -- User biography
             Description VARCHAR(250)
         );
@@ -153,12 +153,13 @@ def get_user_by_id(user_id):
 
     - "name": The user's name.
     - "password_hash": An argon2 hash of the user's password.
+    - "profile_picture": The user's profile picture
     """
 
     cur = _db.cursor()
     cur.execute(
         """
-        SELECT Name, PasswordHash
+        SELECT Name, PasswordHash, ProfilePicture
         FROM User
         WHERE ID == ?
         """,
@@ -170,7 +171,7 @@ def get_user_by_id(user_id):
     if res is None:
         return None
     else:
-        return {"name": res[0], "password_hash": res[1]}
+        return {"name": res[0], "password_hash": res[1], "profile_picture": res[2]}
 
 
 def get_user_by_name(name):
@@ -217,6 +218,36 @@ def create_user(name, password_hash):
     except sqlite3.IntegrityError:
         # Raised when Name was not unique
         return False
+
+
+def get_user_details(user_id):
+    """
+    Fetches details of a user by ID.
+    
+    Returns a dictionary with:
+    - "name": The user's name.
+    - "bio": The user's bio.
+    - "profile_picture": The user's profile picture (returns None if not set).
+    """
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT Name, Bio, ProfilePicture 
+        FROM User 
+        WHERE ID = ?
+        """,
+        [user_id],
+    )
+
+    res = cur.fetchone()
+    if res is None:
+        return None
+
+    return {
+        "name": res[0],
+        "bio": res[1] if res[1] else "",
+        "profile_picture": res[2],  # Return BLOB (frontend should handle display)
+    }
 
 
 ## SNIPPETS ###
@@ -536,9 +567,8 @@ def smart_search_snippets(query, user_id=None):
         WITH DescMatches AS (
             SELECT SnippetID
             FROM SnippetEmbedding
-            WHERE Embedding MATCH ?
+            WHERE Embedding MATCH ? AND k = ?
             ORDER BY distance
-            LIMIT ?
         )
         SELECT
             Snippet.ID,
@@ -553,7 +583,7 @@ def smart_search_snippets(query, user_id=None):
         FROM DescMatches
         JOIN Snippet ON Snippet.ID = DescMatches.SnippetID
         """,
-        [query_embedding, 30 - len(name_matches)],
+        [query_embedding, 35 - len(name_matches)],
     )
     desc_matches = cur.fetchall()
 
@@ -667,7 +697,7 @@ def get_snippets_user_has_access_to(user_id):
     return [row[0] for row in cur.fetchall()]
 
 
-def get_all_users_with_permission(snippet_id):
+def get_all_users_with_permission(snippet_id, exlude_user = None):
     """
     Returns a list of users who have permission to view a specific snippet.
 
@@ -681,9 +711,9 @@ def get_all_users_with_permission(snippet_id):
         SELECT U.ID, U.Name
         FROM SnippetPermissions AS SP
         JOIN User AS U ON SP.UserID = U.ID
-        WHERE SP.SnippetID = ?
+        WHERE SP.SnippetID = ? AND U.ID != ?
         """,
-        [snippet_id],
+        [snippet_id, exlude_user],
     )
 
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]

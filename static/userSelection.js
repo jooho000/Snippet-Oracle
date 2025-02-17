@@ -145,5 +145,4 @@ $(function () {
   });
 
   updateSelectedUsers();
-  renderUserList(); // Initial render
 });

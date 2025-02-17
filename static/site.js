@@ -93,3 +93,10 @@ $(function () {
     }
   });
 });
+
+async function confirmDelete(snippetID) {
+  if (window.confirm("Confirm Deletion")) {
+    await fetch (`/deleteSnippet/${snippetID}`);
+    window.location.reload();
+  }
+}
