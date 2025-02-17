@@ -383,7 +383,7 @@ def search_snippets():
 def edit_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)
-    prev_users = data.get_all_users_with_permission(snippet_id)
+    prev_users = data.get_all_other_users_with_permission(snippet_id, current_user_id)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")

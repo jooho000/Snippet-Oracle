@@ -1,126 +1,28 @@
-{% extends "layout.html" %}
+{% extends "createSnippet.html" %}
 {% block title %}Edit {{ snippet["name"] }} - Snippet Oracle{% endblock %}
-{% block content %}
-  <section class="section">
-    <div class="container">
-      <div class="box p-5">
-        <h1 id="edit" class="title has-text-centered">Edit</h1>
-        <form method="post">
-          <!-- Snippet Name -->
-          <div class="field">
-            <label class="label">Snippet Name</label>
-            <div class="control">
-              <input class="input is-medium is-rounded"
-                     type="text"
-                     name="name"
-                     value="{{ snippet["name"] }}">
-            </div>
-          </div>
-          <!-- Snippet Code -->
-          <div class="field">
-            <label class="label">Code</label>
-            <div class="control">
-              <textarea class="textarea is-medium is-family-code"
-                        name="code"
-                        rows="6"
-                        required>{{ snippet["code"] }}</textarea>
-            </div>
-          </div>
-          <!-- Snippet Description -->
-          <div class="field">
-            <label class="label">Description</label>
-            <div class="control">
-              <textarea class="textarea" name="description">{{ snippet["description"] }}</textarea>
-            </div>
-          </div>
-          <!-- Snippet Tags -->
-          <div class="field">
-            <label class="label">Tags</label>
-            <div class="control">
-              <div class="field is-grouped is-grouped-multiline">
-                <div id="tags-container"
-                     class="tags is-flex is-flex-wrap-wrap is-flex-grow-1">
-                  <input type="hidden" name="tags" id="hidden-tags">
-                  <span id="tag-input"
-                        class="input tag-input is-flex-grow-1"
-                        placeholder="Type tags and press Enter"
-                        contenteditable="true"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Dropdown for Preset Tags -->
-          <div class="control">
-            <div class="dropdown" id="tag-dropdown">
-              <div class="dropdown-trigger">
-                <button type="button"
-                        class="button is-primary mt-3 mb-3"
-                        id="dropdown-button"
-                        aria-haspopup="true"
-                        aria-controls="dropdown-menu">
-                  <span>Select a Tag</span>
-                  <span class="icon is-small">
-                    <i class="fas fa-angle-down" aria-hidden="true"></i>
-                  </span>
-                </button>
-              </div>
-              <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                <div class="dropdown-content">
-                  {% for tag in preset_tags %}<a href="#" class="dropdown-item preset-tag">{{ tag }}</a>{% endfor %}
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Visibility Toggle as a Button -->
-          <div class="field">
-            <label class="label">Visibility</label>
-            <div class="control">
-              <button type="button"
-                      id="visibilityToggle"
-                      class="button is-light is-rounded">
-                <span class="icon">
-                  <i id="visibilityIcon" class="fas fa-lock"></i>
-                </span>
-                <span id="toggleText">Private</span>
-              </button>
-              <input type="hidden" name="is_public" id="isPublic" value="0">
-            </div>
-          </div>
-          <!-- User Selection (Only visible if Private) -->
-          <div class="field" id="permittedUsersField" style="display: none;">
-            <label class="label">Share with Specific Users</label>
-            <div class="box is-shadowless">
-              <div id="selected-users" class="tags are-medium"></div>
-              <div class="field">
-                <input type="text"
-                       id="userSearch"
-                       class="input is-rounded"
-                       placeholder="Search users...">
-              </div>
-              <div id="user-selection" class="box is-light" style="display: none;"></div>
-            </div>
-          </div>
-          <!-- Submit Button -->
-          <div class="field mt-4">
-            <div class="control">
-              <button class="button is-primary is-medium is-rounded">Confirm</button>
-            </div>
-          </div>
-        </form>
-        <!-- Back Button -->
-        <div class="has-text-centered mt-4">
-          <a class="button is-light is-rounded" id="cancel">Cancel</a>
-        </div>
-      </div>
+{% block heading %}<h1 id="edit" class="title has-text-centered">Edit</h1>{% endblock %}
+{% block snippetName %}value="{{ snippet["name"] }}"{% endblock %}
+{% block snippetCode %}{{ snippet["code"] }}{% endblock %}
+{% block snippetDesc %}{{ snippet["description"] }}{% endblock %}
+{% block buttons %}
+  <!-- Submit Button -->
+  <div class="field mt-4">
+    <div class="control">
+      <button class="button is-primary is-medium is-rounded">Confirm</button>
     </div>
-  </section>
-  <script id="user-data" type="application/json">{{ all_users | tojson | safe }}</script>
+  </div>
+</form>
+<!-- Back Button -->
+<div class="has-text-centered mt-4">
+  <a class="button is-light is-rounded" id="cancel">Cancel</a>
+</div>
+{% endblock %}
+{% block data %}
+  {{ super() }}
   <script id="shared-users" type="application/json">{{ users | tojson | safe }}</script>
   <script id="tags" type="application/json">{{ tags | tojson | safe }}</script>
 {% endblock %}
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='cancel.js') }}"></script>
-  <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
-  <script src="{{ url_for('static', filename='tag_handler.js') }}"></script>
 {% endblock %}
