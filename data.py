@@ -52,16 +52,14 @@ def _init_db():
     cur = _db.cursor()
 
     # Create tables
-
     cur.executescript(
         """
-        PRAGMA foreign_keys = 1;
         BEGIN;
         CREATE TABLE IF NOT EXISTS User (
             ID INTEGER PRIMARY KEY,
             Name TEXT UNIQUE,
             PasswordHash TEXT,
-            ProfilePicture TEXT,    -- For storing profile picture URLs/paths
+            ProfilePicture BLOB,    -- For storing profile picture BLOB (binary large object)
             Bio TEXT,               -- User biography
             Description VARCHAR(250)
         );
@@ -70,8 +68,8 @@ def _init_db():
             Name TEXT,
             Code TEXT,
             Description TEXT,
-            UserID INTEGER REFERENCES User(ID) ON DELETE SET NULL,
-            ParentSnippetID INTEGER REFERENCES Snippet(ID) ON DELETE SET NULL,
+            UserID INTEGER,
+            ParentSnippetID INTEGER,
             Date,
             IsPublic BOOLEAN DEFAULT 0, --0 for private and 1 for public
             ShareableLink TEXT UNIQUE
@@ -80,7 +78,7 @@ def _init_db():
             SnippetID INTEGER,
             TagName TEXT,
             PRIMARY KEY (SnippetID, TagName),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS Links (
             ID INTEGER PRIMARY KEY,
@@ -94,7 +92,7 @@ def _init_db():
             UserID INTEGER,
             PRIMARY KEY (SnippetID, UserID),
             FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
-            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE
+            FOREIGN KEY (UserID) REFERENCES User(ID)
             
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
@@ -117,12 +115,10 @@ def reset():
     cur.executescript(
         """
         BEGIN;
-        DROP TABLE IF EXISTS SnippetEmbedding;
-        DROP TABLE IF EXISTS SnippetPermissions;
-        DROP TABLE IF EXISTS Links;
         DROP TABLE IF EXISTS TagUse;
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
+        DROP TABLE IF EXISTS SnippetEmbedding;
         COMMIT;
         """
     )
@@ -157,12 +153,13 @@ def get_user_by_id(user_id):
 
     - "name": The user's name.
     - "password_hash": An argon2 hash of the user's password.
+    - "profile_picture": The user's profile picture
     """
 
     cur = _db.cursor()
     cur.execute(
         """
-        SELECT Name, PasswordHash
+        SELECT Name, PasswordHash, ProfilePicture
         FROM User
         WHERE ID == ?
         """,
@@ -174,7 +171,7 @@ def get_user_by_id(user_id):
     if res is None:
         return None
     else:
-        return {"name": res[0], "password_hash": res[1]}
+        return {"name": res[0], "password_hash": res[1], "profile_picture": res[2]}
 
 
 def get_user_by_name(name):
@@ -223,20 +220,34 @@ def create_user(name, password_hash):
         return False
 
 
-def delete_user(id):
-    """Deletes a user account. Returns `True` if the account was deleted, `False` otherwise."""
-
+def get_user_details(user_id):
+    """
+    Fetches details of a user by ID.
+    
+    Returns a dictionary with:
+    - "name": The user's name.
+    - "bio": The user's bio.
+    - "profile_picture": The user's profile picture (returns None if not set).
+    """
     cur = _db.cursor()
     cur.execute(
         """
-        DELETE 
-        FROM User
+        SELECT Name, Bio, ProfilePicture 
+        FROM User 
         WHERE ID = ?
         """,
-        [id],
+        [user_id],
     )
-    _db.commit()
-    return True
+
+    res = cur.fetchone()
+    if res is None:
+        return None
+
+    return {
+        "name": res[0],
+        "bio": res[1] if res[1] else "",
+        "profile_picture": res[2],  # Return BLOB (frontend should handle display)
+    }
 
 
 ## SNIPPETS ###
@@ -250,7 +261,6 @@ def create_snippet(
     tags=None,
     is_public=False,
     permitted_users=None,
-    parent_id=None,
 ):
     """Creates a new snippet, returning its integer ID."""
     cur = _db.cursor()
@@ -259,18 +269,10 @@ def create_snippet(
 
     cur.execute(
         """
-        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink, ParentSnippetID)
-        VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?)
+        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink)
+        VALUES (?, ?, ?, ?, datetime('now'), ?, ?)
         """,
-        [
-            name,
-            code,
-            description or "",
-            user_id,
-            int(is_public),
-            shareable_link,
-            parent_id,
-        ],
+        [name, code, description or "", user_id, int(is_public), shareable_link],
     )
     snippet_id = cur.lastrowid
 
@@ -339,7 +341,6 @@ def get_snippet(snippet_id, user_id=None):
             "code": snippet[2],
             "description": snippet[3],
             "user_id": snippet[4],
-            "parent_snippet_id": snippet[5],
             "date": snippet[6],
             "is_public": bool(snippet[7]),  # Explicit conversion
             "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags
@@ -712,29 +713,6 @@ def get_all_users_with_permission(snippet_id):
         WHERE SP.SnippetID = ?
         """,
         [snippet_id],
-    )
-
-    return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
-
-
-def get_all_other_users_with_permission(snippet_id, user_id):
-    """
-    Returns a list of users who have permission to view a specific snippet.
-
-    Each entry contains:
-    - "id": The user's integer ID.
-    - "name": The user's name.
-    """
-    cur = _db.cursor()
-    cur.execute(
-        """
-        SELECT U.ID, U.Name
-        FROM SnippetPermissions AS SP
-        JOIN User AS U ON SP.UserID = U.ID
-        WHERE SP.SnippetID = ?
-        AND U.ID != ?
-        """,
-        [snippet_id, user_id],
     )
 
     return [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
