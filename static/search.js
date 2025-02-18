@@ -32,7 +32,7 @@ async function doSearch() {
   searchInput.parent().addClass("is-loading");
 
   // Send the query to the server via AJAX (using fetch)
-  const searchUrl = `/search?q=${query}`;
+  const searchUrl = `/search?q=${encodeURIComponent(query)}`;
   pendingSearchUrl = searchUrl;
 
   fetch(searchUrl)

@@ -478,11 +478,11 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
     - "user_id": The author's integer ID.
     """
 
-    if type(names) == str:
+    if names is str:
         names = [names]
-    if type(tags) == str:
+    if tags is str:
         tags = [tags]
-    if type(desc) == str:
+    if desc is str:
         desc = [desc]
 
     queries = []
@@ -490,7 +490,7 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
 
     # Snippet name includes any of the given names
     if names:
-        name_match = "(" + " OR ".join(["S.Name LIKE ?"] * len(names)) + ")"
+        name_match = "(" + " OR ".join(["Name LIKE ?"] * len(names)) + ")"
         queries.append(name_match)
         params.extend(["%" + name + "%" for name in names])
 
@@ -501,7 +501,7 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
             f"""
             EXISTS (
                 SELECT 1 FROM TagUse AS T
-                WHERE S.ID = T.SnippetID
+                WHERE ID = T.SnippetID
                 AND T.TagName IN {tags_match}
             )
             """
@@ -510,15 +510,15 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
 
     # Snippet description includes any of the given description text
     if desc:
-        desc_match = "(" + " OR ".join(["S.Description LIKE ?"] * len(desc)) + ")"
+        desc_match = "(" + " OR ".join(["Description LIKE ?"] * len(desc)) + ")"
         queries.append(desc_match)
         params.extend(["%" + desc_term + "%" for desc_term in desc])
 
     # Ensure only accessible snippets are returned
     access_filter = """
-        (S.IsPublic = 1 OR EXISTS (
+        (IsPublic = 1 OR EXISTS (
             SELECT 1 FROM SnippetPermissions AS P
-            WHERE P.SnippetID = S.ID AND P.UserID = ?
+            WHERE P.SnippetID = ID AND P.UserID = ?
         ))
     """
     queries.append(access_filter)
@@ -526,16 +526,37 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
 
     # Final query with filters applied
     query = f"""
-        SELECT S.ID, S.Name
-        FROM Snippet AS S
+        SELECT
+            ID,
+            Name,
+            Code,
+            Description,
+            UserID,
+            ParentSnippetID,
+            Date,
+            IsPublic
+        FROM Snippet
         WHERE {" AND ".join(queries)}
-        ORDER BY S.Date DESC
+        ORDER BY Date DESC
     """
 
     cur = _db.cursor()
     results = cur.execute(query, params)
 
-    return [{"id": result[0], "name": result[1]} for result in results]
+    return [
+        {
+            "id": res[0],
+            "name": res[1],
+            "code": res[2],
+            "description": res[3],
+            "user_id": res[4],
+            "parent_snippet_id": res[5],
+            "date": res[6],
+            "is_public": bool(res[7]),
+            "is_description_match": False,
+        }
+        for res in results
+    ]
 
 
 def smart_search_snippets(query, user_id=None):
@@ -586,7 +607,7 @@ def smart_search_snippets(query, user_id=None):
     # Search by description embedding
     # Embeddings are only generated for public snippets
     cur.execute(
-        f"""
+        """
         WITH DescMatches AS (
             SELECT SnippetID
             FROM SnippetEmbedding
