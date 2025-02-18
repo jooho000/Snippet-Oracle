@@ -10,8 +10,9 @@ import os
 import uuid  # For generating unique shareable links
 import mock_data
 
-_desc_transformer = None
-
+_desc_transformer = None 
+# TODO change id from integer to UUID
+# TODO turn updates and stuff into transactions
 preset_tags = [
     "HTML",
     "CSS",
