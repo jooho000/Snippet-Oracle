@@ -245,8 +245,19 @@ def get_social_icon(url):
 
 
 @app.route("/createSnippet", methods=["GET", "POST"])
+@app.route("/remixSnippet/<int:snippet_id>", methods=["GET", "POST"])
 @flask_login.login_required
-def createSnippet():
+def createSnippet(snippet_id=None):
+    """Handles both creating new snippets and remixing existing ones."""
+    
+    # Fetch original snippet if remixing
+    original_snippet = None
+    if snippet_id:
+        original_snippet = data.get_snippet(snippet_id, flask_login.current_user.id)
+        if not original_snippet:
+            flask.flash("Original snippet not found or inaccessible!", "danger")
+            return flask.redirect(flask.url_for("snippets"))
+
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
         code = flask.request.form.get("code")
@@ -256,44 +267,42 @@ def createSnippet():
         user_id = flask_login.current_user.id
 
         try:
-            permitted_users = flask.request.form.getlist(
-                "permitted_users[]"
-            )  # Ensure the correct key
-            permitted_users = [
-                int(user_id) for user_id in permitted_users if user_id.isdigit()
-            ]  # Convert to integers
+            permitted_users = flask.request.form.getlist("permitted_users[]")
+            permitted_users = [int(uid) for uid in permitted_users if uid.isdigit()]
         except (ValueError, TypeError) as e:
             print(f"Error parsing permitted_users: {e}")
             permitted_users = []
 
         if not is_public:
-            permitted_users.append(user_id)
+            permitted_users.append(user_id)  # Ensure owner has permission
 
         if not name or not code:
             flask.flash("Name and Code are required fields!", "warning")
-            return flask.redirect(flask.url_for("createSnippet"))
+            return flask.redirect(flask.url_for("createSnippet", snippet_id=snippet_id))
 
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        snippet_id = data.create_snippet(
-            name, code, user_id, description, tags, is_public, permitted_users
+        new_snippet_id = data.create_snippet(
+            name, code, user_id, description, tags, is_public, permitted_users, 
+            parent_snippet_id=snippet_id  # Set parent snippet if remixing
         )
 
-        if snippet_id:
+        if new_snippet_id:
             flask.flash("Snippet created successfully!", "success")
             return flask.redirect(flask.url_for("snippets"))
         else:
             flask.flash("Failed to create snippet!", "danger")
 
     all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+
     return flask.render_template(
         "createSnippet.html",
-        user=data.get_user_details(flask_login.current_user.id),
         all_users=all_users,
         preset_tags=data.preset_tags,
+        snippet=original_snippet,  # Pass original snippet if remixing
+        user=data.get_user_details(flask_login.current_user.id)
     )
-
 
 # View All Personal User Snippets (Worked on by Alan Ly)
 @app.route("/snippets")
@@ -315,8 +324,12 @@ def view_snippet(snippet_id):
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
+    
+    parent_snippet = None
+    if snippet["parent_snippet_id"] is not None:
+        parent_snippet = data.get_snippet(snippet["parent_snippet_id"], current_user_id)
 
-    return flask.render_template("snippetDetail.html", user=data.get_user_details(flask_login.current_user.id), snippet=snippet)
+    return flask.render_template("snippetDetail.html", user=data.get_user_details(flask_login.current_user.id), snippet=snippet, parent_snippet=parent_snippet)
 
 
 # Allows users to toggle snippet visibility (Public/Private)
@@ -383,7 +396,7 @@ def search_snippets():
 def edit_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
     snippet = data.get_snippet(snippet_id, current_user_id)
-    prev_users = data.get_all_other_users_with_permission(snippet_id, current_user_id)
+    prev_users = data.get_all_users_with_permission(snippet_id, current_user_id)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
