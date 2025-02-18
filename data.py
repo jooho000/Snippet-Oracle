@@ -54,6 +54,7 @@ def _init_db():
     # Create tables
     cur.executescript(
         """
+        PRAGMA foreign_keys = 1;
         BEGIN;
         CREATE TABLE IF NOT EXISTS User (
             ID INTEGER PRIMARY KEY,
@@ -68,8 +69,8 @@ def _init_db():
             Name TEXT,
             Code TEXT,
             Description TEXT,
-            UserID INTEGER,
-            ParentSnippetID INTEGER,
+            UserID INTEGER REFERENCES User(ID) ON DELETE SET NULL,
+            ParentSnippetID INTEGER REFERENCES Snippet(ID) ON DELETE SET NULL,
             Date,
             IsPublic BOOLEAN DEFAULT 0, --0 for private and 1 for public
             ShareableLink TEXT UNIQUE
@@ -78,7 +79,7 @@ def _init_db():
             SnippetID INTEGER,
             TagName TEXT,
             PRIMARY KEY (SnippetID, TagName),
-            FOREIGN KEY (SnippetID) REFERENCES Snippet(SnippetID) ON DELETE CASCADE
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS Links (
             ID INTEGER PRIMARY KEY,
@@ -92,8 +93,7 @@ def _init_db():
             UserID INTEGER,
             PRIMARY KEY (SnippetID, UserID),
             FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
-            FOREIGN KEY (UserID) REFERENCES User(ID)
-            
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
             SnippetID INTEGER PRIMARY KEY,
@@ -115,10 +115,12 @@ def reset():
     cur.executescript(
         """
         BEGIN;
+        DROP TABLE IF EXISTS SnippetEmbedding;
+        DROP TABLE IF EXISTS SnippetPermissions;
+        DROP TABLE IF EXISTS Links;
         DROP TABLE IF EXISTS TagUse;
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
-        DROP TABLE IF EXISTS SnippetEmbedding;
         COMMIT;
         """
     )
@@ -146,6 +148,19 @@ def populate():
 
 ## USER INFO ###
 
+def delete_user(id):
+    """Deletes a user account. Returns `True` if the account was deleted, `False` otherwise."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        DELETE 
+        FROM User
+        WHERE ID = ?
+        """,
+        [id],
+    )
+    _db.commit()
+    return True
 
 def get_user_by_id(user_id):
     """
@@ -270,10 +285,18 @@ def create_snippet(
 
     cur.execute(
         """
-        INSERT INTO Snippet (Name, Code, Description, UserID, ParentSnippetID, Date, IsPublic, ShareableLink)
-        VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?)
+        INSERT INTO Snippet (Name, Code, Description, UserID, Date, IsPublic, ShareableLink, ParentSnippetID)
+        VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?)
         """,
-        [name, code, description or "", user_id, parent_snippet_id, int(is_public), shareable_link],
+        [
+            name,
+            code,
+            description or "",
+            user_id,
+            int(is_public),
+            shareable_link,
+            parent_snippet_id,
+        ],
     )
     snippet_id = cur.lastrowid
 
@@ -799,7 +822,7 @@ def update_snippet(
     )
 
     # Add new tags
-    if tags is not None:
+    if tags is not None and tags != "":
         cur.executemany(
             """
             INSERT INTO TagUse (SnippetID, TagName)
