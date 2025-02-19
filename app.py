@@ -304,19 +304,25 @@ def snippets():
     return flask.render_template("snippets.html", user=data.get_user_details(flask_login.current_user.id), snippets=user_snippets)
 
 
-# View a Specific Snippet Page (Worked on by Alan Ly)
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 @flask_login.login_required
 def view_snippet(snippet_id):
-    current_user_id = flask_login.current_user.id  # Get the current user's ID
-    snippet = data.get_snippet(
-        snippet_id, current_user_id
-    )  # Pass the user ID to get_snippet
+    current_user_id = flask_login.current_user.id
+    snippet = data.get_snippet(snippet_id, current_user_id)
+
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
 
-    return flask.render_template("snippetDetail.html", user=data.get_user_details(flask_login.current_user.id), snippet=snippet)
+    comments = data.get_comments(snippet_id)  # Fetch comments from database
+
+    return flask.render_template(
+        "snippetDetail.html",
+        user=data.get_user_details(current_user_id),
+        snippet=snippet,
+        comments=comments  # Pass comments to template
+    )
+
 
 
 # Allows users to toggle snippet visibility (Public/Private)
@@ -458,3 +464,40 @@ def delete_Snippet(snippet_id):
         return flask.redirect(flask.url_for("snippets"))
     data.delete_snippet(snippet_id, snippet["user_id"])
     return flask.redirect(flask.url_for("snippets"))
+
+@app.route("/snippet/<int:snippet_id>/comment", methods=["POST"])
+@flask_login.login_required
+def add_comment(snippet_id):
+    comment_content = flask.request.form.get("comment")
+    parent_id = flask.request.form.get("parent_id")  # Get Parent Comment ID
+
+    if not comment_content.strip():
+        flask.flash("Comment cannot be empty!", "warning")
+        return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+
+    user_id = flask_login.current_user.id
+    data.add_comment(snippet_id, user_id, comment_content, parent_id)
+    flask.flash("Comment added successfully!", "success")
+
+    return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+
+
+@app.route("/comment/<int:comment_id>/delete", methods=["POST"])
+@flask_login.login_required
+def delete_comment(comment_id):
+    """Deletes a comment and its replies if the current user is the author."""
+    current_user_id = flask_login.current_user.id
+
+    # Get the comment details
+    comment = data.get_comment_by_id(comment_id)
+    # if not comment or comment["user_id"] != current_user_id:
+    #    flask.flash("You are not authorized to delete this comment!", "danger")
+    #    return flask.redirect(flask.url_for("view_snippet", snippet_id=comment["snippet_id"]))
+
+    # Delete the comment and its replies
+    data.delete_comment(comment_id)
+    flask.flash("Comment and its replies deleted successfully!", "success")
+    
+    return flask.redirect(flask.url_for("view_snippet", snippet_id=comment["snippet_id"]))
+
+
