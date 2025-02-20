@@ -50,6 +50,11 @@
                     True) 
           }}
         {% endfor %}
+
+        <!-- Fill up rightmost grid slots when there are only one or two snippets -->
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
       </div>
     {% else %}
       <p class="has-text-centered">No snippets found. Create one!</p>

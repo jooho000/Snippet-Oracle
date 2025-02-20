@@ -82,8 +82,6 @@ async function doSearch() {
 
         // Update summary
         let summary = (snippet.description || "").trim();
-        if (summary.length > 100 - 3)
-          summary = summary.substring(0, 100 - 3).trim() + "...";
         elem.find(".snippet-card-summary").text(summary);
 
         elem.appendTo(

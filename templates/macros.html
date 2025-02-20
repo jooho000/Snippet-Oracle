@@ -1,8 +1,9 @@
 {% macro snippetCard(elementId, snippetId=0, title='', public=None, description='', code='', tags=[], editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
-       class="snippet-card box has-text-left cell"
+       class="snippet-card has-text-left cell mb-2"
        data-code="{{ code | e }}"
        data-description="{{ description | e }}">
+       <div class="box">
     <!-- Snippet Header: Name + Buttons + Visibility -->
     <div class="columns">
       <!-- Snippet Name (Left) -->
@@ -63,13 +64,16 @@
       </div>
     </div>
     <!-- Snippet Description (Middle) -->
-    <p class="snippet-card-summary column is-italic">{{ description | truncate(150) }}</p>
+    <p class="snippet-card-summary column is-italic">{{ description }}</p>
     <!-- Tags Section (Bottom Left) -->
     <div class="snippet-card-tags tags-container">
       {% for tag in tags[:10] %}
         <!-- Limit number of tags shown -->
         <span class="tag is-info">{{ tag }}</span>
       {% endfor %}
+      <!-- Dummy tag to ensure spacing is correct even with no tags -->
+      <span class="tag is-invisible"></span>
     </div>
+  </div>
   </div>
 {%- endmacro %}

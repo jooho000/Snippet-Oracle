@@ -3,33 +3,34 @@
  * @param {JQuery} card
  */
 function toggleSnippet(card) {
-  let codeDiv = card.children(".snippet-card-code");
+  let codeDiv = card.find(".snippet-card-code");
   const icon = card.find(".snippet-card-arrow");
   const summary = card.find(".snippet-card-summary");
+  const tags = card.find(".snippet-card-tags");
 
   if (!codeDiv.length) {
     // Create snippet content dynamically
-    codeDiv = $(document.createElement("div")).appendTo(card);
-    const pre = $(document.createElement("pre")).appendTo(codeDiv);
-    const code = $(document.createElement("code")).appendTo(pre);
+    codeDiv = $(document.createElement("div")).insertBefore(tags);
+    const code = $(document.createElement("pre")).appendTo(codeDiv);
     const desc = $(document.createElement("p")).appendTo(codeDiv);
     desc.text(card.data("description") || "No description available.");
     const strong = $(document.createElement("strong")).prependTo(desc);
 
     codeDiv.addClass("snippet-card-code mt-3");
 
+    desc.addClass("mt-4 mb-4");
     code.text(card.data("code"));
     strong.text("Description: ");
-    hljs.highlightElement(pre[0]);
+    hljs.highlightElement(code[0]);
 
     // Update icon to up arrow
     icon.addClass("snippet-card-arrow-open");
-    summary.addClass("is-invisible");
+    summary.addClass("is-hidden");
   } else {
     // Destroy snippet content dynamically
     codeDiv.remove();
     icon.removeClass("snippet-card-arrow-open");
-    summary.removeClass("is-invisible");
+    summary.removeClass("is-hidden");
   }
 }
 

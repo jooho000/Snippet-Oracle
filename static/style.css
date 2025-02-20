@@ -10,6 +10,28 @@
   border-radius: 6px;
 }
 
+.snippet-card-link {
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.snippet-card-name {
+  overflow-x: hidden;
+  overflow-y: visible;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snippet-card-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 5.5em;
+}
+
+.white-icon {
+  filter: invert(var(--bulma-scheme-main-l));
+}
+
 #flashes {
   position: absolute;
   top: 60px;

@@ -40,12 +40,12 @@ def allowed_file(filename):
 
 
 @app.cli.command("reset-db")
-def create_user():
+def reset_db():
     data.reset()
 
 
 @app.cli.command("populate-db")
-def create_user():
+def populate_db():
     data.reset()
     data.populate()
 
