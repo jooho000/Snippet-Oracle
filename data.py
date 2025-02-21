@@ -915,7 +915,7 @@ def get_comments(snippet_id):
             "user_id": int(row[3]),
             "parent_id": row[4],
             "user_name": row[5],
-            "profile_picture": row[6],  # Add this
+            "profile_picture": row[6],
             "replies": []
         }
 
@@ -951,7 +951,7 @@ def get_comment_by_id(comment_id):
             "id": comment[0],
             "snippet_id": comment[1],
             "user_id": comment[2],
-            "content": comment[3],  # Using correct column name
+            "content": comment[3], 
             "date": comment[4],
         }
     return None  # Comment not found
@@ -962,7 +962,6 @@ def delete_comment(comment_id):
     """Deletes a comment and all its replies recursively."""
     cur = _db.cursor()
 
-    # First, get all replies associated with this comment
     cur.execute(
         """
         SELECT ID FROM Comments WHERE ParentCommentID = ?
@@ -973,7 +972,7 @@ def delete_comment(comment_id):
 
     # Recursively delete each reply
     for reply in replies:
-        delete_comment(reply[0])  # Call delete_comment recursively
+        delete_comment(reply[0]) 
 
     # Finally, delete the parent comment itself
     cur.execute(

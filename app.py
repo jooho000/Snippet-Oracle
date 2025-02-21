@@ -490,9 +490,6 @@ def delete_comment(comment_id):
 
     # Get the comment details
     comment = data.get_comment_by_id(comment_id)
-    # if not comment or comment["user_id"] != current_user_id:
-    #    flask.flash("You are not authorized to delete this comment!", "danger")
-    #    return flask.redirect(flask.url_for("view_snippet", snippet_id=comment["snippet_id"]))
 
     # Delete the comment and its replies
     data.delete_comment(comment_id)
