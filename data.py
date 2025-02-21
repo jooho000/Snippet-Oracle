@@ -553,6 +553,7 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
             "parent_snippet_id": res[5],
             "date": res[6],
             "is_public": bool(res[7]),
+            "tags": get_tags_for_snippet(res[0]),
             "is_description_match": False,
         }
         for res in results
@@ -572,6 +573,7 @@ def smart_search_snippets(query, user_id=None):
     - "parent_snippet_id": The integer ID of the parent snippet or `None`.
     - "date": The date and time of this snippet's creation.
     - "is_public": True if the snippet is public, False otherwise.
+    - "tags": A list of tags that the snippet has.
     - "is_description_match": A list of tags that the snippet has.
     """
     query_embedding = _get_transformer().encode(query)
@@ -641,6 +643,7 @@ def smart_search_snippets(query, user_id=None):
             "parent_snippet_id": res[5],
             "date": res[6],
             "is_public": bool(res[7]),
+            "tags": get_tags_for_snippet(res[0]),
             "is_description_match": bool(res[8]),
         }
         for res in itertools.chain(name_matches, desc_matches)

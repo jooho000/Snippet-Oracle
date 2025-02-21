@@ -44,12 +44,19 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+
+    <!-- Modal for snippet card popup -->
+    <div id="snippet-modal" class="modal" id="edit-modal">
+      <div class="modal-background" onclick="closeSnippet()"></div>
+      <button class="modal-close is-large" aria-label="close" onclick="closeSnippet()"></button>
+    </div>
+
     {% block navbar %}
       <nav class="navbar" role="navigation" aria-label="main navigation">
         <!-- Navbar brand with logo -->
         <div class="navbar-brand">
           <a class="navbar-item" href="{{ url_for('index') }}">
-            <img src="{{ url_for('static', filename='icons/SnippetOracleLogo.png') }}" alt="Logo" class="image is-3by1">
+            <img src="{{ url_for('static', filename='icons/SnippetOracleLogo.png') }}" alt="Logo" class="image white-icon is-3by1">
           </a>
           <!-- Navbar burger icon for mobile -->
           <span class="navbar-burger" data-target="navbarBasic">
