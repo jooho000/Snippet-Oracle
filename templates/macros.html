@@ -14,15 +14,12 @@
       <!-- Buttons + Visibility (Right) -->
       <div class="column has-text-right is-narrow">
         <!-- Visibility Status -->
-        {% if public == None or public == True %}
-          <span class="snippet-card-public tag is-medium is-success">
-            <i class="fas fa-globe mr-2"></i> Public
-          </span>
-        {% endif %}
         {% if public == None or public == False %}
-          <span class="snippet-card-private tag is-medium is-danger">
-            <i class="fas fa-lock mr-2"></i> Private
-          </span>
+          <button class="snippet-card-private button is-small is-danger ml-2">
+            <span class="icon">
+              <i class="fas fa-lock"></i>
+            </span>
+          </button>
         {% endif %}
         <!-- Copy Button -->
         <button class="snippet-card-copy button is-small is-info ml-2"
@@ -41,7 +38,7 @@
           </a>
           <!-- Delete Button -->
           <a class="snippet-card-delete button is-small is-info ml-2"
-              onclick="confirmDelete({{snippetId}})">
+              href="javascript:confirmDelete({{snippetId}})">
             <span class="icon">
               <i class="fas fa-trash"></i>
             </span>
@@ -64,9 +61,9 @@
       </div>
     </div>
     <!-- Snippet Description (Middle) -->
-    <p class="snippet-card-summary column is-italic">{{ description }}</p>
+    <p class="snippet-card-summary column is-italic mb-4">{{ description }}</p>
     <!-- Tags Section (Bottom Left) -->
-    <div class="snippet-card-tags tags-container">
+    <div class="snippet-card-tags tags-container tags">
       {% for tag in tags[:10] %}
         <!-- Limit number of tags shown -->
         <span class="tag is-info">{{ tag }}</span>

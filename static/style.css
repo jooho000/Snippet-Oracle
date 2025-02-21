@@ -2,8 +2,23 @@
   transition: transform 0.5s;
 }
 
-.snippet-card-arrow-open {
+.snippet-card-open .snippet-card-arrow {
   transform: rotate(180deg);
+}
+
+.snippet-card-private {
+  pointer-events: none;
+}
+
+.snippet-card-open {
+  position: fixed;
+  left: 20vw;
+  right: 20vw;
+  top: 5vh;
+  max-height: 90vh;
+  z-index: 50;
+  overflow-y: scroll;
+  padding: 20px;
 }
 
 .snippet-card-code > pre {

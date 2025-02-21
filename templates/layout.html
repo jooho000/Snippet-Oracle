@@ -44,6 +44,13 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+
+    <!-- Modal for snippet card popup -->
+    <div id="snippet-modal" class="modal" id="edit-modal">
+      <div class="modal-background" onclick="closeSnippet()"></div>
+      <button class="modal-close is-large" aria-label="close" onclick="closeSnippet()"></button>
+    </div>
+
     {% block navbar %}
       <nav class="navbar" role="navigation" aria-label="main navigation">
         <!-- Navbar brand with logo -->
