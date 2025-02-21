@@ -7,6 +7,7 @@ const searchDelayMs = 250;
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
+// Start search after the user stops typing
 $(function () {
   searchInput.on("input", function () {
     if (searchTimeout !== null) {
@@ -16,6 +17,10 @@ $(function () {
   });
 });
 
+/**
+ * Start a search immediately, updating search results when complete.
+ * Results are ignored if another search is started before this search completes.
+ */
 async function doSearch() {
   const query = searchInput.val();
   searchTimeout = null;
@@ -32,7 +37,7 @@ async function doSearch() {
   searchInput.parent().addClass("is-loading");
 
   // Send the query to the server via AJAX (using fetch)
-  const searchUrl = `/search?q=${query}`;
+  const searchUrl = `/search?q=${encodeURIComponent(query)}`;
   pendingSearchUrl = searchUrl;
 
   fetch(searchUrl)
@@ -46,8 +51,6 @@ async function doSearch() {
       $(".search-disclaimer").remove();
 
       // If there are results, display them as buttons
-      const baseHref =
-        snippetTemplate.find(".snippet-card-link").attr("href") + "/../";
       let anyDescMatches = false;
       for (const snippet of data.results) {
         // Add a disclaimer that these are only description matches
@@ -59,34 +62,8 @@ async function doSearch() {
           descResultsContainer.before(disclaimer);
         }
 
-        // Create a blank snippet card
-        const elem = snippetTemplate.clone();
-
-        // Update attributes
-        elem.removeAttr("id");
-        elem.data("code", snippet.code);
-        elem.data("description", snippet.description);
-        elem.find(".snippet-card-name").text(snippet.name);
-        elem
-          .find(".snippet-card-link")
-          .attr("href", new URL(baseHref + snippet.id, location.href).href);
-
-        // Remove whichever public/private label isn't relevant
-        if (snippet.is_public) elem.find(".snippet-card-private").remove();
-        else elem.find(".snippet-card-public").remove();
-
-        // Remove edit and delete buttons if the current user doesn't own this snippet
-        if (snippet.user_id !== current_user_id) {
-          elem.find(".snippet-card-edit, .snippet-card-delete").remove();
-        }
-
-        // Update summary
-        let summary = (snippet.description || "").trim();
-        if (summary.length > 100 - 3)
-          summary = summary.substring(0, 100 - 3).trim() + "...";
-        elem.find(".snippet-card-summary").text(summary);
-
-        elem.appendTo(
+        // Add a snippet card to search results
+        createSnippet(snippet).appendTo(
           snippet.is_description_match ? descResultsContainer : resultsContainer
         );
       }
@@ -105,6 +82,55 @@ async function doSearch() {
         searchInput.parent().removeClass("is-loading");
       }
     });
+}
+
+/**
+ * Creates a snippet card from the given info.
+ * @param {{id: number, user_id: number, name: string, description: string, code: string, tags: Array<string>}} snippet
+ */
+function createSnippet(snippet) {
+  const elem = snippetTemplate.clone();
+  const viewLink = elem.find(".snippet-card-link");
+
+  // Update attributes
+  elem.removeAttr("id");
+  elem.data("code", snippet.code);
+  elem.data("description", snippet.description);
+  elem.find(".snippet-card-name").text(snippet.name);
+  viewLink.attr("href", viewLink.attr("href").replace("-1", snippet.id));
+
+  // Remove whichever public/private label isn't relevant
+  if (snippet.is_public) elem.find(".snippet-card-private").remove();
+
+  // Update edit/delete links, or remove them if not the owner
+  const editButton = elem.find(".snippet-card-edit");
+  const deleteButton = elem.find(".snippet-card-delete");
+  if (snippet.user_id !== current_user_id) {
+    editButton.remove();
+    deleteButton.remove();
+  } else {
+    editButton.attr("href", editButton.attr("href").replace("-1", snippet.id));
+    deleteButton.attr("href", deleteButton.attr("href").replace("-1", snippet.id));
+  }
+
+  // Update summary
+  const summary = (snippet.description || "").trim();
+  elem.find(".snippet-card-summary").text(summary);
+
+  // Add tags
+  const tagList = elem.find(".snippet-card-tags");
+  for (const tagName of snippet.tags) {
+    const tagElem = $(document.createElement("span"));
+    tagElem.addClass("tag is-info");
+    tagElem.text(tagName);
+    tagElem.appendTo(tagList);
+  }
+
+  // Move spacer tag to the end of list
+  const dummyTag = tagList.find(".is-invisible");
+  dummyTag.remove().appendTo(tagList);
+
+  return elem;
 }
 
 // Global Set to track selected tags

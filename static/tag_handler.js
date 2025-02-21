@@ -66,4 +66,9 @@ $(function () {
     );
     existingTags.forEach((tag) => addTag(tag));
   }
+
+  for (const tag of tagInput.innerText.split(',')) {
+    addTag(tag)
+  }
+  
 });

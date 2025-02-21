@@ -1,13 +1,50 @@
-.snippet-card-arrow {
-  transition: transform 0.5s;
+.snippet-card-private {
+  display: inline-block;
 }
 
-.snippet-card-arrow-open {
-  transform: rotate(180deg);
+.snippet-card-private > button {
+  pointer-events: none;
+}
+
+.snippet-card-code > pre {
+  padding: 0px;
+}
+
+.snippet-card-open {
+  position: fixed;
+  left: 20vw;
+  right: 20vw;
+  top: 5vh;
+  max-height: 90vh;
+  z-index: 50;
+  overflow-y: scroll;
+  padding: 20px;
 }
 
 .snippet-card-code > pre {
   border-radius: 6px;
+}
+
+.snippet-card-link {
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.snippet-card-name {
+  overflow-x: hidden;
+  overflow-y: visible;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snippet-card-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 5.5em;
+}
+
+.white-icon {
+  filter: invert(var(--bulma-scheme-main-l));
 }
 
 #flashes {
@@ -40,4 +77,13 @@
 
 #image-preview-container {
   display: none;
+  overflow: hidden;
+  border: 3px solid #ddd;
+}
+
+.cropper-crop-box,
+.cropper-view-box {
+    border-radius: 50% !important;
+    border: 3px solid rgba(255, 255, 255, 0.8) !important;
+    outline: none !important;
 }

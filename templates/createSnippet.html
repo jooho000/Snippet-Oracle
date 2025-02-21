@@ -1,12 +1,14 @@
 {% extends "layout.html" %}
-{% block title %}Create Snippet - Snippet Oracle{% endblock %}
+{% block title %}{{ 'Remix Snippet' if snippet else 'Create Snippet' }} - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
     <div class="container">
       <div class="box p-5">
         {% block heading %}
-          <h1 class="title has-text-centered">Create a New Snippet</h1>
-          <p class="subtitle has-text-centered">Save and manage your code snippets efficiently.</p>
+          <h1 class="title has-text-centered">{{ 'Remix Snippet' if snippet else 'Create a New Snippet' }}</h1>
+          <p class="subtitle has-text-centered">
+            {{ 'Modify and enhance an existing snippet.' if snippet else 'Save and manage your code snippets efficiently.' }}
+          </p>
         {% endblock %}
         <form method="post">
           <!-- Snippet Name -->
@@ -17,7 +19,7 @@
                      type="text"
                      name="name"
                      placeholder="Enter snippet name"
-                     {% block snippetName %}{% endblock %}
+                     {% block snippetName %}value="{{ snippet.name if snippet else '' }}"{% endblock %}
                      required>
             </div>
           </div>
@@ -29,16 +31,14 @@
                         name="code" 
                         placeholder="Paste your code here" 
                         rows="6" 
-                        required>{% block snippetCode %}
-                        {% endblock %}</textarea>
+                        required>{% block snippetCode %}{{ snippet.code if snippet else '' }}{% endblock %}</textarea>
             </div>
           </div>
           <!-- Snippet Description -->
           <div class="field">
             <label class="label">Description</label>
             <div class="control">
-              <textarea class="textarea" name="description" placeholder="Optional description">{% block snippetDesc %}{% endblock %}
-                      </textarea>
+              <textarea class="textarea" name="description" placeholder="Optional description">{% block snippetDesc %}{{ snippet.description if snippet else '' }}{% endblock %}</textarea>
             </div>
           </div>
           <!-- Tags Input Section -->
@@ -52,7 +52,7 @@
                   <span id="tag-input"
                         class="input tag-input is-flex-grow-1"
                         placeholder="Type tags and press Enter"
-                        contenteditable="true"></span>
+                        contenteditable="true">{{ ', '.join(snippet.tags) if snippet and snippet.tags else '' }}</span>
                 </div>
               </div>
             </div>
@@ -87,11 +87,15 @@
                       id="visibilityToggle"
                       class="button is-light is-rounded">
                 <span class="icon">
-                  <i id="visibilityIcon" class="fas fa-lock"></i>
+                  <i id="visibilityIcon"
+                     class="{{ 'fas fa-globe' if snippet and snippet.is_public else 'fas fa-lock' }}"></i>
                 </span>
-                <span id="toggleText">Private</span>
+                <span id="toggleText">{{ 'Public' if snippet and snippet.is_public else 'Private' }}</span>
               </button>
-              <input type="hidden" name="is_public" id="isPublic" value="0">
+              <input type="hidden"
+                     name="is_public"
+                     id="isPublic"
+                     value="{{ 1 if snippet and snippet.is_public else 0 }}">
             </div>
           </div>
           <!-- User Selection (Only visible if Private) -->
@@ -112,7 +116,7 @@
             <!-- Submit Button -->
             <div class="field mt-4">
               <div class="control">
-                <button class="button is-primary is-fullwidth is-medium is-rounded">Create Snippet</button>
+                <button class="button is-primary is-fullwidth is-medium is-rounded">{{ 'Create Remix' if snippet else 'Create Snippet' }}</button>
               </div>
             </div>
           </form>

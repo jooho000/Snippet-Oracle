@@ -7,6 +7,7 @@ import os
 import random
 import faker
 import requests
+import re
 
 fake = faker.Faker()
 langs = [
@@ -36,7 +37,7 @@ langs = [
 def _load_franken():
     with open("mock_data/frankenstein.txt") as file:
         global franken, franken_starts
-        franken = file.read().replace("\r\n", " ").replace("_", "")
+        franken = re.sub("[\r\n]+", " ", file.read()).replace("_", "")
         franken_starts = [0]
         for i in range(len(franken) - 1):
             c = franken[i]
@@ -97,7 +98,7 @@ def paragraph():
     ind_start = random.randint(0, len(franken_starts) - sentence_count - 1)
     char_start = franken_starts[ind_start]
     char_end = franken_starts[ind_start + sentence_count]
-    return franken[char_start:char_end]
+    return franken[char_start:char_end].strip()
 
 
 def tags():

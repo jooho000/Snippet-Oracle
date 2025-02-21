@@ -8,7 +8,7 @@ def parent_child():
     temp_user = data.get_user_by_name("test_user")
     parent = data.create_snippet("Test1", "1234", temp_user["id"], is_public=True)
     child = data.create_snippet(
-        "Test2", "1234", temp_user["id"], is_public=True, parent_id=parent
+        "Test2", "1234", temp_user["id"], is_public=True, parent_snippet_id=parent
     )
     parent_Data = data.get_snippet(parent)
     child_Data = data.get_snippet(child)
