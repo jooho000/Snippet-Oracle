@@ -15,14 +15,17 @@
       <div class="column has-text-right is-narrow">
         <!-- Visibility Status -->
         {% if public == None or public == False %}
-          <button class="snippet-card-private button is-small is-danger ml-2">
-            <span class="icon">
-              <i class="fas fa-lock"></i>
-            </span>
-          </button>
+          <div class="snippet-card-private" title="Private">
+            <button class="button is-small is-danger ml-2">
+              <span class="icon">
+                <i class="fas fa-lock"></i>
+              </span>
+            </button>
+          </div>
         {% endif %}
         <!-- Copy Button -->
         <button class="snippet-card-copy button is-small is-info ml-2"
+                title="Copy Code"
                 onclick="copySnippet($(this).closest('.snippet-card'))">
           <span class="icon">
             <i class="fas fa-copy"></i>
@@ -31,6 +34,7 @@
         {% if editable %}
           <!-- Edit Button -->
           <a class="snippet-card-edit button is-small is-info ml-2"
+             title="Edit Snippet"
              href="{{ url_for('edit_snippet', snippet_id=snippetId) }}">
             <span class="icon">
               <i class="fas fa-edit"></i>
@@ -38,6 +42,7 @@
           </a>
           <!-- Delete Button -->
           <a class="snippet-card-delete button is-small is-info ml-2"
+              title="Delete Snippet"
               href="javascript:confirmDelete({{snippetId}})">
             <span class="icon">
               <i class="fas fa-trash"></i>
@@ -46,6 +51,7 @@
         {% endif %}
         <!-- Expand Button -->
         <button class="snippet-card-expand button is-small is-primary ml-2"
+                title="Expand"
                 onclick="toggleSnippet($(this).closest('.snippet-card'))">
           <span class="snippet-card-arrow icon">
             <svg xmlns="http://www.w3.org/2000/svg"
