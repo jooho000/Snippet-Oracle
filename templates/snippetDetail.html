@@ -99,7 +99,7 @@
         <!-- Comment Actions -->
         <nav class="level is-mobile">
           <div class="level-left">
-            <button class="button is-small is-link" onclick="toggleReplyForm('{{ comment['id'] }}')">
+            <button class="button is-small is-link" onclick="toggleReplyForm('{{ comment['id']}}')">
               Reply
             </button>
             {% if comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
@@ -133,7 +133,7 @@
               <div class="media-content">
                 <div class="content">
                   <strong>{{ reply["user_name"] }}</strong>
-                  <small class="has-text-grey-light timestamp" data-timestamp="{{ comment['date'] }}">{{ comment["date"] }}</small>
+                  <small class="has-text-grey-light timestamp" data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
                   <p>{{ reply["content"] }}</p>
                 </div>
     
