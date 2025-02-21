@@ -125,6 +125,7 @@ def reset():
     cur = _db.cursor()
     cur.executescript(
         """
+        PRAGMA foreign_keys = 0;
         BEGIN;
         DROP TABLE IF EXISTS SnippetEmbedding;
         DROP TABLE IF EXISTS SnippetPermissions;
@@ -133,6 +134,7 @@ def reset():
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
         COMMIT;
+        PRAGMA foreign_keys = 1;
         """
     )
     _init_db()
@@ -936,7 +938,7 @@ def add_comment(snippet_id, user_id, comment, parent_id=None):
     cur = _db.cursor()
     cur.execute(
         """
-        INSERT INTO Comments (SnippetID, UserID, comment, ParentCommentID)
+        INSERT INTO Comments (SnippetID, UserID, Content, ParentCommentID)
         VALUES (?, ?, ?, ?)
         """,
         (snippet_id, user_id, comment, parent_id),
@@ -951,7 +953,7 @@ def get_comments(snippet_id):
     cur = _db.cursor()
     cur.execute(
         """
-        SELECT Comments.ID, Comments.Comment, Comments.Date, Comments.UserID, Comments.ParentCommentID, 
+        SELECT Comments.ID, Comments.Content, Comments.Date, Comments.UserID, Comments.ParentCommentID, 
                User.Name, User.ProfilePicture
         FROM Comments
         JOIN User ON Comments.UserID = User.ID
@@ -993,7 +995,7 @@ def get_comment_by_id(comment_id):
     cur = _db.cursor()
     cur.execute(
         """
-        SELECT ID, SnippetID, UserID, Comment, Date 
+        SELECT ID, SnippetID, UserID, Content, Date 
         FROM Comments 
         WHERE ID = ?
         """,

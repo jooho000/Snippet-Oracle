@@ -2,7 +2,7 @@
 {% block title %}{{ snippet["name"] }} - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
-    <div class="columns is-mobile">
+    <div class="columns is-mobile is-vcentered">
       <div class="column is-narrow">
         <h1 class="title">{{ snippet["name"] }}</h1>
       </div>
@@ -81,7 +81,7 @@
     <article class="media box has-background-dark has-text-white mb-4">
       <figure class="media-left">
         <p class="image is-64x64">
-          <img class = is-rounded src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] 
+          <img class="is-rounded" src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] 
           if comment['profile_picture'] else 'default_image.png')) }}" alt="Profile Picture">
         </p>   
       </figure>
@@ -112,7 +112,7 @@
           <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}" method="post">
             <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
             <textarea class="textarea" name="comment" placeholder="Write a reply..." required></textarea>
-            <button type="submit" class="button is-link is-small">Post Reply</button>
+            <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
           </form>
         </div>
     
