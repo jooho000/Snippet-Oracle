@@ -99,6 +99,17 @@ def _init_db():
             SnippetID INTEGER PRIMARY KEY,
             Embedding float[384]
         );
+        CREATE TABLE IF NOT EXISTS Comments (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            SnippetID INTEGER NOT NULL,
+            UserID INTEGER NOT NULL,
+            ParentCommentID INTEGER DEFAULT NULL,  -- New field for replies
+            Content TEXT NOT NULL,
+            Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE,
+            FOREIGN KEY (ParentCommentID) REFERENCES Comments(ID) ON DELETE CASCADE
+        );
         COMMIT;
         """
     )
@@ -915,6 +926,115 @@ def delete_snippet(id, user_id):
             SnippetID = ?
         """,
         [id],
+    )
+
+    _db.commit()
+
+
+def add_comment(snippet_id, user_id, comment, parent_id=None):
+    """Adds a comment or reply to a snippet."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        INSERT INTO Comments (SnippetID, UserID, comment, ParentCommentID)
+        VALUES (?, ?, ?, ?)
+        """,
+        (snippet_id, user_id, comment, parent_id),
+    )
+    _db.commit()
+
+
+
+
+def get_comments(snippet_id):
+    """Fetches all comments and their replies for a snippet."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT Comments.ID, Comments.Comment, Comments.Date, Comments.UserID, Comments.ParentCommentID, 
+               User.Name, User.ProfilePicture
+        FROM Comments
+        JOIN User ON Comments.UserID = User.ID
+        WHERE Comments.SnippetID = ?
+        ORDER BY Comments.ParentCommentID NULLS FIRST, Comments.Date ASC
+        """,
+        [snippet_id],
+    )
+
+    comments = cur.fetchall()
+    comment_tree = {}
+    for row in comments:
+        comment_data = {
+            "id": row[0],
+            "content": row[1],
+            "date": row[2],
+            "user_id": int(row[3]),
+            "parent_id": row[4],
+            "user_name": row[5],
+            "profile_picture": row[6],
+            "replies": []
+        }
+
+        if comment_data["parent_id"] is None:
+            comment_tree[comment_data["id"]] = comment_data
+        else:
+            if comment_data["parent_id"] in comment_tree:
+                comment_tree[comment_data["parent_id"]]["replies"].append(comment_data)
+            else:
+                comment_tree[comment_data["parent_id"]] = {"replies": [comment_data]}
+    return list(comment_tree.values())
+
+
+
+
+
+def get_comment_by_id(comment_id):
+    """Fetches a specific comment by its ID."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT ID, SnippetID, UserID, Comment, Date 
+        FROM Comments 
+        WHERE ID = ?
+        """,
+        [comment_id],
+    )
+
+    comment = cur.fetchone()
+    if comment:
+        return {
+            "id": comment[0],
+            "snippet_id": comment[1],
+            "user_id": comment[2],
+            "content": comment[3], 
+            "date": comment[4],
+        }
+    return None  # Comment not found
+
+
+
+def delete_comment(comment_id):
+    """Deletes a comment and all its replies recursively."""
+    cur = _db.cursor()
+
+    cur.execute(
+        """
+        SELECT ID FROM Comments WHERE ParentCommentID = ?
+        """,
+        [comment_id],
+    )
+    replies = cur.fetchall()
+
+    # Recursively delete each reply
+    for reply in replies:
+        delete_comment(reply[0]) 
+
+    # Finally, delete the parent comment itself
+    cur.execute(
+        """
+        DELETE FROM Comments WHERE ID = ?
+        """,
+        [comment_id],
     )
 
     _db.commit()
