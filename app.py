@@ -491,10 +491,16 @@ def delete_comment(comment_id):
     # Get the comment details
     comment = data.get_comment_by_id(comment_id)
 
+    # Get the snippet details to get snippet author
+    snippet = data.get_snippet(comment["snippet_id"])
+
+    # Checks if the current user is the comment/snippet author
+    if comment["user_id"] != int(current_user_id) and snippet["user_id"] != int(current_user_id):
+        flask.flash("Unauthorized User!", "danger")
+        return flask.redirect(flask.url_for("index"))
+    
     # Delete the comment and its replies
     data.delete_comment(comment_id)
     flask.flash("Comment and its replies deleted successfully!", "success")
     
     return flask.redirect(flask.url_for("view_snippet", snippet_id=comment["snippet_id"]))
-
-

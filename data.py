@@ -926,7 +926,6 @@ def get_comments(snippet_id):
                 comment_tree[comment_data["parent_id"]]["replies"].append(comment_data)
             else:
                 comment_tree[comment_data["parent_id"]] = {"replies": [comment_data]}
-
     return list(comment_tree.values())
 
 
@@ -983,4 +982,3 @@ def delete_comment(comment_id):
     )
 
     _db.commit()
-
