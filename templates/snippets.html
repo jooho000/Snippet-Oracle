@@ -15,6 +15,11 @@
         {% for s in snippets %}
           {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
         {% endfor %}
+
+        <!-- Fill up rightmost grid slots when there are only one or two snippets -->
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
       </div>
     {% else %}
       <p>You haven't created any snippets yet!</p>

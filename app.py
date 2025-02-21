@@ -314,11 +314,9 @@ def snippets():
 
 
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
-@flask_login.login_required
 def view_snippet(snippet_id):
-    current_user_id = flask_login.current_user.id
+    current_user_id = auth.get_current_id_or_none()
     snippet = data.get_snippet(snippet_id, current_user_id)
-
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
@@ -333,7 +331,7 @@ def view_snippet(snippet_id):
         "snippetDetail.html",
         user=data.get_user_details(current_user_id),
         snippet=snippet,
-        comments=comments,  # Pass comments to template
+        comments=comments,
         parent_snippet=parent_snippet
     )
 

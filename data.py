@@ -9,8 +9,9 @@ import sqlite_vec
 import os
 import uuid  # For generating unique shareable links
 import mock_data
+from sentence_transformers import SentenceTransformer
 
-_desc_transformer = None
+_desc_transformer = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 preset_tags = [
     "HTML",
@@ -22,17 +23,11 @@ preset_tags = [
     "React",
     "Vue.js",
     "Code Snippet",
+    "C#",
 ]
 
 
 def _get_transformer():
-    from sentence_transformers import SentenceTransformer
-
-    global _desc_transformer
-    if _desc_transformer is None:
-        _desc_transformer = SentenceTransformer(
-            "sentence-transformers/all-MiniLM-L6-v2"
-        )
     return _desc_transformer
 
 
@@ -257,6 +252,9 @@ def get_user_details(user_id):
     - "bio": The user's bio.
     - "profile_picture": The user's profile picture (returns None if not set).
     """
+    if user_id is None:
+        return None
+
     cur = _db.cursor()
     cur.execute(
         """
