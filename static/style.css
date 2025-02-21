@@ -85,4 +85,13 @@
 
 #image-preview-container {
   display: none;
+  overflow: hidden;
+  border: 3px solid #ddd;
+}
+
+.cropper-crop-box,
+.cropper-view-box {
+    border-radius: 50% !important;
+    border: 3px solid rgba(255, 255, 255, 0.8) !important;
+    outline: none !important;
 }
