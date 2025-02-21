@@ -313,6 +313,9 @@ def create_snippet(
                 )
 
     if tags:
+        # Remove empty strings and whitespace-only tags
+        tags = [tag.strip() for tag in tags if tag.strip()]
+
         cur.executemany(
             """
             INSERT INTO TagUse (SnippetID, TagName)
@@ -822,6 +825,11 @@ def update_snippet(
     id, user_id, name, code, description=None, tags=None, is_public=False, users=None
 ):
     cur = _db.cursor()
+
+    # Remove empty tags before updating the database
+    if tags:
+        tags = [tag.strip() for tag in tags if tag.strip()]  # Ensure no empty tags
+        
     # Update the Snippet
     cur.execute(
         """
