@@ -26,7 +26,8 @@ function openSnippet(card) {
 
   // Code block
   const codeDiv = $(document.createElement("div")).insertBefore(tags);
-  const code = $(document.createElement("pre")).appendTo(codeDiv);
+  const pre = $(document.createElement("pre")).appendTo(codeDiv);
+  const code = $(document.createElement("code")).appendTo(pre);
   codeDiv.addClass("snippet-card-code mt-3");
   code.text(card.data("code"));
   hljs.highlightElement(code[0]);
