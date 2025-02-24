@@ -365,12 +365,12 @@ def view_snippet_by_link(link):
         return flask.redirect(flask.url_for("index"))
 
 
-@app.route("/search", methods=["GET"])
+@app.route("/search/", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "")  # Get the search query from the URL
+    public = True if request.headers.get("Search-Type") == "true" else False
     if len(query) > 300:
         query = query[:300]
-
     terms = query.split(" ")
     tags, names = set(), set()
     desc_has = []
@@ -389,9 +389,9 @@ def search_snippets():
         user_id = flask_login.current_user.id
 
     if len(tags) or len(desc_has) > 0:
-        results = data.search_snippets(names, tags, desc_has, user_id)
+        results = data.search_snippets(names, tags, desc_has, user_id, public)
     else:
-        results = data.smart_search_snippets(query, user_id)
+        results = data.smart_search_snippets(query, user_id, public)
 
     return jsonify({"results": results})
 

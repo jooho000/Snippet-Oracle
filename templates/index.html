@@ -25,7 +25,7 @@
           </span>
         </div>
       </div>
-      <div hidden>{{ macros.snippetCard("snippet-template", -1) }}</div>
+      <div hidden>{{ macros.snippetCard('snippet-template', -1) }}</div>
       <!-- Selected Tags Display (Tags that were clicked will appear here) -->
       <div id="selected-tags" class="tags are-medium mt-3"></div>
       <!-- Search Results -->
@@ -50,7 +50,6 @@
                     True) 
           }}
         {% endfor %}
-
         <!-- Fill up rightmost grid slots when there are only one or two snippets -->
         <div class="cell"></div>
         <div class="cell"></div>
@@ -63,12 +62,5 @@
 {% endblock %}
 {% block scripts %}
   {{ super() }}
-  <script>
-    {% if current_user.is_authenticated %}
-    const current_user_id = {{ current_user.id | int }};
-    {% else %}
-    const current_user_id = null;
-    {% endif %}
-  </script>
   <script src="{{ url_for('static', filename='search.js') }}"></script>
 {% endblock %}
