@@ -9,6 +9,7 @@ $(function () {
 
   function addTag(tagText) {
     tagText = tagText.trim();
+
     if (tagText.length > 0 && !tags.includes(tagText)) {
       tags.push(tagText);
 
@@ -31,6 +32,16 @@ $(function () {
       hiddenTags.value = tags.join(",");
     }
   }
+
+  tagInput.addEventListener("beforeinput", function (event) {
+    if (event.inputType === "deleteContentBackward" || event.inputType === "deleteContentForward") {
+      return;
+    }
+  
+    if (tagInput.textContent.length >= 20) {
+      event.preventDefault();
+    }
+  });
 
   tagInput.addEventListener("keydown", function (event) {
     if (event.key === "Enter" || event.key === ",") {
