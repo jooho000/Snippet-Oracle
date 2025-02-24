@@ -52,8 +52,8 @@ async function doSearch() {
 
   fetch(searchUrl, {
     headers: {
-      'Search-Type': $("#search-icon").hasClass("fa-lock") ? false : true
-    }
+      "Search-Type": $("#search-icon").hasClass("fa-lock") ? false : true,
+    },
   })
     .then((response) => response.json())
     .then((data) => {
@@ -74,12 +74,11 @@ async function doSearch() {
           disclaimer.addClass("subtitle mt-6 is-5 search-disclaimer");
           disclaimer.text("Similar public snippets");
           descResultsContainer.before(disclaimer);
-          
+
           if ($("#search-icon").hasClass("fa-lock")) {
             $("#show-similar-snippets").show();
             $("#search-results-desc").hide();
-          }
-          else {
+          } else {
             $("#show-similar-snippets").hide();
             $("#search-results-desc").show();
             disclaimer.hide();
@@ -134,7 +133,10 @@ function createSnippet(snippet) {
     deleteButton.remove();
   } else {
     editButton.attr("href", editButton.attr("href").replace("-1", snippet.id));
-    deleteButton.attr("href", deleteButton.attr("href").replace("-1", snippet.id));
+    deleteButton.attr(
+      "href",
+      deleteButton.attr("href").replace("-1", snippet.id)
+    );
   }
 
   // Update summary
@@ -217,12 +219,11 @@ function updateSnippetGrid() {
   });
 }
 
-
 //helper funcs
-addEventListener("keydown", function(event) {
+addEventListener("keydown", function (event) {
   if (event.ctrlKey && event.key === "k") {
     event.preventDefault();
-    $('#search-input').focus();
+    $("#search-input").focus();
   } else if (event.key === "Tab" && searchInput.val()) {
     event.preventDefault();
     toggleSearch();
@@ -231,7 +232,7 @@ addEventListener("keydown", function(event) {
 });
 
 function changeTitle() {
-  if ($('#search-input').val().trim()){
+  if ($("#search-input").val().trim()) {
     if ($("#search-icon").hasClass("fa-globe")) title.text("Global Search");
     else title.text("Local Search");
     doSearch();
@@ -239,7 +240,7 @@ function changeTitle() {
 }
 
 function toggleSearch() {
-  if ($("#search-icon").hasClass("fa-lock")){
+  if ($("#search-icon").hasClass("fa-lock")) {
     $("#search-icon").removeClass("fa-lock");
     $("#search-type").removeClass("is-danger");
     $("#search-type").addClass("is-success");
@@ -251,6 +252,9 @@ function toggleSearch() {
     $("#search-type").addClass("is-danger");
   }
   doSearch();
+  changeTitle();
 }
 
-$(function () {changeTitle()});
+$(function () {
+  changeTitle();
+});

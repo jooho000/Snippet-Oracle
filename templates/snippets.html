@@ -2,17 +2,19 @@
 {% import "macros.html" as macros %}
 {% block title %}Your Snippets - Snippet Oracle{% endblock %}
 {% block navbarsearch %}
-  <div id="navbar-search" class="navbar-fill-middle control has-icons-left is-medium">
-    <a id="search-type" class="search-toggle button icon is-danger mt-1 mx-1 is-small"
-      onclick="toggleSearch()">
-        <i id="search-icon" class="fas fa-lock"></i>
+  <div id="navbar-search"
+       class="navbar-fill-middle control has-icons-left is-medium  mt-1">
+    <a id="search-type"
+       class="search-toggle button icon is-danger mt-1 mx-1 is-small"
+       onclick="toggleSearch()">
+      <i id="search-icon" class="fas fa-lock"></i>
     </a>
     <input class="input is-medium is-primary"
-          id="search-input"
-          oninput="changeTitle()"
-          type="text"
-          maxlength="300"
-          placeholder="Search for snippets...(name | -desc | :tag)" />
+           id="search-input"
+           oninput="changeTitle()"
+           type="text"
+           maxlength="300"
+           placeholder="Search for snippets...(name | -desc | :tag)" />
   </div>
 {% endblock %}
 {% block content %}
@@ -21,26 +23,26 @@
     <!-- Buttons to navigate -->
     <div class="field is-grouped">
       <div class="control">
-        <a id="create" class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
+        <a id="create"
+           class="button is-light"
+           href="{{ url_for("createSnippet") }}">Create New Snippet</a>
       </div>
     </div>
-
     <div hidden>{{ macros.snippetCard("snippet-template") }}</div>
-      <!-- Selected Tags Display (Tags that were clicked will appear here) -->
-      <div id="selected-tags" class="tags are-medium mt-3"></div>
-      <!-- Search Results -->
-      <div id="search-results" class="grid is-col-min-16 mt-5"></div>
-      <button id="show-similar-snippets" class="button is-light" onclick="$('#search-results-desc').toggle()">
-        Toggle Similar Snippets</button>
-      <!-- Description Matches -->
-      <div id="search-results-desc" class="grid is-col-min-16"></div>
-
+    <!-- Selected Tags Display (Tags that were clicked will appear here) -->
+    <div id="selected-tags" class="tags are-medium mt-3"></div>
+    <!-- Search Results -->
+    <div id="search-results" class="grid is-col-min-16 mt-5"></div>
+    <button id="show-similar-snippets"
+            class="button is-light"
+            onclick="$('#search-results-desc').toggle()">Toggle Similar Snippets</button>
+    <!-- Description Matches -->
+    <div id="search-results-desc" class="grid is-col-min-16"></div>
     {% if snippets %}
       <div id ="snippets" class="grid is-col-min-20 mt-5">
         {% for s in snippets %}
           {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
         {% endfor %}
-
         <!-- Fill up rightmost grid slots when there are only one or two snippets -->
         <div class="cell"></div>
         <div class="cell"></div>
@@ -74,13 +76,11 @@
       }
     });
   </script>
-
-<script> 
+  <script>
   $("#search-type").css("pointer-events", "initial");
   $("#search-results-desc").hide();
   $("#show-similar-snippets").hide();
 
-</script>
-
-<script src="{{ url_for('static', filename='search.js')}}"></script>
+  </script>
+  <script src="{{ url_for('static', filename='search.js')}}"></script>
 {% endblock %}
