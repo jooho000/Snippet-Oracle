@@ -41,3 +41,12 @@
 #image-preview-container {
   display: none;
 }
+
+.navbar-fill-middle {
+  display: flex;
+  flex-grow: 1;
+}
+
+.search-toggle {
+  pointer-events: initial;
+}

@@ -1,17 +1,40 @@
 {% extends "layout.html" %}
 {% import "macros.html" as macros %}
 {% block title %}Your Snippets - Snippet Oracle{% endblock %}
+{% block navbarsearch %}
+  <div id="navbar-search" class="navbar-fill-middle control has-icons-left is-medium">
+    <a id="search-type" class="search-toggle button icon is-danger mt-1 mx-1 is-small"
+      onclick="toggleSearch()">
+        <i id="search-icon" class="fas fa-lock"></i>
+    </a>
+    <input class="input is-medium is-primary"
+          id="search-input"
+          oninput="changeTitle()"
+          type="text"
+          maxlength="300"
+          placeholder="Search for snippets...(name | -desc | :tag)" />
+  </div>
+{% endblock %}
 {% block content %}
   <section class="section">
-    <h1 class="title">Your Snippets</h1>
+    <h1 id="title" class="title">Your Snippets</h1>
     <!-- Buttons to navigate -->
     <div class="field is-grouped">
       <div class="control">
-        <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
+        <a id="create" class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
       </div>
     </div>
+
+    <div hidden>{{ macros.snippetCard("snippet-template") }}</div>
+      <!-- Selected Tags Display (Tags that were clicked will appear here) -->
+      <div id="selected-tags" class="tags are-medium mt-3"></div>
+      <!-- Search Results -->
+      <div id="search-results" class="grid is-col-min-16 mt-5"></div>
+      <!-- Description Matches -->
+      <div id="search-results-desc" class="grid is-col-min-16"></div>
+
     {% if snippets %}
-      <div class="grid is-col-min-20 mt-5">
+      <div id ="snippets" class="grid is-col-min-20 mt-5">
         {% for s in snippets %}
           {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
         {% endfor %}
@@ -20,4 +43,31 @@
       <p>You haven't created any snippets yet!</p>
     {% endif %}
   </section>
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  <script>
+    if ($('#navbarBasic').css("display") == "flex") {
+      $("#desktop-search").append($('#navbar-search'));
+    } else {
+      $("#mobile-search").append($('#navbar-search'));
+      $('#search-input').removeClass("is-medium");
+    }
+        
+    addEventListener("resize", () => {
+      if ($('#navbarBasic').css("display") == "flex"){
+        $("#desktop-search").append($('#navbar-search'));
+        $('#search-input').addClass("is-medium");
+      } else {
+        $("#mobile-search").append($('#navbar-search'));
+        $('#search-input').removeClass("is-medium");
+      }
+    });
+  </script>
+
+<script> 
+  $("#search-type").css("pointer-events", "initial")
+</script>
+
+<script src="{{ url_for('static', filename='search.js')}}"></script>
 {% endblock %}
