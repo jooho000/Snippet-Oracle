@@ -54,6 +54,7 @@
   <script>
     if ($('#navbarBasic').css("display") == "flex") {
       $("#desktop-search").append($('#navbar-search'));
+      $("#search-type").addClass("mt-2");
     } else {
       $("#mobile-search").append($('#navbar-search'));
       $('#search-input').removeClass("is-medium");
@@ -63,9 +64,11 @@
       if ($('#navbarBasic').css("display") == "flex"){
         $("#desktop-search").append($('#navbar-search'));
         $('#search-input').addClass("is-medium");
+        $("#search-type").addClass("mt-2");
       } else {
         $("#mobile-search").append($('#navbar-search'));
         $('#search-input').removeClass("is-medium");
+        $("#search-type").removeClass("mt-2");
       }
     });
   </script>

@@ -32,9 +32,10 @@ async function doSearch() {
     resultsContainer.empty();
     descResultsContainer.empty();
     $(".search-disclaimer").remove();
+    $("#snippets").show();
     return;
   }
-
+  $("#snippets").hide();
   // Show loading spinner
   searchInput.parent().addClass("is-loading");
 
