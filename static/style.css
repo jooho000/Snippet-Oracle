@@ -87,3 +87,8 @@
     border: 3px solid rgba(255, 255, 255, 0.8) !important;
     outline: none !important;
 }
+
+.navbar-fill-middle {
+  display: flex;
+  flex: 1;
+}

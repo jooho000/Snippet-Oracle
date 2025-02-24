@@ -107,6 +107,13 @@
     {% block content %}{% endblock %}
     {% block navbarsearch %}{% endblock %}
     {% block scripts %}
+      <script>
+        {% if current_user.is_authenticated %}
+        const current_user_id = {{ current_user.id | int }};
+        {% else %}
+        const current_user_id = null;
+        {% endif %}
+      </script>
       <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
       <script src="{{ url_for('static', filename='navbarBurger.js')}}"></script>
     {% endblock %}
