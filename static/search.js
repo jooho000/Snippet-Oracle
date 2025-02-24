@@ -32,10 +32,11 @@ async function doSearch() {
     resultsContainer.empty();
     descResultsContainer.empty();
     $(".search-disclaimer").remove();
-    $("#snippets").show();
+    $("#show-similar-snippets").toggle();
+    $("#snippets").toggle();
     return;
   }
-  $("#snippets").hide();
+  $("#snippets").toggle();
   // Show loading spinner
   searchInput.parent().addClass("is-loading");
 
@@ -67,6 +68,9 @@ async function doSearch() {
           disclaimer.addClass("subtitle mt-6 is-5 search-disclaimer");
           disclaimer.text("Similar public snippets");
           descResultsContainer.before(disclaimer);
+          
+          if ($("#search-icon").hasClass("fa-lock")) $("#show-similar-snippets").toggle();
+          else disclaimer.hide();
         }
 
         // Add a snippet card to search results
@@ -233,6 +237,9 @@ function toggleSearch() {
     $("#search-icon").addClass("fa-lock");
     $("#search-type").addClass("is-danger");
   }
+  $("#show-similar-snippets").hide();
+  console.log($(".search-disclaimer"));
+  
   doSearch();
 }
 

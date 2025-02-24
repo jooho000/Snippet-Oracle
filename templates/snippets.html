@@ -30,6 +30,8 @@
       <div id="selected-tags" class="tags are-medium mt-3"></div>
       <!-- Search Results -->
       <div id="search-results" class="grid is-col-min-16 mt-5"></div>
+      <button id="show-similar-snippets" class="button is-light" onclick="$('#search-results-desc').toggle()">
+        Toggle Similar Snippets</button>
       <!-- Description Matches -->
       <div id="search-results-desc" class="grid is-col-min-16"></div>
 
@@ -74,7 +76,10 @@
   </script>
 
 <script> 
-  $("#search-type").css("pointer-events", "initial")
+  $("#search-type").css("pointer-events", "initial");
+  $("#search-results-desc").hide();
+  $("#show-similar-snippets").hide();
+
 </script>
 
 <script src="{{ url_for('static', filename='search.js')}}"></script>
