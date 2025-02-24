@@ -2,7 +2,7 @@
 {% block title %}{{ snippet["name"] }} - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
-    <div class="columns is-mobile">
+    <div class="columns is-mobile is-vcentered">
       <div class="column is-narrow">
         <h1 class="title">{{ snippet["name"] }}</h1>
       </div>
@@ -38,7 +38,7 @@
       <div class="control">
         <button class="button is-link" id="copyButton">Copy Code</button>
         
-        {% set id = current_user.id | int %}
+        {% set id = current_user.get_id() | int %}
         {% if snippet["user_id"] == id %}
           <a class="button is-link" href="{{ url_for('edit_snippet', snippet_id=snippet['id']) }}">
             <span class="icon"><i class="fas fa-edit"></i></span>
@@ -71,6 +71,122 @@
       </div>
     {% endif %}
 
+<!-- Comment Section -->
+<div class="box">
+  <h2 class="title is-4">Comments</h2>
+
+  <!-- Display Existing Comments -->
+  <div id="comments-section">
+    {% for comment in comments %}
+    <article class="media box has-background-dark has-text-white mb-4">
+      <figure class="media-left">
+        <p class="image is-64x64">
+          <img class="is-rounded" src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] 
+          if comment['profile_picture'] else 'default_image.png')) }}" alt="Profile Picture">
+        </p>   
+      </figure>
+      <div class="media-content">
+        <div class="content">
+          <strong>{{ comment["user_name"] }}</strong>
+          <small class="has-text-grey-light timestamp" data-timestamp="{{ comment['date'] }}">{{ comment["date"] }}</small>
+          <p>{{ comment["content"] }}</p>
+        </div>
+
+    
+        <!-- Comment Actions -->
+        <nav class="level is-mobile">
+          <div class="level-left">
+            <button class="button is-small is-link" onclick="toggleReplyForm('{{ comment['id']}}')">
+              Reply
+            </button>
+            {% if comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
+              <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}" method="post" class="is-inline">
+                <button class="button is-small is-danger" type="submit">Delete</button>
+              </form>
+            {% endif %}
+          </div>
+        </nav>
+    
+        <!-- Reply Form -->
+        <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">
+          <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}" method="post">
+            <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
+            <textarea class="textarea" name="comment" placeholder="Write a reply..." required></textarea>
+            <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
+          </form>
+        </div>
+    
+        <!-- Nested Replies -->
+        {% if comment["replies"] %}
+            {% for reply in comment["replies"] %}
+            <article class="media">
+              <figure class="media-left">
+                <p class="image is-64x64">
+                  <img class = is-rounded
+                  src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] 
+                  if reply['profile_picture'] else 'default_image.png')) }}" alt="Profile Picture">
+                </p>                
+              </figure>
+              <div class="media-content">
+                <div class="content">
+                  <strong>{{ reply["user_name"] }}</strong>
+                  <small class="has-text-grey-light timestamp" data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
+                  <p>{{ reply["content"] }}</p>
+                </div>
+    
+                <!-- Reply Actions -->
+                 <nav class="level is-mobile">
+                  <div class="level-left">
+
+                    {% if reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
+                      <form action="{{ url_for('delete_comment', comment_id=reply['id']) }}" method="post" class="is-inline">
+                        <button class="button is-small is-danger" type="submit">Delete</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </nav>
+    
+                <!-- Reply Form for Nested Replies -->
+                <div id="reply-form-{{ reply['id'] }}" class="is-hidden">
+                  <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}" method="post">
+                    <input type="hidden" name="parent_id" value="{{ reply['id'] }}">
+                    <textarea class="textarea is-small" name="comment" placeholder="Write a reply..." required></textarea>
+                    <button type="submit" class="button is-link is-small">Post Reply</button>
+                  </form>
+                </div>
+              </div>
+            </article>
+            {% endfor %}
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    <p>No comments yet. Be the first to comment!</p>
+    {% endfor %}
+  </div>
+
+  <!-- Add New Comment -->
+  <article class="media">
+    <figure class="media-left">
+    </figure>
+    <div class="media-content">
+      <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}" method="post">
+        <div class="field">
+          <p class="control">
+            <textarea class="textarea" name="comment" placeholder="Write your comment here..." required></textarea>
+          </p>
+        </div>
+        <div class="field">
+          <p class="control">
+            <button class="button is-link">Post Comment</button>
+          </p>
+        </div>
+      </form>
+    </div>
+  </article>
+</div>
+
+    <!-- Message for users viewing a shared snippet -->
     {% if request.path.startswith('/share/') %}
       <div class="notification is-info">
         <p>You are viewing this snippet from a shareable link.</p>
@@ -93,6 +209,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='copy.js') }}"></script>
+  <script src="{{ url_for('static', filename='comments.js') }}"></script>
   <script>
     document.getElementById("copyShareLink")?.addEventListener("click", function() {
       const input = document.getElementById("shareableLink");
@@ -101,4 +218,5 @@
       alert("Shareable link copied!");
     });
   </script>
+
 {% endblock %}

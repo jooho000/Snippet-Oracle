@@ -3,34 +3,59 @@
  * @param {JQuery} card
  */
 function toggleSnippet(card) {
-  let codeDiv = card.children(".snippet-card-code");
-  const icon = card.find(".snippet-card-arrow");
-  const summary = card.find(".snippet-card-summary");
+  const codeDiv = card.find(".snippet-card-code");
 
   if (!codeDiv.length) {
-    // Create snippet content dynamically
-    codeDiv = $(document.createElement("div")).appendTo(card);
-    const pre = $(document.createElement("pre")).appendTo(codeDiv);
-    const code = $(document.createElement("code")).appendTo(pre);
-    const desc = $(document.createElement("p")).appendTo(codeDiv);
-    desc.text(card.data("description") || "No description available.");
-    const strong = $(document.createElement("strong")).prependTo(desc);
-
-    codeDiv.addClass("snippet-card-code mt-3");
-
-    code.text(card.data("code"));
-    strong.text("Description: ");
-    hljs.highlightElement(pre[0]);
-
-    // Update icon to up arrow
-    icon.addClass("snippet-card-arrow-open");
-    summary.addClass("is-invisible");
+    openSnippet(card);
   } else {
-    // Destroy snippet content dynamically
-    codeDiv.remove();
-    icon.removeClass("snippet-card-arrow-open");
-    summary.removeClass("is-invisible");
+    closeSnippet();
   }
+}
+
+/**
+ * Show the contents of a snippet card.
+ * @param {JQuery} card 
+ */
+function openSnippet(card) {
+  const summary = card.find(".snippet-card-summary");
+  const tags = card.find(".snippet-card-tags");
+  const modal = $("#snippet-modal");
+
+  // Close currently opened snippet card
+  closeSnippet();
+
+  // Code block
+  const codeDiv = $(document.createElement("div")).insertBefore(tags);
+  const pre = $(document.createElement("pre")).appendTo(codeDiv);
+  const code = $(document.createElement("code")).appendTo(pre);
+  codeDiv.addClass("snippet-card-code mt-3");
+  code.text(card.data("code"));
+  hljs.highlightElement(code[0]);
+
+  // Description
+  const desc = $(document.createElement("p")).appendTo(codeDiv);
+  desc.addClass("mt-4 mb-4");
+  desc.text(card.data("description") || "No description available.");
+  const strong = $(document.createElement("strong")).prependTo(desc);
+  strong.text("Description: ");
+
+  // Update style
+  card.addClass("snippet-card-open");
+  summary.addClass("is-hidden");
+  modal.addClass("is-active");
+}
+
+/**
+ * Close the current open snippet card.
+ * No action is taken if there is not an open card.
+ * @param {JQuery | undefined} card 
+ */
+function closeSnippet() {
+  const card = $(".snippet-card-open");
+  card.removeClass("snippet-card-open");
+  card.find(".snippet-card-code").remove();
+  card.find(".snippet-card-summary").removeClass("is-hidden");
+  $("#snippet-modal").removeClass("is-active");
 }
 
 /**
@@ -96,7 +121,7 @@ $(function () {
 
 async function confirmDelete(snippetID) {
   if (window.confirm("Confirm Deletion")) {
-    await fetch (`/deleteSnippet/${snippetID}`);
+    await fetch(`/deleteSnippet/${snippetID}`);
     window.location.reload();
   }
 }

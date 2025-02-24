@@ -13,6 +13,7 @@ $(function () {
       tags.push(tagText);
 
       let tag = document.createElement("span");
+      tag.id = tagText
       tag.classList.add("tag", "is-info", "is-medium", "mr-2");
       tag.textContent = tagText;
 
@@ -26,7 +27,7 @@ $(function () {
 
       tag.appendChild(deleteBtn);
       tagsContainer.insertBefore(tag, tagInput);
-      tagInput.innerText = "";
+      tagInput.textContent = "";
       hiddenTags.value = tags.join(",");
     }
   }
@@ -34,14 +35,14 @@ $(function () {
   tagInput.addEventListener("keydown", function (event) {
     if (event.key === "Enter" || event.key === ",") {
       event.preventDefault();
-      addTag(tagInput.innerText);
-    }
+      addTag(tagInput.textContent);
+    }    
   });
 
   presetTags.forEach(function (tag) {
     tag.addEventListener("click", function (event) {
       event.preventDefault();
-      addTag(tag.innerText);
+      addTag(tag.textContent);
     });
   });
 

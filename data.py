@@ -9,10 +9,10 @@ import sqlite_vec
 import os
 import uuid  # For generating unique shareable links
 import mock_data
+from sentence_transformers import SentenceTransformer
 
-_desc_transformer = None 
-# TODO change id from integer to UUID
-# TODO turn updates and stuff into transactions
+_desc_transformer = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
 preset_tags = [
     "HTML",
     "CSS",
@@ -23,17 +23,11 @@ preset_tags = [
     "React",
     "Vue.js",
     "Code Snippet",
+    "C#",
 ]
 
 
 def _get_transformer():
-    from sentence_transformers import SentenceTransformer
-
-    global _desc_transformer
-    if _desc_transformer is None:
-        _desc_transformer = SentenceTransformer(
-            "sentence-transformers/all-MiniLM-L6-v2"
-        )
     return _desc_transformer
 
 
@@ -100,6 +94,17 @@ def _init_db():
             SnippetID INTEGER PRIMARY KEY,
             Embedding float[384]
         );
+        CREATE TABLE IF NOT EXISTS Comments (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            SnippetID INTEGER NOT NULL,
+            UserID INTEGER NOT NULL,
+            ParentCommentID INTEGER DEFAULT NULL,  -- New field for replies
+            Content TEXT NOT NULL,
+            Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE,
+            FOREIGN KEY (ParentCommentID) REFERENCES Comments(ID) ON DELETE CASCADE
+        );
         COMMIT;
         """
     )
@@ -115,6 +120,7 @@ def reset():
     cur = _db.cursor()
     cur.executescript(
         """
+        PRAGMA foreign_keys = 0;
         BEGIN;
         DROP TABLE IF EXISTS SnippetEmbedding;
         DROP TABLE IF EXISTS SnippetPermissions;
@@ -123,6 +129,7 @@ def reset():
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
         COMMIT;
+        PRAGMA foreign_keys = 1;
         """
     )
     _init_db()
@@ -245,6 +252,9 @@ def get_user_details(user_id):
     - "bio": The user's bio.
     - "profile_picture": The user's profile picture (returns None if not set).
     """
+    if user_id is None:
+        return None
+
     cur = _db.cursor()
     cur.execute(
         """
@@ -314,6 +324,9 @@ def create_snippet(
                 )
 
     if tags:
+        # Remove empty strings and whitespace-only tags
+        tags = [tag.strip() for tag in tags if tag.strip()]
+
         cur.executemany(
             """
             INSERT INTO TagUse (SnippetID, TagName)
@@ -554,6 +567,7 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
             "parent_snippet_id": res[5],
             "date": res[6],
             "is_public": bool(res[7]),
+            "tags": get_tags_for_snippet(res[0]),
             "is_description_match": False,
         }
         for res in results
@@ -573,6 +587,7 @@ def smart_search_snippets(query, user_id=None):
     - "parent_snippet_id": The integer ID of the parent snippet or `None`.
     - "date": The date and time of this snippet's creation.
     - "is_public": True if the snippet is public, False otherwise.
+    - "tags": A list of tags that the snippet has.
     - "is_description_match": A list of tags that the snippet has.
     """
     query_embedding = _get_transformer().encode(query)
@@ -642,6 +657,7 @@ def smart_search_snippets(query, user_id=None):
             "parent_snippet_id": res[5],
             "date": res[6],
             "is_public": bool(res[7]),
+            "tags": get_tags_for_snippet(res[0]),
             "is_description_match": bool(res[8]),
         }
         for res in itertools.chain(name_matches, desc_matches)
@@ -820,6 +836,11 @@ def update_snippet(
     id, user_id, name, code, description=None, tags=None, is_public=False, users=None
 ):
     cur = _db.cursor()
+
+    # Remove empty tags before updating the database
+    if tags:
+        tags = [tag.strip() for tag in tags if tag.strip()]  # Ensure no empty tags
+        
     # Update the Snippet
     cur.execute(
         """
@@ -905,6 +926,115 @@ def delete_snippet(id, user_id):
             SnippetID = ?
         """,
         [id],
+    )
+
+    _db.commit()
+
+
+def add_comment(snippet_id, user_id, comment, parent_id=None):
+    """Adds a comment or reply to a snippet."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        INSERT INTO Comments (SnippetID, UserID, Content, ParentCommentID)
+        VALUES (?, ?, ?, ?)
+        """,
+        (snippet_id, user_id, comment, parent_id),
+    )
+    _db.commit()
+
+
+
+
+def get_comments(snippet_id):
+    """Fetches all comments and their replies for a snippet."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT Comments.ID, Comments.Content, Comments.Date, Comments.UserID, Comments.ParentCommentID, 
+               User.Name, User.ProfilePicture
+        FROM Comments
+        JOIN User ON Comments.UserID = User.ID
+        WHERE Comments.SnippetID = ?
+        ORDER BY Comments.ParentCommentID NULLS FIRST, Comments.Date ASC
+        """,
+        [snippet_id],
+    )
+
+    comments = cur.fetchall()
+    comment_tree = {}
+    for row in comments:
+        comment_data = {
+            "id": row[0],
+            "content": row[1],
+            "date": row[2],
+            "user_id": int(row[3]),
+            "parent_id": row[4],
+            "user_name": row[5],
+            "profile_picture": row[6],
+            "replies": []
+        }
+
+        if comment_data["parent_id"] is None:
+            comment_tree[comment_data["id"]] = comment_data
+        else:
+            if comment_data["parent_id"] in comment_tree:
+                comment_tree[comment_data["parent_id"]]["replies"].append(comment_data)
+            else:
+                comment_tree[comment_data["parent_id"]] = {"replies": [comment_data]}
+    return list(comment_tree.values())
+
+
+
+
+
+def get_comment_by_id(comment_id):
+    """Fetches a specific comment by its ID."""
+    cur = _db.cursor()
+    cur.execute(
+        """
+        SELECT ID, SnippetID, UserID, Content, Date 
+        FROM Comments 
+        WHERE ID = ?
+        """,
+        [comment_id],
+    )
+
+    comment = cur.fetchone()
+    if comment:
+        return {
+            "id": comment[0],
+            "snippet_id": comment[1],
+            "user_id": comment[2],
+            "content": comment[3], 
+            "date": comment[4],
+        }
+    return None  # Comment not found
+
+
+
+def delete_comment(comment_id):
+    """Deletes a comment and all its replies recursively."""
+    cur = _db.cursor()
+
+    cur.execute(
+        """
+        SELECT ID FROM Comments WHERE ParentCommentID = ?
+        """,
+        [comment_id],
+    )
+    replies = cur.fetchall()
+
+    # Recursively delete each reply
+    for reply in replies:
+        delete_comment(reply[0]) 
+
+    # Finally, delete the parent comment itself
+    cur.execute(
+        """
+        DELETE FROM Comments WHERE ID = ?
+        """,
+        [comment_id],
     )
 
     _db.commit()
