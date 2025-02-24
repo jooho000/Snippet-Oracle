@@ -31,12 +31,18 @@ async function doSearch() {
   if (!query.trim()) {
     resultsContainer.empty();
     descResultsContainer.empty();
+    changeTitle();
+    $("#search-type").removeClass("is-success");
+    $("#search-icon").removeClass("fa-globe");
+    $("#search-icon").addClass("fa-lock");
+    $("#search-type").addClass("is-danger");
     $(".search-disclaimer").remove();
-    $("#show-similar-snippets").toggle();
-    $("#snippets").toggle();
+    $("#show-similar-snippets").hide();
+    $("#snippets").show();
+    $("#search-results-desc").hide();
     return;
   }
-  $("#snippets").toggle();
+  $("#snippets").hide();
   // Show loading spinner
   searchInput.parent().addClass("is-loading");
 
@@ -69,8 +75,15 @@ async function doSearch() {
           disclaimer.text("Similar public snippets");
           descResultsContainer.before(disclaimer);
           
-          if ($("#search-icon").hasClass("fa-lock")) $("#show-similar-snippets").toggle();
-          else disclaimer.hide();
+          if ($("#search-icon").hasClass("fa-lock")) {
+            $("#show-similar-snippets").show();
+            $("#search-results-desc").hide();
+          }
+          else {
+            $("#show-similar-snippets").hide();
+            $("#search-results-desc").show();
+            disclaimer.hide();
+          }
         }
 
         // Add a snippet card to search results
@@ -210,7 +223,7 @@ addEventListener("keydown", function(event) {
   if (event.ctrlKey && event.key === "k") {
     event.preventDefault();
     $('#search-input').focus();
-  } else if (event.key === "Tab") {
+  } else if (event.key === "Tab" && searchInput.val()) {
     event.preventDefault();
     toggleSearch();
     changeTitle();
@@ -237,9 +250,6 @@ function toggleSearch() {
     $("#search-icon").addClass("fa-lock");
     $("#search-type").addClass("is-danger");
   }
-  $("#show-similar-snippets").hide();
-  console.log($(".search-disclaimer"));
-  
   doSearch();
 }
 
