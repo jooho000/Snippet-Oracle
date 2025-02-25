@@ -10,20 +10,21 @@ The main Flask module for Snippet Oracle.
 
 import flask
 import flask_login
-import data
 import auth
 import uuid
 import os
 import base64
+import data
 from io import BytesIO
 from PIL import Image
-from flask import jsonify, request
+from flask import jsonify, request, g
 from urllib.parse import urlparse
 
 
 app = flask.Flask("snippet_oracle")
 auth.init(app, "login")
 app.secret_key = auth.get_secret_key()
+data.preload_transformer()
 
 
 # Configure file upload settings
@@ -39,14 +40,26 @@ def allowed_file(filename):
 
 @app.cli.command("reset-db")
 def reset_db():
-    data.reset()
+    get_db().reset()
 
 
 @app.cli.command("populate-db")
 def populate_db():
-    data.reset()
-    data.populate()
+    get_db().reset()
+    get_db().populate()
 
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = data.Data()
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 @app.route("/")
 def index():
@@ -57,8 +70,8 @@ def index():
     user_data = None
 
     if flask_login.current_user.is_authenticated:
-        user_snippets = data.get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
-        user_data = data.get_user_details(flask_login.current_user.id)
+        user_snippets = get_db().get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
+        user_data = get_db().get_user_details(flask_login.current_user.id)
     return flask.render_template("index.html", snippets=user_snippets, user=user_data)
 
 
@@ -138,7 +151,7 @@ def logout():
 @app.route("/profile", methods=["GET", "POST"])
 @flask_login.login_required
 def profile():
-    cur = data._db.cursor()
+    cur = get_db()._db.cursor()
 
     if flask.request.method == "POST":
         bio = flask.request.form.get("bio", "")
@@ -191,7 +204,7 @@ def profile():
                     VALUES (?, ?, ?)
                 """, [flask_login.current_user.id, "Custom", link])
 
-        data._db.commit()
+        get_db()._db.commit()
         flask.flash("Profile updated successfully!", "info")
 
     cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [flask_login.current_user.id])
@@ -205,8 +218,8 @@ def profile():
         SELECT ID, Name, Description FROM Snippet
         WHERE UserID = ? ORDER BY Date DESC LIMIT ? OFFSET ?
     """, [flask_login.current_user.id, limit, offset])
-    user_snippets = data.get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
-    user_details = data.get_user_details(flask_login.current_user.id)
+    user_snippets = get_db().get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
+    user_details = get_db().get_user_details(flask_login.current_user.id)
 
     return flask.render_template(
         "profile.html",
@@ -252,7 +265,7 @@ def createSnippet(snippet_id=None):
     # Fetch original snippet if remixing
     original_snippet = None
     if snippet_id:
-        original_snippet = data.get_snippet(snippet_id, flask_login.current_user.id)
+        original_snippet = get_db().get_snippet(snippet_id, flask_login.current_user.id)
         if not original_snippet:
             flask.flash("Original snippet not found or inaccessible!", "danger")
             return flask.redirect(flask.url_for("snippets"))
@@ -282,7 +295,7 @@ def createSnippet(snippet_id=None):
         if tags:
             tags = set(tags.replace(" ", "").split(","))
 
-        new_snippet_id = data.create_snippet(
+        new_snippet_id = get_db().create_snippet(
             name, code, user_id, description, tags, is_public, permitted_users, 
             parent_snippet_id=snippet_id  # Set parent snippet if remixing
         )
@@ -293,14 +306,14 @@ def createSnippet(snippet_id=None):
         else:
             flask.flash("Failed to create snippet!", "danger")
 
-    all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+    all_users = get_db().get_all_users_excluding_current(flask_login.current_user.id)
 
     return flask.render_template(
         "createSnippet.html",
         all_users=all_users,
-        preset_tags=data.preset_tags,
+        preset_tags=get_db().preset_tags,
         snippet=original_snippet,  # Pass original snippet if remixing
-        user=data.get_user_details(flask_login.current_user.id)
+        user=get_db().get_user_details(flask_login.current_user.id)
     )
 
 # View All Personal User Snippets (Worked on by Alan Ly)
@@ -308,28 +321,28 @@ def createSnippet(snippet_id=None):
 @flask_login.login_required
 def snippets():
     # Fetch all snippets for the logged-in user
-    user_snippets = data.get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
-    user_details = data.get_user_details(flask_login.current_user.id)
+    user_snippets = get_db().get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
+    user_details = get_db().get_user_details(flask_login.current_user.id)
     return flask.render_template("snippets.html", user=user_details, snippets=user_snippets)
 
 
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 def view_snippet(snippet_id):
     current_user_id = auth.get_current_id_or_none()
-    snippet = data.get_snippet(snippet_id, current_user_id)
+    snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
         return flask.redirect(flask.url_for("snippets"))
     
     parent_snippet = None
     if snippet["parent_snippet_id"] is not None:
-        parent_snippet = data.get_snippet(snippet["parent_snippet_id"], current_user_id)
+        parent_snippet = get_db().get_snippet(snippet["parent_snippet_id"], current_user_id)
 
-    comments = data.get_comments(snippet_id)  # Fetch comments from database
+    comments = get_db().get_comments(snippet_id)  # Fetch comments from database
 
     return flask.render_template(
         "snippetDetail.html",
-        user=data.get_user_details(current_user_id),
+        user=get_db().get_user_details(current_user_id),
         snippet=snippet,
         comments=comments,
         parent_snippet=parent_snippet
@@ -343,12 +356,12 @@ def view_snippet(snippet_id):
 def update_snippet_visibility(snippet_id):
     is_public = request.form.get("is_public")
 
-    snippet = data.get_snippet(snippet_id)
+    snippet = get_db().get_snippet(snippet_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("snippets"))
 
-    data.set_snippet_visibility(snippet_id, is_public)
+    get_db().set_snippet_visibility(snippet_id, is_public)
     flask.flash("Snippet visibility updated!", "success")
 
     return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
@@ -357,11 +370,11 @@ def update_snippet_visibility(snippet_id):
 # Allow users to access private snippets via shareable links
 @app.route("/share/<string:link>")
 def view_snippet_by_link(link):
-    snippet_id = data.get_snippet_id_by_shareable_link(link)
+    snippet_id = get_db().get_snippet_id_by_shareable_link(link)
     if snippet_id is not None:
         user_id = flask_login.current_user.id if flask_login.current_user.is_authenticated else None
-        snippet = data.get_snippet(snippet_id, user_id)
-        return flask.render_template("snippetDetail.html", user=data.get_user_details(flask_login.current_user.id), snippet=snippet)
+        snippet = get_db().get_snippet(snippet_id, user_id)
+        return flask.render_template("snippetDetail.html", user=get_db().get_user_details(flask_login.current_user.id), snippet=snippet)
     else:
         flask.flash("Invalid or expired link!", "warning")
         return flask.redirect(flask.url_for("index"))
@@ -391,9 +404,9 @@ def search_snippets():
         user_id = flask_login.current_user.id
 
     if len(tags) or len(desc_has) > 0:
-        results = data.search_snippets(names, tags, desc_has, user_id, public)
+        results = get_db().search_snippets(names, tags, desc_has, user_id, public)
     else:
-        results = data.smart_search_snippets(query, user_id, public)
+        results = get_db().smart_search_snippets(query, user_id, public)
 
     return jsonify({"results": results})
 
@@ -402,8 +415,8 @@ def search_snippets():
 @flask_login.login_required
 def edit_snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
-    snippet = data.get_snippet(snippet_id, current_user_id)
-    prev_users = data.get_all_users_with_permission(snippet_id, current_user_id)
+    snippet = get_db().get_snippet(snippet_id, current_user_id)
+    prev_users = get_db().get_all_users_with_permission(snippet_id, current_user_id)
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
@@ -439,7 +452,7 @@ def edit_snippet(snippet_id):
         if tags is not None:
             tags = set(tags.replace(" ", "").split(","))
 
-        data.update_snippet(
+        get_db().update_snippet(
             snippet_id,
             user_id,
             name,
@@ -451,17 +464,17 @@ def edit_snippet(snippet_id):
         )
 
         flask.flash("Snippet Edited successfully!")
-        return flask.redirect(flask.url_for("view_snippet", user=data.get_user_details(flask_login.current_user.id), snippet_id=snippet_id))
+        return flask.redirect(flask.url_for("view_snippet", user=get_db().get_user_details(flask_login.current_user.id), snippet_id=snippet_id))
     elif snippet:
-        all_users = data.get_all_users_excluding_current(flask_login.current_user.id)
+        all_users = get_db().get_all_users_excluding_current(flask_login.current_user.id)
         return flask.render_template(
             "editSnippet.html",
-            user=data.get_user_details(flask_login.current_user.id),
+            user=get_db().get_user_details(flask_login.current_user.id),
             all_users=all_users,
             snippet=snippet,
             tags=snippet["tags"],
             users=prev_users,
-            preset_tags=data.preset_tags,
+            preset_tags=get_db().preset_tags,
         )
     else:
         flask.flash("Snippet not found!", "warning")
@@ -471,11 +484,11 @@ def edit_snippet(snippet_id):
 @app.route("/deleteSnippet/<int:snippet_id>")
 def delete_Snippet(snippet_id):
     current_user_id = flask_login.current_user.id  # Get the current user's ID
-    snippet = data.get_snippet(snippet_id, current_user_id)
+    snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("snippets"))
-    data.delete_snippet(snippet_id, snippet["user_id"])
+    get_db().delete_snippet(snippet_id, snippet["user_id"])
     return flask.redirect(flask.url_for("snippets"))
 
 @app.route("/snippet/<int:snippet_id>/comment", methods=["POST"])
@@ -489,7 +502,7 @@ def add_comment(snippet_id):
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
 
     user_id = flask_login.current_user.id
-    data.add_comment(snippet_id, user_id, comment_content, parent_id)
+    get_db().add_comment(snippet_id, user_id, comment_content, parent_id)
     flask.flash("Comment added successfully!", "success")
 
     return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
@@ -502,10 +515,10 @@ def delete_comment(comment_id):
     current_user_id = flask_login.current_user.id
 
     # Get the comment details
-    comment = data.get_comment_by_id(comment_id)
+    comment = get_db().get_comment_by_id(comment_id)
 
     # Get the snippet details to get snippet author
-    snippet = data.get_snippet(comment["snippet_id"])
+    snippet = get_db().get_snippet(comment["snippet_id"])
 
     # Checks if the current user is the comment/snippet author
     if comment["user_id"] != int(current_user_id) and snippet["user_id"] != int(current_user_id):
@@ -513,7 +526,7 @@ def delete_comment(comment_id):
         return flask.redirect(flask.url_for("index"))
     
     # Delete the comment and its replies
-    data.delete_comment(comment_id)
+    get_db().delete_comment(comment_id)
     flask.flash("Comment and its replies deleted successfully!", "success")
     
     return flask.redirect(flask.url_for("view_snippet", snippet_id=comment["snippet_id"]))
@@ -522,14 +535,14 @@ def delete_comment(comment_id):
 @flask_login.login_required
 def add_like(snippet_id):
     """Adds a like to a snippet for the current user."""
-    data.add_like(snippet_id, flask_login.current_user.id)
-    likes = data.get_likes(snippet_id)
+    get_db().add_like(snippet_id, flask_login.current_user.id)
+    likes = get_db().get_likes(snippet_id)
     return jsonify({ likes: likes })
 
 @app.route("/likes/<int:snippet_id>", methods=["DELETE"])
 @flask_login.login_required
 def remove_like(snippet_id):
     """Removes the current user's like from a snippet."""
-    data.remove_like(snippet_id, flask_login.current_user.id)
-    likes = data.get_likes(snippet_id)
+    get_db().remove_like(snippet_id, flask_login.current_user.id)
+    likes = get_db().get_likes(snippet_id)
     return jsonify({ likes: likes })
