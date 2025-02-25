@@ -126,8 +126,9 @@ function editSnippet(card) {
 async function confirmDeleteSnippet(card) {
   const title = card.find(".snippet-card-name").text();
   const message = 'Are you sure you want to delete "' + title + '"?';
+  const snippetId = card.attr("data-snippet-id");
   if (window.confirm(message)) {
-    await fetch(`/deleteSnippet/${snippetID}`);
+    await fetch(`/deleteSnippet/${snippetId}`);
     window.location.reload();
   }
 }
