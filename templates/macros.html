@@ -15,7 +15,7 @@
         <!-- Buttons + Visibility (Right) -->
         <div class="column has-text-right is-narrow">
           <!-- Visibility Status -->
-          {% if not snippet.get("is_public", False) %}
+          {% if not snippet["is_public"] %}
             <div class="snippet-card-private" title="Private">
               <button class="button is-small is-danger ml-2">
                 <span class="icon">
@@ -64,16 +64,8 @@
       <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get('description', '') }}</p>
       <div class="columns">
         <div class="column">
-          <!-- Tags Section (Bottom Left) -->
           <div class="snippet-card-tags tags-container tags">
-            {% if snippet["tags"] %}
-              {% for tag in snippet["tags"][:10] %}
-                <!-- Limit number of tags shown -->
-                <span class="tag is-info">{{ tag }}</span>
-              {% endfor %}
-            {% endif %}
-            <!-- Dummy tag to ensure spacing is correct even with no tags -->
-            <span class="tag is-invisible"></span>
+            {{ tagsDisplay(snippet) }}
           </div>
         </div>
         <div class="column is-narrow">
@@ -90,4 +82,15 @@
       </div>
     </div>
   </div>
+{%- endmacro %}
+
+{% macro tagsDisplay(snippet) -%}
+  {% if snippet["tags"] %}
+    {% for tag in snippet["tags"][:10] %}
+      <!-- Limit number of tags shown -->
+      <span class="tag is-info">{{ tag }}</span>
+    {% endfor %}
+  {% endif %}
+  <!-- Dummy tag to ensure spacing is correct even with no tags -->
+  <span class="tag is-invisible"></span>
 {%- endmacro %}

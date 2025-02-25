@@ -460,7 +460,7 @@ class Data:
                 "user_id": snippet[4],
                 "parent_snippet_id": snippet[5],
                 "date": snippet[6],
-                "is_public": snippet[7],
+                "is_public": bool(snippet[7]),
                 "tags": self.get_tags_for_snippet(snippet[0]),
                 "likes": self.get_likes(snippet[0]),
                 "is_liked": self.is_liked(snippet[0], viewer_id),
@@ -873,7 +873,6 @@ class Data:
         users=None,
     ):
         cur = self._db.cursor()
-
         # Remove empty tags before updating the database
         if tags:
             tags = [tag.strip() for tag in tags if tag.strip()]  # Ensure no empty tags
@@ -937,14 +936,13 @@ class Data:
 
         self._db.commit()
 
-        if is_public:
-            self.set_snippet_visibility(id, is_public)
-
+        self.set_snippet_visibility(id, is_public)
         self.clear_snippet_permission(id)
 
-        if users:
-            for user in users:
-                self.grant_snippet_permission(id, user)
+        if(not is_public):
+          if users:
+              for user in users:
+                  self.grant_snippet_permission(id, user)
 
         return id
 
