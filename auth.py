@@ -92,16 +92,18 @@ def try_login(username, password):
 
     # Fetch account info by name
     res = app.get_db().get_user_by_name(username)
+    if res is None:
+        return None
 
     # Verify that the password matches
     try:
         password_hasher.verify(res["password_hash"], password)
         return User(res["id"], res["name"], res["password_hash"])
-    except argon2.exceptions.VerificationError:
+    except argon2.exceptions.Argon2Error:
         return None
 
 
-def try_sign_up(db, username, password):
+def try_sign_up(username, password):
     """
     Attempts to create a new user account from a username and password pair.
     If the username was in use, then None is returned.
