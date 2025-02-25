@@ -479,8 +479,9 @@ def edit_snippet(snippet_id):
         description = flask.request.form.get("description")
         tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
+        print("HELLO IS IT PUBLIC: " + str(flask.request.form.get("is_public") == "1"))
         is_public = flask.request.form.get("is_public") == "1"
-
+        print("STORED VALUE IS: " + str(is_public))
         try:
             permitted_users = flask.request.form.getlist(
                 "permitted_users[]"
