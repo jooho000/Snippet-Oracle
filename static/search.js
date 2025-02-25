@@ -4,6 +4,8 @@ const descResultsContainer = $("#search-results-desc");
 const snippetTemplate = $("#snippet-template");
 const searchDelayMs = 250;
 
+const title = $("#title");
+
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
@@ -29,10 +31,18 @@ async function doSearch() {
   if (!query.trim()) {
     resultsContainer.empty();
     descResultsContainer.empty();
+    changeTitle();
+    $("#search-type").removeClass("is-success");
+    $("#search-icon").removeClass("fa-globe");
+    $("#search-icon").addClass("fa-lock");
+    $("#search-type").addClass("is-danger");
     $(".search-disclaimer").remove();
+    $("#show-similar-snippets").hide();
+    $("#snippets").show();
+    $("#search-results-desc").hide();
     return;
   }
-
+  $("#snippets").hide();
   // Show loading spinner
   searchInput.parent().addClass("is-loading");
 
@@ -40,7 +50,11 @@ async function doSearch() {
   const searchUrl = `/search?q=${encodeURIComponent(query)}`;
   pendingSearchUrl = searchUrl;
 
-  fetch(searchUrl)
+  fetch(searchUrl, {
+    headers: {
+      "Search-Type": $("#search-icon").hasClass("fa-lock") ? false : true,
+    },
+  })
     .then((response) => response.json())
     .then((data) => {
       // Ignore results if another
@@ -60,6 +74,15 @@ async function doSearch() {
           disclaimer.addClass("subtitle mt-6 is-5 search-disclaimer");
           disclaimer.text("Similar public snippets");
           descResultsContainer.before(disclaimer);
+
+          if ($("#search-icon").hasClass("fa-lock")) {
+            $("#show-similar-snippets").show();
+            $("#search-results-desc").hide();
+          } else {
+            $("#show-similar-snippets").hide();
+            $("#search-results-desc").show();
+            disclaimer.hide();
+          }
         }
 
         // Add a snippet card to search results
@@ -193,3 +216,43 @@ function updateSnippetGrid() {
     }
   });
 }
+
+//helper funcs
+addEventListener("keydown", function (event) {
+  if (event.ctrlKey && event.key === "k") {
+    event.preventDefault();
+    $("#search-input").focus();
+  } else if (event.key === "Tab" && searchInput.val()) {
+    event.preventDefault();
+    toggleSearch();
+    changeTitle();
+  }
+});
+
+function changeTitle() {
+  if ($("#search-input").val().trim()) {
+    if ($("#search-icon").hasClass("fa-globe")) title.text("Global Search");
+    else title.text("Local Search");
+    doSearch();
+  } else title.text("Your Snippets");
+}
+
+function toggleSearch() {
+  if ($("#search-icon").hasClass("fa-lock")) {
+    $("#search-icon").removeClass("fa-lock");
+    $("#search-type").removeClass("is-danger");
+    $("#search-type").addClass("is-success");
+    $("#search-icon").addClass("fa-globe");
+  } else {
+    $("#search-type").removeClass("is-success");
+    $("#search-icon").removeClass("fa-globe");
+    $("#search-icon").addClass("fa-lock");
+    $("#search-type").addClass("is-danger");
+  }
+  doSearch();
+  changeTitle();
+}
+
+$(function () {
+  changeTitle();
+});

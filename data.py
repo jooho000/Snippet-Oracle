@@ -487,7 +487,7 @@ def get_snippet_id_by_shareable_link(link):
         return result[0]
 
 
-def search_snippets(names=None, tags=None, desc=None, viewer_id=None):
+def search_snippets(names=None, tags=None, desc=None, viewer_id=None, public=True):
     """
     Returns summaries of all snippets that include the given elements and that
     the user has permission to view.
@@ -536,12 +536,17 @@ def search_snippets(names=None, tags=None, desc=None, viewer_id=None):
         params.extend(["%" + desc_term + "%" for desc_term in desc])
 
     # Ensure only accessible snippets are returned
-    access_filter = """
+    if (public):
+      access_filter = """
         (IsPublic = 1 OR EXISTS (
-            SELECT 1 FROM SnippetPermissions AS P
-            WHERE P.SnippetID = ID AND P.UserID = ?
+          SELECT 1 FROM SnippetPermissions AS P
+          WHERE P.SnippetID = ID AND P.UserID = ?
         ))
-    """
+      """
+    else:
+      access_filter = """
+        Snippet.UserID = ?
+      """
     queries.append(access_filter)
     params.append(viewer_id)
 
@@ -583,7 +588,7 @@ def search_snippets(names=None, tags=None, desc=None, viewer_id=None):
     ]
 
 
-def smart_search_snippets(query, viewer_id=None):
+def smart_search_snippets(query, viewer_id=None, public=True):
     """
     Leverages AI to return summaries of all snippets that match a query,
     but ensures only accessible snippets are returned.
@@ -603,6 +608,17 @@ def smart_search_snippets(query, viewer_id=None):
     query_terms = ["%" + term.strip() + "%" for term in query.split(" ")]
 
     cur = _db.cursor()
+    if (public):
+      access_filter = """
+        (IsPublic = 1 OR EXISTS (
+          SELECT 1 FROM SnippetPermissions AS P
+          WHERE P.SnippetID = ID AND P.UserID = ?
+        ))
+      """
+    else:
+      access_filter = """
+        Snippet.UserID = ?
+      """
 
     # Find snippets that have all query terms in their names
     cur.execute(
@@ -619,9 +635,7 @@ def smart_search_snippets(query, viewer_id=None):
             0
         FROM Snippet
         WHERE ({" AND ".join(["Name LIKE ?"] * len(query_terms))})
-        AND (IsPublic = 1 OR EXISTS (
-            SELECT 1 FROM SnippetPermissions WHERE SnippetID = Snippet.ID AND UserID = ?
-        ))
+        AND {access_filter}
         ORDER BY length(Name) ASC, Name
         LIMIT 30
         """,

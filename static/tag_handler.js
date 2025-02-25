@@ -9,10 +9,12 @@ $(function () {
 
   function addTag(tagText) {
     tagText = tagText.trim();
+
     if (tagText.length > 0 && !tags.includes(tagText)) {
       tags.push(tagText);
 
       let tag = document.createElement("span");
+      tag.id = tagText
       tag.classList.add("tag", "is-info", "is-medium", "mr-2");
       tag.textContent = tagText;
 
@@ -26,22 +28,32 @@ $(function () {
 
       tag.appendChild(deleteBtn);
       tagsContainer.insertBefore(tag, tagInput);
-      tagInput.innerText = "";
+      tagInput.textContent = "";
       hiddenTags.value = tags.join(",");
     }
   }
 
+  tagInput.addEventListener("beforeinput", function (event) {
+    if (event.inputType === "deleteContentBackward" || event.inputType === "deleteContentForward") {
+      return;
+    }
+  
+    if (tagInput.textContent.length >= 20) {
+      event.preventDefault();
+    }
+  });
+
   tagInput.addEventListener("keydown", function (event) {
     if (event.key === "Enter" || event.key === ",") {
       event.preventDefault();
-      addTag(tagInput.innerText);
-    }
+      addTag(tagInput.textContent);
+    }    
   });
 
   presetTags.forEach(function (tag) {
     tag.addEventListener("click", function (event) {
       event.preventDefault();
-      addTag(tag.innerText);
+      addTag(tag.textContent);
     });
   });
 
