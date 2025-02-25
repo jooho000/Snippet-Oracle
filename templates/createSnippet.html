@@ -10,7 +10,7 @@
             {{ 'Modify and enhance an existing snippet.' if snippet else 'Save and manage your code snippets efficiently.' }}
           </p>
         {% endblock %}
-        <form method="post">
+        <form method="post" autocomplete="off">
           <!-- Snippet Name -->
           <div class="field">
             <label class="label">Snippet Name</label>
@@ -27,7 +27,7 @@
           <div class="field">
             <label class="label">Code</label>
             <div class="control">
-              <textarea class="textarea is-medium is-family-code" 
+              <textarea class="textarea is-family-code" 
                         name="code" 
                         placeholder="Paste your code here" 
                         rows="6" 

@@ -104,6 +104,10 @@
     {% endblock %}
     {% block content %}{% endblock %}
     {% block scripts %}
+      <script>
+        const current_user_id = {{ current_user.id if current_user.is_authenticated else None | tojson }};
+        const script_root = {{ request.script_root | tojson }};
+      </script>
       <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
       <script src="{{ url_for('static', filename='navbarBurger.js')}}"></script>
     {% endblock %}

@@ -1,75 +1,93 @@
-{% macro snippetCard(elementId, snippetId=0, title='', public=None, description='', code='', tags=[], editable=True) -%}
+{% macro snippetCard(elementId, snippet, editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
        class="snippet-card has-text-left cell mb-2"
-       data-code="{{ code | e }}"
-       data-description="{{ description | e }}">
-       <div class="box">
-    <!-- Snippet Header: Name + Buttons + Visibility -->
-    <div class="columns">
-      <!-- Snippet Name (Left) -->
-      <a class="snippet-card-link column has-text-left"
-         href="{{ url_for('view_snippet', snippet_id=snippetId) }}">
-        <h2 class="snippet-card-name title pb-2 is-5">{{ title }}</h2>
-      </a>
-      <!-- Buttons + Visibility (Right) -->
-      <div class="column has-text-right is-narrow">
-        <!-- Visibility Status -->
-        {% if public == None or public == False %}
-          <div class="snippet-card-private" title="Private">
-            <button class="button is-small is-danger ml-2">
+       data-snippet-id='{{ snippet.get("id", None) | tojson }}'
+       data-code='{{ snippet.get("code", None) | tojson }}'>
+    <div class="box">
+      <!-- Snippet Header: Name + Buttons + Visibility -->
+      <div class="snippet-card-header columns">
+        <!-- Snippet Name (Left) -->
+        <a class="snippet-card-link column has-text-left"
+           href="#"
+           onclick="goToSnippet($(this).closest('.snippet-card'))">
+          <h2 class="snippet-card-name title pb-2 is-5">{{ snippet.get("name", "") }}</h2>
+        </a>
+        <!-- Buttons + Visibility (Right) -->
+        <div class="column has-text-right is-narrow">
+          <!-- Visibility Status -->
+          {% if not snippet.get("is_public", False) %}
+            <div class="snippet-card-private" title="Private">
+              <button class="button is-small is-danger ml-2">
+                <span class="icon">
+                  <i class="fas fa-lock"></i>
+                </span>
+              </button>
+            </div>
+          {% endif %}
+          <!-- Copy Button -->
+          <button class="snippet-card-copy button is-small is-info ml-2"
+                  title="Copy Code"
+                  onclick="copySnippet($(this).closest('.snippet-card'))">
+            <span class="icon">
+              <i class="fas fa-copy"></i>
+            </span>
+          </button>
+          {% if editable %}
+            <!-- Edit Button -->
+            <button class="snippet-card-edit button is-small is-info ml-2"
+               title="Edit Snippet"
+               onclick="editSnippet($(this).closest('.snippet-card'))">
               <span class="icon">
-                <i class="fas fa-lock"></i>
+                <i class="fas fa-edit"></i>
               </span>
             </button>
+            <!-- Delete Button -->
+            <button class="snippet-card-delete button is-small is-info ml-2"
+                    title="Delete Snippet"
+                    onclick="confirmDeleteSnippet($(this).closest('.snippet-card'))">
+              <span class="icon">
+                <i class="fas fa-trash"></i>
+              </span>
+            </button>
+          {% endif %}
+          <!-- Expand Button -->
+          <button class="snippet-card-expand button is-small is-primary ml-2"
+                  title="Expand"
+                  onclick="toggleSnippet($(this).closest('.snippet-card'))">
+            <span class="snippet-card-arrow icon">
+              <i class="fas fa-eye"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+      <!-- Snippet Description (Middle) -->
+      <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get("description", "") }}</p>
+      <div class="columns">
+        <div class="column">
+          <!-- Tags Section (Bottom Left) -->
+          <div class="snippet-card-tags tags-container tags">
+            {% if snippet["tags"] %}
+              {% for tag in snippet["tags"][:10] %}
+                <!-- Limit number of tags shown -->
+                <span class="tag is-info">{{ tag }}</span>
+              {% endfor %}
+            {% endif %}
+            <!-- Dummy tag to ensure spacing is correct even with no tags -->
+            <span class="tag is-invisible"></span>
           </div>
-        {% endif %}
-        <!-- Copy Button -->
-        <button class="snippet-card-copy button is-small is-info ml-2"
-                title="Copy Code"
-                onclick="copySnippet($(this).closest('.snippet-card'))">
-          <span class="icon">
-            <i class="fas fa-copy"></i>
-          </span>
-        </button>
-        {% if editable %}
-          <!-- Edit Button -->
-          <a class="snippet-card-edit button is-small is-info ml-2"
-             title="Edit Snippet"
-             href="{{ url_for('edit_snippet', snippet_id=snippetId) }}">
-            <span class="icon">
-              <i class="fas fa-edit"></i>
-            </span>
-          </a>
-          <!-- Delete Button -->
-          <a class="snippet-card-delete button is-small is-info ml-2"
-              title="Delete Snippet"
-              href="javascript:confirmDelete({{snippetId}})">
-            <span class="icon">
-              <i class="fas fa-trash"></i>
-            </span>
-          </a>
-        {% endif %}
-        <!-- Expand Button -->
-        <button class="snippet-card-expand button is-small is-primary ml-2"
-                title="Expand"
-                onclick="toggleSnippet($(this).closest('.snippet-card'))">
-          <span class="snippet-card-arrow icon">
-            <i class="fas fa-eye"></i>
-          </span>
-        </button>
+        </div>
+        <div class="column is-narrow">
+          <div class="level">
+            <div class="level-item">
+              <button class='snippet-card-like-button icon-text {% if snippet.get("is_liked", False) %}has-text-link{% endif %}'
+                      onclick="likeSnippet($(this).closest('.snippet-card'))">
+                <span class="icon is-small"><i class="fas fa-thumbs-up"></i></span>
+                <span class="snippet-card-likes">{{ snippet.get("likes", 0) }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- Snippet Description (Middle) -->
-    <p class="snippet-card-summary column is-italic mb-4">{{ description }}</p>
-    <!-- Tags Section (Bottom Left) -->
-    <div class="snippet-card-tags tags-container tags">
-      {% for tag in tags[:10] %}
-        <!-- Limit number of tags shown -->
-        <span class="tag is-info">{{ tag }}</span>
-      {% endfor %}
-      <!-- Dummy tag to ensure spacing is correct even with no tags -->
-      <span class="tag is-invisible"></span>
-    </div>
-  </div>
   </div>
 {%- endmacro %}

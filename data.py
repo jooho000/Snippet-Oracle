@@ -41,7 +41,6 @@ _db.enable_load_extension(True)
 sqlite_vec.load(_db)
 _db.enable_load_extension(False)
 
-
 def _init_db():
     """Initialize the database's tables."""
     cur = _db.cursor()
@@ -105,6 +104,13 @@ def _init_db():
             FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE,
             FOREIGN KEY (ParentCommentID) REFERENCES Comments(ID) ON DELETE CASCADE
         );
+        CREATE TABLE IF NOT EXISTS Like (
+            SnippetID INTEGER NOT NULL,
+            UserID INTEGER NOT NULL,
+            FOREIGN KEY (SnippetID) REFERENCES Snippet(ID) ON DELETE CASCADE,
+            FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE,
+            UNIQUE (SnippetID, UserID)
+        );
         COMMIT;
         """
     )
@@ -128,6 +134,7 @@ def reset():
         DROP TABLE IF EXISTS TagUse;
         DROP TABLE IF EXISTS Snippet;
         DROP TABLE IF EXISTS User;
+        DROP TABLE IF EXISTS Like;
         COMMIT;
         PRAGMA foreign_keys = 1;
         """
@@ -335,7 +342,7 @@ def create_snippet(
             [(snippet_id, tag) for tag in tags],
         )
 
-    if description is not None and is_public:
+    if description is not None and description != "" and is_public:
         embedding = _get_transformer().encode(description)
         cur.execute(
             """
@@ -347,11 +354,14 @@ def create_snippet(
 
     _db.commit()
 
+    # Posters like their own snippets by default
+    add_like(snippet_id, user_id)
+
     return snippet_id
 
 
 
-def get_snippet(snippet_id, user_id=None):
+def get_snippet(snippet_id, viewer_id=None):
     cur = _db.cursor()
 
     cur.execute(
@@ -367,7 +377,7 @@ def get_snippet(snippet_id, user_id=None):
              )
         )
         """,
-        (snippet_id, user_id, snippet_id, user_id),
+        (snippet_id, viewer_id, snippet_id, viewer_id),
     )
 
     snippet = cur.fetchone()
@@ -384,12 +394,14 @@ def get_snippet(snippet_id, user_id=None):
             "is_public": bool(snippet[7]),  # Explicit conversion
             "tags": get_tags_for_snippet(snippet[0]),  # Fetch tags
             "shareable_link": snippet[8],
+            "likes": get_likes(snippet[0]),
+            "is_liked": is_liked(snippet[0], viewer_id),
         }
 
     return None  # Snippet not found or not accessible
 
 
-def get_user_snippets(user_id):
+def get_user_snippets(user_id, viewer_id=None):
     """
     Gets all snippets posted by a specific user.
 
@@ -434,6 +446,8 @@ def get_user_snippets(user_id):
             "date": snippet[6],
             "is_public": snippet[7],
             "tags": get_tags_for_snippet(snippet[0]),
+            "likes": get_likes(snippet[0]),
+            "is_liked": is_liked(snippet[0], viewer_id),
         }
         for snippet in snippets
     ]
@@ -456,31 +470,24 @@ def set_snippet_visibility(snippet_id, is_public):
     _db.commit()
 
 
-def get_snippet_by_shareable_link(link):
+def get_snippet_id_by_shareable_link(link):
     """
     Fetches snippet using its unique shareable link
     """
 
     cur = _db.cursor()
     cur.execute(
-        "SELECT ID, Name, Code, Description, UserID, Date, IsPublic FROM Snippet WHERE ShareableLink = ?",
+        "SELECT ID FROM Snippet WHERE ShareableLink = ?",
         [link],
     )
-    snippet = cur.fetchone()
-    if snippet:
-        return {
-            "id": snippet[0],
-            "name": snippet[1],
-            "code": snippet[2],
-            "description": snippet[3],
-            "user_id": snippet[4],
-            "date": snippet[5],
-            "is_public": bool(snippet[6]),
-        }
-    return None
+    result = cur.fetchone()
+    if result is None:
+        return None
+    else:
+        return result[0]
 
 
-def search_snippets(names=None, tags=None, desc=None, user_id=None):
+def search_snippets(names=None, tags=None, desc=None, viewer_id=None):
     """
     Returns summaries of all snippets that include the given elements and that
     the user has permission to view.
@@ -536,7 +543,7 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
         ))
     """
     queries.append(access_filter)
-    params.append(user_id)
+    params.append(viewer_id)
 
     # Final query with filters applied
     query = f"""
@@ -569,12 +576,14 @@ def search_snippets(names=None, tags=None, desc=None, user_id=None):
             "is_public": bool(res[7]),
             "tags": get_tags_for_snippet(res[0]),
             "is_description_match": False,
+            "likes": get_likes(res[0]),
+            "is_liked": is_liked(res[0], viewer_id),
         }
         for res in results
     ]
 
 
-def smart_search_snippets(query, user_id=None):
+def smart_search_snippets(query, viewer_id=None):
     """
     Leverages AI to return summaries of all snippets that match a query,
     but ensures only accessible snippets are returned.
@@ -616,7 +625,7 @@ def smart_search_snippets(query, user_id=None):
         ORDER BY length(Name) ASC, Name
         LIMIT 30
         """,
-        query_terms + [user_id],
+        query_terms + [viewer_id],
     )
     name_matches = cur.fetchall()
 
@@ -659,6 +668,8 @@ def smart_search_snippets(query, user_id=None):
             "is_public": bool(res[7]),
             "tags": get_tags_for_snippet(res[0]),
             "is_description_match": bool(res[8]),
+            "likes": get_likes(res[0]),
+            "is_liked": is_liked(res[0], viewer_id),
         }
         for res in itertools.chain(name_matches, desc_matches)
     ]
@@ -883,7 +894,7 @@ def update_snippet(
         """,
         [id],
     )
-    if description is not None and is_public:
+    if description is not None and description != "" and is_public:
         embedding = _get_transformer().encode(description)
         cur.execute(
             """
@@ -918,14 +929,6 @@ def delete_snippet(id, user_id):
         WHERE ID = ? AND UserID = ?
         """,
         [id, user_id],
-    )
-    cur.execute(
-        """
-        DELETE FROM TagUse
-        WHERE  
-            SnippetID = ?
-        """,
-        [id],
     )
 
     _db.commit()
@@ -1038,3 +1041,54 @@ def delete_comment(comment_id):
     )
 
     _db.commit()
+
+def add_like(snippet_id, user_id):
+    """
+    Adds a like to a snippet.
+
+    Returns True if the like was added, False if the user had already liked the snippet or the snippet was not found.
+    """
+    cur = _db.cursor()
+
+    try:
+        cur.execute(
+            "INSERT INTO Like(SnippetID, UserID) VALUES (?, ?)",
+            [snippet_id, user_id]
+        )
+    except sqlite3.IntegrityError:
+        return False
+    
+    _db.commit()
+    return True
+
+def remove_like(snippet_id, user_id):
+    """Removes a like from a snippet, if one existed from the given user."""
+    cur = _db.cursor()
+    cur.execute(
+        "DELETE FROM Like WHERE SnippetID = ? AND UserID = ?",
+        [snippet_id, user_id]
+    )
+    _db.commit()
+
+def get_likes(snippet_id):
+    """Returns the number of likes a snippet has."""
+
+    cur = _db.cursor()
+    cur.execute(
+        "SELECT count() FROM Like WHERE SnippetID = ?",
+        [snippet_id]
+    )
+
+    return cur.fetchone()[0]
+
+def is_liked(snippet_id, user_id):
+    """Returns True if the user has liked the snippet, False otherwise."""
+    if user_id is None:
+        return False
+
+    cur = _db.cursor()
+    cur.execute(
+        "SELECT count() FROM Like WHERE SnippetID = ? AND UserID = ?",
+        [snippet_id, user_id]
+    )
+    return cur.fetchone()[0] > 0

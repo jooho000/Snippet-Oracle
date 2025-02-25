@@ -10,11 +10,9 @@ The main Flask module for Snippet Oracle.
 
 import flask
 import flask_login
-import click
 import data
 import auth
 import uuid
-import json
 import os
 import base64
 from io import BytesIO
@@ -59,7 +57,7 @@ def index():
     user_data = None
 
     if flask_login.current_user.is_authenticated:
-        user_snippets = data.get_user_snippets(flask_login.current_user.id)
+        user_snippets = data.get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
         user_data = data.get_user_details(flask_login.current_user.id)
     return flask.render_template("index.html", snippets=user_snippets, user=user_data)
 
@@ -207,11 +205,12 @@ def profile():
         SELECT ID, Name, Description FROM Snippet
         WHERE UserID = ? ORDER BY Date DESC LIMIT ? OFFSET ?
     """, [flask_login.current_user.id, limit, offset])
-    user_snippets = data.get_user_snippets(flask_login.current_user.id)
+    user_snippets = data.get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
+    user_details = data.get_user_details(flask_login.current_user.id)
 
     return flask.render_template(
         "profile.html",
-        user=data.get_user_details(flask_login.current_user.id),
+        user=user_details,
         links=user_links,
         snippets=user_snippets,
         page=page,
@@ -309,8 +308,9 @@ def createSnippet(snippet_id=None):
 @flask_login.login_required
 def snippets():
     # Fetch all snippets for the logged-in user
-    user_snippets = data.get_user_snippets(flask_login.current_user.id)
-    return flask.render_template("snippets.html", user=data.get_user_details(flask_login.current_user.id), snippets=user_snippets)
+    user_snippets = data.get_user_snippets(flask_login.current_user.id, flask_login.current_user.id)
+    user_details = data.get_user_details(flask_login.current_user.id)
+    return flask.render_template("snippets.html", user=user_details, snippets=user_snippets)
 
 
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
@@ -357,8 +357,10 @@ def update_snippet_visibility(snippet_id):
 # Allow users to access private snippets via shareable links
 @app.route("/share/<string:link>")
 def view_snippet_by_link(link):
-    snippet = data.get_snippet_by_shareable_link(link)
-    if snippet:
+    snippet_id = data.get_snippet_id_by_shareable_link(link)
+    if snippet_id is not None:
+        user_id = flask_login.current_user.id if flask_login.current_user.is_authenticated else None
+        snippet = data.get_snippet(snippet_id, user_id)
         return flask.render_template("snippetDetail.html", user=data.get_user_details(flask_login.current_user.id), snippet=snippet)
     else:
         flask.flash("Invalid or expired link!", "warning")
@@ -422,7 +424,6 @@ def edit_snippet(snippet_id):
             permitted_users = [
                 int(user_id) for user_id in permitted_users if user_id.isdigit()
             ]  # Convert to integers
-            prev_permissions = set([int(user_id["id"]) for user_id in prev_users])
         except (ValueError, TypeError) as e:
             print(f"Error parsing permitted_users: {e}")
             permitted_users = []
@@ -516,3 +517,19 @@ def delete_comment(comment_id):
     flask.flash("Comment and its replies deleted successfully!", "success")
     
     return flask.redirect(flask.url_for("view_snippet", snippet_id=comment["snippet_id"]))
+
+@app.route("/likes/<int:snippet_id>", methods=["POST"])
+@flask_login.login_required
+def add_like(snippet_id):
+    """Adds a like to a snippet for the current user."""
+    data.add_like(snippet_id, flask_login.current_user.id)
+    likes = data.get_likes(snippet_id)
+    return jsonify({ likes: likes })
+
+@app.route("/likes/<int:snippet_id>", methods=["DELETE"])
+@flask_login.login_required
+def remove_like(snippet_id):
+    """Removes the current user's like from a snippet."""
+    data.remove_like(snippet_id, flask_login.current_user.id)
+    likes = data.get_likes(snippet_id)
+    return jsonify({ likes: likes })

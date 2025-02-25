@@ -58,16 +58,8 @@
             <h4 class="title is-5">Your Snippets</h4>
             <div class="container" id="snippet-grid">
               {% if snippets %}
-                {% for s in snippets %}
-                  {{ macros.snippetCard(None,
-                                s["id"],
-                                s["name"],
-                                s["is_public"],
-                                s["description"],
-                                s["code"],
-                                s["tags"],
-                                s["user_id"] == current_user.id | int)
-                  }}
+                {% for snippet in snippets %}
+                  {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == current_user.id | int) }}
                 {% endfor %}
               {% else %}
                 <p>No snippets found. Start creating your first snippet!</p>
