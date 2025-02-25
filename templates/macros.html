@@ -1,15 +1,16 @@
 {% macro snippetCard(elementId, snippet, editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
        class="snippet-card has-text-left cell mb-2"
-       data-snippet-id='{{ snippet.get("id", 0) }}'
-       data-code='{{ snippet.get("code", "") }}'>
+       data-snippet-id='{{ snippet.get("id", None) }}'
+       data-code='{{ snippet.get("code", None) }}'>
     <div class="box">
       <!-- Snippet Header: Name + Buttons + Visibility -->
       <div class="snippet-card-header columns">
         <!-- Snippet Name (Left) -->
         <a class="snippet-card-link column has-text-left"
-           href="{{ url_for('view_snippet', snippet_id=snippet.get('id', 0)) }}">
-          <h2 class="snippet-card-name title pb-2 is-5">{{ snippet.get('name', 'Untitled Snippet') }}</h2>
+           href="#"
+           onclick="goToSnippet($(this).closest('.snippet-card'))">
+          <h2 class="snippet-card-name title pb-2 is-5">{{ snippet.get('name', '') }}</h2>
         </a>
         <!-- Buttons + Visibility (Right) -->
         <div class="column has-text-right is-narrow">
@@ -48,7 +49,6 @@
                 <i class="fas fa-trash"></i>
               </span>
             </button>
-          {% else %}
           {% endif %}
           <!-- Expand Button -->
           <button class="snippet-card-expand button is-small is-primary ml-2"
@@ -66,13 +66,14 @@
         <div class="column">
           <!-- Tags Section (Bottom Left) -->
           <div class="snippet-card-tags tags-container tags">
-            {% if snippet.get("tags") %}
+            {% if snippet["tags"] %}
               {% for tag in snippet["tags"][:10] %}
-                <a href="{{ url_for('index') }}?q={{ tag }}" class="tag is-info">
+                <a href="{{ url_for('index', q=':' + tag) }}" class="tag is-info search-tag">
                   {{ tag }}
                 </a>
               {% endfor %}
             {% endif %}
+            <!-- Dummy tag to ensure spacing is correct even with no tags -->
             <span class="tag is-invisible"></span>
           </div>
         </div>

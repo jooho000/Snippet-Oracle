@@ -6,11 +6,13 @@
     <div class="container has-text-centered">
       <h1 class="title">Welcome to Snippet Oracle</h1>
       <p class="subtitle">Effortlessly manage, search, and share your code snippets.</p>
+      <!-- Navigation Buttons -->
       <div class="control is-centered mt-5">
         <a class="button is-primary is-large"
-           href="{{ url_for('createSnippet') }}">Create Snippet</a>
-        <a class="button is-link is-large" href="{{ url_for('snippets') }}">View My Snippets</a>
+           href="{{ url_for("createSnippet") }}">Create Snippet</a>
+        <a class="button is-link is-large" href="{{ url_for("snippets") }}">View My Snippets</a>
       </div>
+      <!-- Search Bar -->
       <div class="field mt-5">
         <div class="control has-icons-left has-icons-right is-large">
           <input class="input is-large is-primary"
@@ -24,19 +26,25 @@
           </span>
         </div>
       </div>
-      <div hidden>{{ macros.snippetCard('snippet-template', snippet={'id': 0, 'name': 'Placeholder', 'is_public': True}, editable=True) }}</div>
+      <div hidden>{{ macros.snippetCard('snippet-template', {}) }}</div>
+      <!-- Selected Tags Display (Tags that were clicked will appear here) -->
       <div id="selected-tags" class="tags are-medium mt-3"></div>
+      <!-- Search Results -->
       <div id="search-results" class="grid is-col-min-16 mt-5"></div>
+      <!-- Description Matches -->
       <div id="search-results-desc" class="grid is-col-min-16"></div>
     </div>
   </section>
+  <!-- Snippet Grid -->
   <section class="section">
     <h1 class="title">Your Snippets</h1>
     {% if snippets %}
       <div class="grid is-col-min-20">
-        {% for snippet in snippets %}
-          {{ macros.snippetCard(None, snippet, editable=snippet.get("editable", False)) }}
-        {% endfor %}
+        {% for snippet in snippets %}{{ macros.snippetCard(None, snippet) }}{% endfor %}
+        <!-- Fill up rightmost grid slots when there are only one or two snippets -->
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
       </div>
     {% else %}
       <p class="has-text-centered">No snippets found. Create one!</p>

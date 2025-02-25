@@ -63,8 +63,12 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+
 @app.route("/")
 def index():
+    """
+    Render the homepage with the list of snippets.
+    """
     user_snippets = []
     user_data = None
 
@@ -73,12 +77,6 @@ def index():
             flask_login.current_user.id, flask_login.current_user.id
         )
         user_data = get_db().get_user_details(flask_login.current_user.id)
-
-        # Ensure `editable=True` is set for owned snippets
-        for snippet in user_snippets:
-            snippet["editable"] = snippet.get("user_id") == flask_login.current_user.id
-            print(f"DEBUG: Snippet ID: {snippet['id']} Editable: {snippet['editable']} (Owner: {snippet.get('user_id')}, User: {flask_login.current_user.id})")
-
     return flask.render_template("index.html", snippets=user_snippets, user=user_data)
 
 
@@ -413,39 +411,53 @@ def update_snippet_visibility(snippet_id):
 
 
 # Allow users to access private snippets via shareable links
+@app.route("/share/<string:link>")
+def view_snippet_by_link(link):
+    snippet_id = get_db().get_snippet_id_by_shareable_link(link)
+    if snippet_id is not None:
+        user_id = (
+            flask_login.current_user.id
+            if flask_login.current_user.is_authenticated
+            else None
+        )
+        snippet = get_db().get_snippet(snippet_id, user_id)
+        return flask.render_template(
+            "snippetDetail.html",
+            user=get_db().get_user_details(flask_login.current_user.id),
+            snippet=snippet,
+        )
+    else:
+        flask.flash("Invalid or expired link!", "warning")
+        return flask.redirect(flask.url_for("index"))
+
+
 @app.route("/search/", methods=["GET"])
 def search_snippets():
-    query = request.args.get("q", "").strip()
+    query = request.args.get("q", "")  # Get the search query from the URL
     public = True if request.headers.get("Search-Type") == "true" else False
-
     if len(query) > 300:
         query = query[:300]
-
     terms = query.split(" ")
     tags, names = set(), set()
     desc_has = []
 
     for term in terms:
         if term != "":
-            if term[0] == ":":  # Tag-based search
+            if term[0] == ":":
                 tags.add(term[1:])
-            elif term[0] == "-":  # Excluding terms
+            elif term[0] == "-":
                 desc_has.append(term[1:])
-            else:  # General name search
+            else:
                 names.add(term)
 
     user_id = None
     if flask_login.current_user.is_authenticated:
         user_id = flask_login.current_user.id
 
-    # Fetch matching snippets
     if len(tags) or len(desc_has) > 0:
         results = get_db().search_snippets(names, tags, desc_has, user_id, public)
     else:
         results = get_db().smart_search_snippets(query, user_id, public)
-
-    for snippet in results:
-        snippet["editable"] = user_id is not None and snippet.get("user_id") == user_id
 
     return jsonify({"results": results})
 
