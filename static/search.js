@@ -116,8 +116,8 @@ function createSnippet(snippet) {
 
   // Update attributes
   card.removeAttr("id");
-  card.data("snippet-id", snippet.id);
-  card.data("code", snippet.code);
+  card.attr("data-snippet-id", snippet.id);
+  card.attr("data-code", snippet.code);
   card.find(".snippet-card-name").text(snippet.name);
 
   // Remove whichever public/private label isn't relevant

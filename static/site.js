@@ -29,7 +29,7 @@ function openSnippet(card) {
   const pre = $(document.createElement("pre")).appendTo(codeDiv);
   const code = $(document.createElement("code")).appendTo(pre);
   codeDiv.addClass("snippet-card-code mt-3");
-  code.text(card.data("code"));
+  code.text(card.attr("data-code"));
   hljs.highlightElement(code[0]);
 
   // Description
@@ -63,7 +63,7 @@ function closeSnippet() {
  */
 function copySnippet(card) {
   navigator.clipboard
-    .writeText(card.data("code"))
+    .writeText(card.attr("data-code"))
     .then(() => {
       alert("Code snippet copied to clipboard!");
     })
@@ -77,15 +77,19 @@ function copySnippet(card) {
  * @param {JQuery} card
  */
 async function likeSnippet(card) {
-  const id = card.data("snippet-id");
+  const id = card.attr("data-snippet-id");
   const button = card.find(".snippet-card-like-button");
   const likes = card.find(".snippet-card-likes");
   const wasLiked = button.hasClass("has-text-link");
 
   // Update text and color locally
-  const allCards = $(".snippet-card").filter((i, card) => $(card).data("snippet-id") == id);
+  const allCards = $(".snippet-card").filter(
+    (_, card) => $(card).attr("data-snippet-id") == id
+  );
   const allButtons = allCards.find(".snippet-card-like-button");
-  allCards.find(".snippet-card-likes").text(parseInt(likes.text()) + (wasLiked ? -1 : 1));
+  allCards
+    .find(".snippet-card-likes")
+    .text(parseInt(likes.text()) + (wasLiked ? -1 : 1));
   if (wasLiked) allButtons.removeClass("has-text-link");
   else allButtons.addClass("has-text-link");
 
@@ -102,7 +106,7 @@ async function likeSnippet(card) {
  * @param {JQuery} card
  */
 function goToSnippet(card) {
-  const id = card.data("snippet-id");
+  const id = card.attr("data-snippet-id");
   window.location = script_root + `/snippet/${id}`;
 }
 
@@ -111,7 +115,7 @@ function goToSnippet(card) {
  * @param {JQuery} card
  */
 function editSnippet(card) {
-  const id = card.data("snippet-id");
+  const id = card.attr("data-snippet-id");
   window.location = script_root + `/editSnippet/${id}`;
 }
 
@@ -131,6 +135,17 @@ async function confirmDeleteSnippet(card) {
 $(function () {
   // Apply code highlighting
   hljs.highlightAll();
+
+  // Manage burger menu
+  const navbarBurger = $(".navbar-burger");
+  const navbarMenu = $("#navbarBasic");
+
+  if (navbarBurger.length) {
+    navbarBurger.on("click", () => {
+      navbarBurger.toggleClass("is-active");
+      navbarMenu.toggleClass("is-active");
+    });
+  }
 
   // Manage dark and light themes
   const themeButton = $("#theme-button");

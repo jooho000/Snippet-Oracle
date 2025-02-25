@@ -33,11 +33,13 @@ def get_secret_key():
             file.write(key)
         return key
 
+
 def get_current_id_or_none():
     if flask_login.current_user.is_authenticated:
         return flask_login.current_user.id
     else:
         return None
+
 
 def get_username_error(username):
     """

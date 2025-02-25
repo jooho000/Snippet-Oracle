@@ -14,7 +14,7 @@ $(function () {
       tags.push(tagText);
 
       let tag = document.createElement("span");
-      tag.id = tagText
+      tag.id = tagText;
       tag.classList.add("tag", "is-info", "is-medium", "mr-2");
       tag.textContent = tagText;
 
@@ -34,10 +34,13 @@ $(function () {
   }
 
   tagInput.addEventListener("beforeinput", function (event) {
-    if (event.inputType === "deleteContentBackward" || event.inputType === "deleteContentForward") {
+    if (
+      event.inputType === "deleteContentBackward" ||
+      event.inputType === "deleteContentForward"
+    ) {
       return;
     }
-  
+
     if (tagInput.textContent.length >= 20) {
       event.preventDefault();
     }
@@ -47,7 +50,7 @@ $(function () {
     if (event.key === "Enter" || event.key === ",") {
       event.preventDefault();
       addTag(tagInput.textContent);
-    }    
+    }
   });
 
   presetTags.forEach(function (tag) {
@@ -79,8 +82,7 @@ $(function () {
     existingTags.forEach((tag) => addTag(tag));
   }
 
-  for (const tag of tagInput.innerText.split(',')) {
-    addTag(tag)
+  for (const tag of tagInput.innerText.split(",")) {
+    addTag(tag);
   }
-  
 });

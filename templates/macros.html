@@ -1,8 +1,8 @@
 {% macro snippetCard(elementId, snippet, editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
        class="snippet-card has-text-left cell mb-2"
-       data-snippet-id='{{ snippet.get("id", None) | tojson }}'
-       data-code='{{ snippet.get("code", None) | tojson }}'>
+       data-snippet-id='{{ snippet.get("id", None) }}'
+       data-code='{{ snippet.get("code", None) }}'>
     <div class="box">
       <!-- Snippet Header: Name + Buttons + Visibility -->
       <div class="snippet-card-header columns">
@@ -10,7 +10,7 @@
         <a class="snippet-card-link column has-text-left"
            href="#"
            onclick="goToSnippet($(this).closest('.snippet-card'))">
-          <h2 class="snippet-card-name title pb-2 is-5">{{ snippet.get("name", "") }}</h2>
+          <h2 class="snippet-card-name title pb-2 is-5">{{ snippet.get('name', '') }}</h2>
         </a>
         <!-- Buttons + Visibility (Right) -->
         <div class="column has-text-right is-narrow">
@@ -35,8 +35,8 @@
           {% if editable %}
             <!-- Edit Button -->
             <button class="snippet-card-edit button is-small is-info ml-2"
-               title="Edit Snippet"
-               onclick="editSnippet($(this).closest('.snippet-card'))">
+                    title="Edit Snippet"
+                    onclick="editSnippet($(this).closest('.snippet-card'))">
               <span class="icon">
                 <i class="fas fa-edit"></i>
               </span>
@@ -61,7 +61,7 @@
         </div>
       </div>
       <!-- Snippet Description (Middle) -->
-      <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get("description", "") }}</p>
+      <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get('description', '') }}</p>
       <div class="columns">
         <div class="column">
           <!-- Tags Section (Bottom Left) -->
@@ -82,7 +82,7 @@
               <button class='snippet-card-like-button icon-text {% if snippet.get("is_liked", False) %}has-text-link{% endif %}'
                       onclick="likeSnippet($(this).closest('.snippet-card'))">
                 <span class="icon is-small"><i class="fas fa-thumbs-up"></i></span>
-                <span class="snippet-card-likes">{{ snippet.get("likes", 0) }}</span>
+                <span class="snippet-card-likes">{{ snippet.get('likes', 0) }}</span>
               </button>
             </div>
           </div>

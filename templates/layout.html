@@ -44,19 +44,21 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-
     <!-- Modal for snippet card popup -->
-    <div id="snippet-modal" class="modal" id="edit-modal">
+    <div id="snippet-modal" class="modal">
       <div class="modal-background" onclick="closeSnippet()"></div>
-      <button class="modal-close is-large" aria-label="close" onclick="closeSnippet()"></button>
+      <button class="modal-close is-large"
+              aria-label="close"
+              onclick="closeSnippet()"></button>
     </div>
-
     {% block navbar %}
       <nav class="navbar" role="navigation" aria-label="main navigation">
         <!-- Navbar brand with logo -->
         <div class="navbar-brand">
-          <a class="navbar-item" href="{{ url_for('index') }}">
-            <img src="{{ url_for('static', filename='icons/SnippetOracleLogo.png') }}" alt="Logo" class="image white-icon is-3by1">
+          <a class="navbar-item" href="{{ url_for("index") }}">
+            <img src="{{ url_for('static', filename='icons/SnippetOracleLogo.png') }}"
+                 alt="Logo"
+                 class="image white-icon is-3by1">
           </a>
           <div id="mobile-search" class="navbar-fill-middle"></div>
           <!-- Navbar burger icon for mobile -->
@@ -66,14 +68,12 @@
             <span></span>
           </span>
         </div>
-
         <div id="navbarBasic" class="navbar-menu">
           <div class="navbar-start">
             <a class="navbar-item" href="{{ url_for("index") }}">Home</a>
             <a class="navbar-item">About</a>
           </div>
           <div id="desktop-search" class="navbar-fill-middle"></div>
-
           <div class="navbar-end">
             <a id="theme-button" class="navbar-item"><span class="theme-icon fas fa-lightbulb mr-2"></span>Theme</a>
             <div class="navbar-item">
@@ -81,10 +81,12 @@
                 <div class="navbar-item has-dropdown is-hoverable">
                   <a class="navbar-link">
                     <figure class="image is-32x32">
-                      <img src="{{ url_for('static', filename='profile_pictures/' + (user.profile_picture if user.profile_picture else 'default_image.png')) }}"
+                      <img src="{{ url_for('static', filename='profile_pictures/' + (user.profile_picture if user.profile_picture else 'default_image.png') ) }}"
                            alt="Profile Picture"
                            class="is-rounded"
-                           style="object-fit: cover; width: 100%; height: 100%;">
+                           style="object-fit: cover;
+                                  width: 100%;
+                                  height: 100%">
                     </figure>
                     {{ current_user.name }}
                   </a>
@@ -112,7 +114,6 @@
         const script_root = {{ request.script_root | tojson }};
       </script>
       <script src="{{ url_for('static', filename='warningMessage.js') }}"></script>
-      <script src="{{ url_for('static', filename='navbarBurger.js')}}"></script>
     {% endblock %}
   </body>
 </html>

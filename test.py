@@ -3,6 +3,7 @@ import pytest
 
 # Fixtures
 
+
 @pytest.fixture
 def db():
     db = data.Data()
@@ -31,9 +32,7 @@ def user(db):
 
 @pytest.fixture
 def snippet(db, author):
-    id = db.create_snippet(
-        "Snippet", "Snippet Code", author["id"], is_public=True
-    )
+    id = db.create_snippet("Snippet", "Snippet Code", author["id"], is_public=True)
     snippet = db.get_snippet(id)
     yield snippet
     db.delete_snippet(id, author["id"])

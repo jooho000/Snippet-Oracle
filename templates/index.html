@@ -39,9 +39,7 @@
     <h1 class="title">Your Snippets</h1>
     {% if snippets %}
       <div class="grid is-col-min-20">
-        {% for snippet in snippets %}
-          {{ macros.snippetCard(None, snippet) }}
-        {% endfor %}
+        {% for snippet in snippets %}{{ macros.snippetCard(None, snippet) }}{% endfor %}
         <!-- Fill up rightmost grid slots when there are only one or two snippets -->
         <div class="cell"></div>
         <div class="cell"></div>
