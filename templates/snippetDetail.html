@@ -84,7 +84,7 @@
       <!-- Display Existing Comments -->
       <div id="comments-section">
         {% for comment in comments %}
-          <article class="media box mb-4">
+          <article id="comment-{{ comment['id'] }}" class="media box mb-4">
             <figure class="media-left">
               <p class="image is-64x64">
                 <img class="is-rounded"
@@ -102,15 +102,13 @@
               <!-- Comment Actions -->
               <nav class="level is-mobile">
                 <div class="level-left">
-                  <a class="level-item"
-                     href="#"
-                     onclick="toggleReplyForm('{{ comment['id'] }}')">
+                  <a class="level-item" onclick="toggleReplyForm('{{ comment['id'] }}')">
                     <span class="icon is-small">
                       <i class="fas fa-reply"></i>
                     </span>
                   </a>
                   {% if comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                    <form action="{{ url_for('delete_comment', comment_id=comment['id']) }}"
+                    <form action="{{ url_for('delete_comment', comment_id=comment['id'], _anchor='comments-section') }}"
                           method="post"
                           class="level-item">
                       <button class="icon is-small has-text-danger" type="submit">
@@ -122,7 +120,7 @@
               </nav>
               <!-- Reply Form -->
               <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">
-                <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}"
+                <form action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-' ~ comment['id']) }}"
                       method="post">
                   <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
                   <textarea class="textarea"
@@ -135,7 +133,7 @@
               <!-- Nested Replies -->
               {% if comment["replies"] %}
                 {% for reply in comment["replies"] %}
-                  <article class="media">
+                  <article id="comment-{{ reply['id'] }}" class="media">
                     <figure class="media-left">
                       <p class="image is-64x64">
                         <img class="is-rounded"
@@ -154,26 +152,16 @@
                       <nav class="level is-mobile">
                         <div class="level-left">
                           {% if reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                            <form action="{{ url_for('delete_comment', comment_id=reply['id']) }}"
+                            <form action="{{ url_for('delete_comment', comment_id=reply['id'], _anchor='comment-' ~ comment['id']) }}"
                                   method="post"
-                                  class="is-inline">
-                              <button class="button is-small is-danger" type="submit">Delete</button>
+                                  class="level-item">
+                              <button class="icon is-small has-text-danger" type="submit">
+                                <i class="fas fa-trash"></i>
+                              </button>
                             </form>
                           {% endif %}
                         </div>
                       </nav>
-                      <!-- Reply Form for Nested Replies -->
-                      <div id="reply-form-{{ reply['id'] }}" class="is-hidden">
-                        <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}"
-                              method="post">
-                          <input type="hidden" name="parent_id" value="{{ reply['id'] }}">
-                          <textarea class="textarea is-small"
-                                    name="comment"
-                                    placeholder="Write a reply..."
-                                    required></textarea>
-                          <button type="submit" class="button is-link is-small">Post Reply</button>
-                        </form>
-                      </div>
                     </div>
                   </article>
                 {% endfor %}
@@ -189,7 +177,8 @@
         <figure class="media-left">
         </figure>
         <div class="media-content">
-          <form action="{{ url_for('add_comment', snippet_id=snippet['id']) }}"
+          <form id="comment-form"
+                action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-form') }}"
                 method="post">
             <div class="field">
               <p class="control">
