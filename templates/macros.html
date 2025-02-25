@@ -70,7 +70,7 @@
               {% for tag in snippet["tags"][:10] %}
                 <a href="{{ url_for('index', q=':' + tag) }}" class="tag is-info search-tag">
                   {{ tag }}
-                </a>
+                </a>              
               {% endfor %}
             {% endif %}
             <!-- Dummy tag to ensure spacing is correct even with no tags -->

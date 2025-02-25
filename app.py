@@ -67,18 +67,19 @@ def close_connection(exception):
 @app.route("/")
 def index():
     """
-    Render the homepage with the list of snippets.
+    Render the homepage with optional search results.
     """
     user_snippets = []
     user_data = None
+    query = request.args.get("q", "").strip()
 
     if flask_login.current_user.is_authenticated:
         user_snippets = get_db().get_user_snippets(
             flask_login.current_user.id, flask_login.current_user.id
         )
         user_data = get_db().get_user_details(flask_login.current_user.id)
-    return flask.render_template("index.html", snippets=user_snippets, user=user_data)
 
+    return flask.render_template("index.html", snippets=user_snippets, user=user_data, query=query)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
