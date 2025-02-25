@@ -1,13 +1,12 @@
 import data
-import mock_data
 import pytest
 
 # Fixtures
 
 
 @pytest.fixture
-def user():
-    username = mock_data.username()
+def author():
+    username = "Author"
     data.create_user(username, "N/A")
     user = data.get_user_by_name(username)
     yield user
@@ -15,48 +14,49 @@ def user():
 
 
 @pytest.fixture
-def snippet(user):
-    id = data.create_snippet(
-        "Test Snippet", mock_data.code(), user["id"], is_public=True
-    )
-    snippet = data.get_snippet(id)
-    yield snippet
-    data.delete_snippet(id, user["id"])
+def user():
+    username = "Other"
+    data.create_user(username, "N/A")
+    user = data.get_user_by_name(username)
+    yield user
+    data.delete_user(user["id"])
 
 
 @pytest.fixture
-def parent_child(user):
-    parent_id = data.create_snippet(
-        "Parent Snippet", mock_data.code(), user["id"], is_public=True
+def snippet(author):
+    id = data.create_snippet(
+        "Snippet", "Snippet Code", author["id"], is_public=True
     )
-    child_id = data.create_snippet(
+    snippet = data.get_snippet(id)
+    yield snippet
+    data.delete_snippet(id, author["id"])
+
+
+@pytest.fixture
+def child_snippet(author, snippet):
+    id = data.create_snippet(
         "Child Snippet",
-        mock_data.code(),
-        user["id"],
+        "Child Code",
+        author["id"],
         is_public=True,
-        parent_snippet_id=parent_id,
+        parent_snippet_id=snippet["id"],
     )
-    parent = data.get_snippet(parent_id)
-    child = data.get_snippet(child_id)
-    yield (user, parent, child)
-    data.delete_snippet(parent_id, user["id"])
-    data.delete_snippet(child_id, user["id"])
+    yield data.get_snippet(id)
+    data.delete_snippet(id, author["id"])
 
 
 # Tests
 
 
-def test_parent_snippet_isNotNull(parent_child):
-    _, parent, child = parent_child
-    assert child["parent_snippet_id"] == parent["id"]
+def test_parent_snippet_isNotNull(snippet, child_snippet):
+    assert child_snippet["parent_snippet_id"] == snippet["id"]
 
 
-def test_delete_parent_snippet_isNull(parent_child):
-    user, parent, child = parent_child
-    data.delete_snippet(parent["id"], user["id"])
-    child1 = data.get_snippet(child["id"], user["id"])
-    assert data.get_snippet(parent["id"], user["id"]) is None
-    assert child1["parent_snippet_id"] is None
+def test_delete_parent_snippet_isNull(author, snippet, child_snippet):
+    data.delete_snippet(snippet["id"], author["id"])
+    child_snippet = data.get_snippet(child_snippet["id"], author["id"])
+    assert data.get_snippet(snippet["id"], author["id"]) is None
+    assert child_snippet["parent_snippet_id"] is None
 
 
 def test_single_like(user, snippet):
