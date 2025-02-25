@@ -17,11 +17,20 @@ $(function () {
     }
     searchTimeout = setTimeout(doSearch, searchDelayMs);
   });
+
+  // Attach event listener for tag clicks
+  $(document).on("click", ".search-tag", function (event) {
+    event.preventDefault();
+    const tag = $(this).data("tag");
+
+    // Update search input with the clicked tag and trigger search
+    searchInput.val(`:${tag}`);
+    doSearch();
+  });
 });
 
 /**
  * Start a search immediately, updating search results when complete.
- * Results are ignored if another search is started before this search completes.
  */
 async function doSearch() {
   const query = searchInput.val();
@@ -42,32 +51,26 @@ async function doSearch() {
     $("#search-results-desc").hide();
     return;
   }
+
   $("#snippets").hide();
-  // Show loading spinner
   searchInput.parent().addClass("is-loading");
 
-  // Send the query to the server via AJAX (using fetch)
-  const searchUrl = `/search?q=${encodeURIComponent(query)}`;
+  const searchUrl = `/search?q=${encodeURIComponent(query)}&format=json`;
   pendingSearchUrl = searchUrl;
 
   fetch(searchUrl, {
-    headers: {
-      "Search-Type": $("#search-icon").hasClass("fa-lock") ? false : true,
-    },
+    headers: { "Search-Type": $("#search-icon").hasClass("fa-lock") ? false : true }
   })
-    .then((response) => response.json())
-    .then((data) => {
-      // Ignore results if another
+    .then(response => response.json())
+    .then(data => {
       if (searchUrl !== pendingSearchUrl) return;
 
-      resultsContainer.empty(); // Clear previous results
+      resultsContainer.empty();
       descResultsContainer.empty();
       $(".search-disclaimer").remove();
 
-      // If there are results, display them as buttons
       let anyDescMatches = false;
       for (const snippet of data.results) {
-        // Add a disclaimer that these are only description matches
         if (!anyDescMatches && snippet.is_description_match) {
           anyDescMatches = true;
           const disclaimer = $(document.createElement("h5"));
@@ -85,7 +88,6 @@ async function doSearch() {
           }
         }
 
-        // Add a snippet card to search results
         createSnippet(snippet).appendTo(
           snippet.is_description_match ? descResultsContainer : resultsContainer
         );
@@ -94,8 +96,10 @@ async function doSearch() {
       if (data.results.length === 0) {
         resultsContainer.text("No snippets found.");
       }
+
+      attachTagListeners();
     })
-    .catch((error) => {
+    .catch(error => {
       console.error("Error fetching search results:", error);
       resultsContainer.text("Error occurred while searching.");
     })
@@ -109,115 +113,56 @@ async function doSearch() {
 
 /**
  * Creates a snippet card from the given info.
- * @param {{id: number, user_id: number, name: string, description: string, code: string, tags: Array<string>, likes: number, is_liked: boolean}} snippet
  */
 function createSnippet(snippet) {
-  const card = snippetTemplate.clone();
 
-  // Update attributes
+  const card = snippetTemplate.clone();
   card.removeAttr("id");
   card.attr("data-snippet-id", snippet.id);
   card.attr("data-code", snippet.code);
   card.find(".snippet-card-name").text(snippet.name);
 
-  // Remove whichever public/private label isn't relevant
+  // Remove irrelevant public/private labels
   if (snippet.is_public) card.find(".snippet-card-private").remove();
 
-  // Remove edit/delete links if not the owner
   const editButton = card.find(".snippet-card-edit");
   const deleteButton = card.find(".snippet-card-delete");
-  if (snippet.user_id !== current_user_id) {
+  if (!snippet.editable) {
     editButton.remove();
     deleteButton.remove();
   }
 
-  // Update summary
-  const summary = (snippet.description || "").trim();
-  card.find(".snippet-card-summary").text(summary);
+  // Update description
+  card.find(".snippet-card-summary").text((snippet.description || "").trim());
 
   // Add tags
   const tagList = card.find(".snippet-card-tags");
+  tagList.empty();
   for (const tagName of snippet.tags) {
-    const tagElem = $(document.createElement("span"));
-    tagElem.addClass("tag is-info");
+    const tagElem = $(document.createElement("a"));
+    tagElem.addClass("tag is-info search-tag");
+    tagElem.attr("href", "#");
+    tagElem.attr("data-tag", tagName);
     tagElem.text(tagName);
     tagElem.appendTo(tagList);
   }
 
-  // Update likes
-  const likesButton = card.find(".snippet-card-like-button");
-  const likes = card.find(".snippet-card-likes");
-  if (snippet.is_liked) likesButton.addClass("has-text-link");
-  likes.text(snippet.likes);
-
-  // Move spacer tag to the end of list
-  const dummyTag = tagList.find(".is-invisible");
-  dummyTag.remove().appendTo(tagList);
-
   return card;
 }
 
-// Global Set to track selected tags
-let selectedTags = new Set();
-
-function filterByTag(tag) {
-  const selectedTagsContainer = document.getElementById("selected-tags");
-
-  if (selectedTags.has(tag)) {
-    return; // Avoid adding duplicates
-  }
-
-  selectedTags.add(tag);
-
-  // Create a removable tag button
-  const tagElement = document.createElement("span");
-  tagElement.className = "tag is-primary is-rounded";
-  tagElement.id = `selected-tag-${tag}`;
-  tagElement.innerHTML = `${tag} <button class="delete is-small" onclick="removeTag('${tag}')"></button>`;
-
-  // Append to the selected tags container
-  selectedTagsContainer.appendChild(tagElement);
-
-  updateSnippetGrid();
-}
-
-function removeTag(tag) {
-  if (!selectedTags.has(tag)) return;
-
-  selectedTags.delete(tag);
-
-  // Remove the tag from the UI
-  const tagElement = document.getElementById(`selected-tag-${tag}`);
-  if (tagElement) tagElement.remove();
-
-  // Ensure correct filtering happens after tag removal
-  updateSnippetGrid();
-}
-
-function updateSnippetGrid() {
-  const snippets = document.querySelectorAll(".box[data-snippet-id]");
-
-  snippets.forEach((snippet) => {
-    const tagsContainer = snippet.querySelector(".tags-container");
-    const snippetTags = Array.from(
-      tagsContainer.getElementsByClassName("tag")
-    ).map((tagElement) => tagElement.textContent.trim());
-
-    // Check if the snippet has all selected tags
-    // chnage it to the parent element
-    const matchesAllTags = [...selectedTags].every((tag) =>
-      snippetTags.includes(tag)
-    );
-
-    if (matchesAllTags) {
-      snippet.parentElement.style.display = "";
-    } else {
-      snippet.parentElement.style.display = "none";
-    }
+/**
+ * Ensures event listeners are attached to dynamically created tags.
+ */
+function attachTagListeners() {
+  $(document).off("click", ".search-tag").on("click", ".search-tag", function (event) {
+    event.preventDefault();
+    const tag = $(this).data("tag");
+    searchInput.val(`:${tag}`);
+    doSearch();
   });
 }
 
-//helper funcs
+// Helper Functions
 addEventListener("keydown", function (event) {
   if (event.ctrlKey && event.key === "k") {
     event.preventDefault();
