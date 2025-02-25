@@ -4,7 +4,8 @@
 {% block head %}
   {{ super() }}
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css"
+        rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 {% endblock %}
 {% block content %}
@@ -18,9 +19,11 @@
         <div class="column is-one-quarter">
           <figure class="image is-square">
             <img class="is-rounded"
-                 src="{{ url_for('static', filename='profile_pictures/' + (user.profile_picture if user.profile_picture else 'default_image.png')) }}"
+                 src="{{ url_for('static', filename='profile_pictures/' + (user.profile_picture if user.profile_picture else 'default_image.png') ) }}"
                  alt="Profile Picture"
-                 style="object-fit: cover; width: 100%; height: 100%;">
+                 style="object-fit: cover;
+                        width: 100%;
+                        height: 100%">
           </figure>
         </div>
         <div class="column">
@@ -45,7 +48,10 @@
                   <a href="{{ link[1] }}" target="_blank" title="{{ link[1] }}">
                     <img src="{{ get_social_icon(link[1]) }}"
                          alt="{{ link[0] }}"
-                         style="width: 20px; height: 20px; margin-right: 8px">
+                         style="width: 20px;
+                                height: 20px;
+                                margin-right: 8px"
+                         class="white-icon">
                     <span class="social-links-box">{{ link[1] }}</span>
                   </a>
                 </li>
@@ -58,16 +64,8 @@
             <h4 class="title is-5">Your Snippets</h4>
             <div class="container" id="snippet-grid">
               {% if snippets %}
-                {% for s in snippets %}
-                  {{ macros.snippetCard(None,
-                                s["id"],
-                                s["name"],
-                                s["is_public"],
-                                s["description"],
-                                s["code"],
-                                s["tags"],
-                                s["user_id"] == current_user.id | int)
-                  }}
+                {% for snippet in snippets %}
+                  {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == current_user.id | int) }}
                 {% endfor %}
               {% else %}
                 <p>No snippets found. Start creating your first snippet!</p>
@@ -83,23 +81,28 @@
     <div class="modal-content">
       <div class="box">
         <h3 class="title is-4">Edit Profile</h3>
-        <form method="POST" action="/profile" id="edit-profile-form" enctype="multipart/form-data">
+        <form method="POST"
+              action="/profile"
+              id="edit-profile-form"
+              enctype="multipart/form-data">
           <div class="field">
             <label class="label">Bio</label>
             <div class="control">
-              <textarea class="textarea" name="bio" placeholder="Write something about yourself...">{{ user.bio }}</textarea>
+              <textarea class="textarea"
+                        name="bio"
+                        placeholder="Write something about yourself...">{{ user.bio }}</textarea>
             </div>
           </div>
           <div class="field">
             <label class="label">Profile Picture</label>
             <div class="control">
-              <input class="input" 
-                      type="file" 
-                      name="profile_picture" 
-                      id="profile-picture-input" 
-                      placeholder="Upload your profile picture" 
-                      accept="image/*" 
-                      onchange="previewImage(event)">
+              <input class="input"
+                     type="file"
+                     name="profile_picture"
+                     id="profile-picture-input"
+                     placeholder="Upload your profile picture"
+                     accept="image/*"
+                     onchange="previewImage(event)">
             </div>
             <div id="image-preview-container" class="mt-3">
               <img id="image-preview" class="image-preview" src="" alt="Image Preview">
@@ -110,24 +113,35 @@
             <div id="social-links-container">
               {% for link in links %}
                 <div class="control">
-                  <input class="input" type="text" name="links" placeholder="Enter a URL" value="{{ link[1] }}">
+                  <input class="input"
+                         type="text"
+                         name="links"
+                         placeholder="Enter a URL"
+                         value="{{ link[1] }}">
                 </div>
               {% endfor %}
               <div class="control">
                 <input class="input" type="text" name="links" placeholder="Enter a new URL">
               </div>
             </div>
-            <button type="button" class="button is-small is-link mt-2" onclick="addSocialLink()">Add Link</button>
+            <button type="button"
+                    class="button is-small is-link mt-2"
+                    onclick="addSocialLink()">Add Link</button>
           </div>
           <div class="field">
             <div class="control">
-              <button class="button is-primary" type="button" id="submit-button" onclick="submitProfileForm(event)">Save Changes</button>
+              <button class="button is-primary"
+                      type="button"
+                      id="submit-button"
+                      onclick="submitProfileForm(event)">Save Changes</button>
             </div>
           </div>
         </form>
       </div>
     </div>
-    <button class="modal-close is-large" aria-label="close" onclick="closeEditModal()"></button>
+    <button class="modal-close is-large"
+            aria-label="close"
+            onclick="closeEditModal()"></button>
   </div>
 {% endblock %}
 {% block scripts %}

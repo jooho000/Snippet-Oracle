@@ -10,7 +10,7 @@
             {{ 'Modify and enhance an existing snippet.' if snippet else 'Save and manage your code snippets efficiently.' }}
           </p>
         {% endblock %}
-        <form method="post">
+        <form method="post" autocomplete="off">
           <!-- Snippet Name -->
           <div class="field">
             <label class="label">Snippet Name</label>
@@ -27,10 +27,10 @@
           <div class="field">
             <label class="label">Code</label>
             <div class="control">
-              <textarea class="textarea is-medium is-family-code" 
-                        name="code" 
-                        placeholder="Paste your code here" 
-                        rows="6" 
+              <textarea class="textarea is-family-code"
+                        name="code"
+                        placeholder="Paste your code here"
+                        rows="6"
                         required>{% block snippetCode %}{{ snippet.code if snippet else '' }}{% endblock %}</textarea>
             </div>
           </div>
@@ -38,7 +38,9 @@
           <div class="field">
             <label class="label">Description</label>
             <div class="control">
-              <textarea class="textarea" name="description" placeholder="Optional description">{% block snippetDesc %}{{ snippet.description if snippet else '' }}{% endblock %}</textarea>
+              <textarea class="textarea"
+                        name="description"
+                        placeholder="Optional description">{% block snippetDesc %}{{ snippet.description if snippet else '' }}{% endblock %}</textarea>
             </div>
           </div>
           <!-- Tags Input Section -->
@@ -116,7 +118,9 @@
             <!-- Submit Button -->
             <div class="field mt-4">
               <div class="control">
-                <button class="button is-primary is-fullwidth is-medium is-rounded">{{ 'Create Remix' if snippet else 'Create Snippet' }}</button>
+                <button class="button is-primary is-fullwidth is-medium is-rounded">
+                  {{ 'Create Remix' if snippet else 'Create Snippet' }}
+                </button>
               </div>
             </div>
           </form>
@@ -133,5 +137,5 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
-  <script src="{{ url_for('static', filename='tag_handler.js') }}"></script>
+  <script src="{{ url_for('static', filename='tagHandler.js') }}"></script>
 {% endblock %}

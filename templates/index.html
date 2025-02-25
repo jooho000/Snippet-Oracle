@@ -25,7 +25,7 @@
           </span>
         </div>
       </div>
-      <div hidden>{{ macros.snippetCard('snippet-template', -1) }}</div>
+      <div hidden>{{ macros.snippetCard('snippet-template', {}) }}</div>
       <!-- Selected Tags Display (Tags that were clicked will appear here) -->
       <div id="selected-tags" class="tags are-medium mt-3"></div>
       <!-- Search Results -->
@@ -39,17 +39,7 @@
     <h1 class="title">Your Snippets</h1>
     {% if snippets %}
       <div class="grid is-col-min-20">
-        {% for s in snippets %}
-          {{ macros.snippetCard(None,
-                    s["id"],
-                    s["name"],
-                    s["is_public"],
-                    s["description"],
-                    s["code"],
-                    s["tags"],
-                    True) 
-          }}
-        {% endfor %}
+        {% for snippet in snippets %}{{ macros.snippetCard(None, snippet) }}{% endfor %}
         <!-- Fill up rightmost grid slots when there are only one or two snippets -->
         <div class="cell"></div>
         <div class="cell"></div>

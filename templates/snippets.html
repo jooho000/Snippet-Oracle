@@ -28,7 +28,7 @@
            href="{{ url_for("createSnippet") }}">Create New Snippet</a>
       </div>
     </div>
-    <div hidden>{{ macros.snippetCard("snippet-template") }}</div>
+    <div hidden>{{ macros.snippetCard('snippet-template', {}) }}</div>
     <!-- Selected Tags Display (Tags that were clicked will appear here) -->
     <div id="selected-tags" class="tags are-medium mt-3"></div>
     <!-- Search Results -->
@@ -39,10 +39,8 @@
     <!-- Description Matches -->
     <div id="search-results-desc" class="grid is-col-min-16"></div>
     {% if snippets %}
-      <div id ="snippets" class="grid is-col-min-20 mt-5">
-        {% for s in snippets %}
-          {{ macros.snippetCard("snippet-" ~ loop.index, s["id"], s["name"], s["is_public"], s["description"], s["code"], s["tags"]) }}
-        {% endfor %}
+      <div id = "snippets" class="grid is-col-min-20 mt-5">
+        {% for snippet in snippets %}{{ macros.snippetCard("snippet-" ~ loop.index, snippet) }}{% endfor %}
         <!-- Fill up rightmost grid slots when there are only one or two snippets -->
         <div class="cell"></div>
         <div class="cell"></div>
