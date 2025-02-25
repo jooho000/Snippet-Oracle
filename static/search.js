@@ -109,42 +109,34 @@ async function doSearch() {
 
 /**
  * Creates a snippet card from the given info.
- * @param {{id: number, user_id: number, name: string, description: string, code: string, tags: Array<string>}} snippet
+ * @param {{id: number, user_id: number, name: string, description: string, code: string, tags: Array<string>, likes: number, is_liked: boolean}} snippet
  */
 function createSnippet(snippet) {
-  const elem = snippetTemplate.clone();
-  const viewLink = elem.find(".snippet-card-link");
+  const card = snippetTemplate.clone();
 
   // Update attributes
-  elem.removeAttr("id");
-  elem.data("code", snippet.code);
-  elem.data("description", snippet.description);
-  elem.find(".snippet-card-name").text(snippet.name);
-  viewLink.attr("href", viewLink.attr("href").replace("-1", snippet.id));
+  card.removeAttr("id");
+  card.attr("data-snippet-id", snippet.id);
+  card.attr("data-code", snippet.code);
+  card.find(".snippet-card-name").text(snippet.name);
 
   // Remove whichever public/private label isn't relevant
-  if (snippet.is_public) elem.find(".snippet-card-private").remove();
+  if (snippet.is_public) card.find(".snippet-card-private").remove();
 
-  // Update edit/delete links, or remove them if not the owner
-  const editButton = elem.find(".snippet-card-edit");
-  const deleteButton = elem.find(".snippet-card-delete");
+  // Remove edit/delete links if not the owner
+  const editButton = card.find(".snippet-card-edit");
+  const deleteButton = card.find(".snippet-card-delete");
   if (snippet.user_id !== current_user_id) {
     editButton.remove();
     deleteButton.remove();
-  } else {
-    editButton.attr("href", editButton.attr("href").replace("-1", snippet.id));
-    deleteButton.attr(
-      "href",
-      deleteButton.attr("href").replace("-1", snippet.id)
-    );
   }
 
   // Update summary
   const summary = (snippet.description || "").trim();
-  elem.find(".snippet-card-summary").text(summary);
+  card.find(".snippet-card-summary").text(summary);
 
   // Add tags
-  const tagList = elem.find(".snippet-card-tags");
+  const tagList = card.find(".snippet-card-tags");
   for (const tagName of snippet.tags) {
     const tagElem = $(document.createElement("span"));
     tagElem.addClass("tag is-info");
@@ -152,11 +144,17 @@ function createSnippet(snippet) {
     tagElem.appendTo(tagList);
   }
 
+  // Update likes
+  const likesButton = card.find(".snippet-card-like-button");
+  const likes = card.find(".snippet-card-likes");
+  if (snippet.is_liked) likesButton.addClass("has-text-link");
+  likes.text(snippet.likes);
+
   // Move spacer tag to the end of list
   const dummyTag = tagList.find(".is-invisible");
   dummyTag.remove().appendTo(tagList);
 
-  return elem;
+  return card;
 }
 
 // Global Set to track selected tags

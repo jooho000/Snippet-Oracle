@@ -1,11 +1,9 @@
-// static/copy.js
-
-document.addEventListener("DOMContentLoaded", function () {
+$(() => {
   // Get the copy button and snippet code element
-  const copyButton = document.getElementById("copyButton");
-  const snippetCode = document.getElementById("snippet-code");
+  const copyButton = $("#copyButton");
+  const snippetCode = $("#snippet-code");
 
-  copyButton.addEventListener("click", function () {
+  copyButton.on("click", () => {
     const textarea = document.createElement("textarea");
     textarea.value = snippetCode.innerText; // Get the snippet code text
     document.body.appendChild(textarea);

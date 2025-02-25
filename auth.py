@@ -5,7 +5,7 @@ Stores user login information.
 import os
 import flask_login
 import argon2
-import data
+import app
 
 login_manager = flask_login.LoginManager()
 password_hasher = argon2.PasswordHasher()
@@ -33,11 +33,13 @@ def get_secret_key():
             file.write(key)
         return key
 
+
 def get_current_id_or_none():
     if flask_login.current_user.is_authenticated:
         return flask_login.current_user.id
     else:
         return None
+
 
 def get_username_error(username):
     """
@@ -72,7 +74,7 @@ def load_user(user_id):
     """
     Fetch a user by ID, returning None if that user does not exist.
     """
-    res = data.get_user_by_id(user_id)
+    res = app.get_db().get_user_by_id(user_id)
 
     if res is None:
         return None
@@ -89,13 +91,15 @@ def try_login(username, password):
         return None
 
     # Fetch account info by name
-    res = data.get_user_by_name(username)
+    res = app.get_db().get_user_by_name(username)
+    if res is None:
+        return None
 
     # Verify that the password matches
     try:
         password_hasher.verify(res["password_hash"], password)
         return User(res["id"], res["name"], res["password_hash"])
-    except:
+    except argon2.exceptions.Argon2Error:
         return None
 
 
@@ -109,7 +113,7 @@ def try_sign_up(username, password):
 
     # Create the new account
     password_hash = password_hasher.hash(password)
-    data.create_user(username, password_hash)
+    app.get_db().create_user(username, password_hash)
 
     # Log in with the new account
     return try_login(username, password)
