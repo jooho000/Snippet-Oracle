@@ -1,5 +1,8 @@
 let cropper;
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_CROP_SIZE = 1024;
+
 function openEditModal() {
   document.getElementById("edit-modal").classList.add("is-active");
 }
@@ -19,8 +22,13 @@ function addSocialLink() {
 
 function previewImage(event) {
   const file = event.target.files[0];
-  const reader = new FileReader();
 
+  if (file.size > MAX_FILE_SIZE) {
+    alert("File is too large! Please upload an image smaller than 5MB.");
+    return;
+  }
+
+  const reader = new FileReader();
   reader.onload = function (e) {
     const previewContainer = document.getElementById("image-preview-container");
     const previewImage = document.getElementById("image-preview");
@@ -40,6 +48,11 @@ function previewImage(event) {
       responsive: true,
       scalable: false,
       zoomable: false,
+      cropmove(event) {
+        const cropBoxData = cropper.getCropBoxData();
+        if (cropBoxData.width > MAX_CROP_SIZE) cropper.setCropBoxData({ width: MAX_CROP_SIZE });
+        if (cropBoxData.height > MAX_CROP_SIZE) cropper.setCropBoxData({ height: MAX_CROP_SIZE });
+      },
       ready() {
         // Apply circular appearance to the crop box and preview
         const cropBox = document.querySelector(".cropper-crop-box");
@@ -59,19 +72,17 @@ function previewImage(event) {
 }
 
 function submitProfileForm(event) {
-  event.preventDefault(); // Prevent the default form submission
-
-  // If there's a cropped image, compress and add it to the form as base64
+  event.preventDefault();
   const form = document.getElementById("edit-profile-form");
 
   if (cropper) {
-    // Get the cropped canvas
-    const croppedCanvas = cropper.getCroppedCanvas();
+    const croppedCanvas = cropper.getCroppedCanvas({
+      maxWidth: MAX_CROP_SIZE,
+      maxHeight: MAX_CROP_SIZE,
+    });
 
-    // Compress the image (e.g., 50% quality for JPEG)
-    const compressedImage = croppedCanvas.toDataURL("image/jpeg", 0.5); // 0.5 is the quality factor (0 to 1)
+    const compressedImage = croppedCanvas.toDataURL("image/jpeg", 0.5);
 
-    // Only add the hidden input with base64 if an image was cropped
     const hiddenInput = document.createElement("input");
     hiddenInput.type = "hidden";
     hiddenInput.name = "profile_picture_base64";
@@ -79,6 +90,5 @@ function submitProfileForm(event) {
     form.appendChild(hiddenInput);
   }
 
-  // Submit the form
   form.submit();
 }

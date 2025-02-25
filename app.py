@@ -170,6 +170,10 @@ def profile():
             image_data = base64.b64decode(encoded_image)
             image = Image.open(BytesIO(image_data))
 
+            if image.size[0] > 1024 or image.size[1] > 1024:
+                flask.flash("Cropped image is too large! Max allowed size is 1024x1024 pixels.", "warning")
+                return flask.redirect(flask.request.url)
+
             # Generate a unique filename
             file_extension = profile_picture_base64.split("/")[1].split(";")[0]
             unique_filename = str(uuid.uuid4()) + "." + file_extension
