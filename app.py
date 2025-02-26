@@ -241,10 +241,8 @@ def profile(username=None):
     offset = (page - 1) * limit
 
     # Fetch all snippets if owner, only public snippets if visitor
-    user_snippets = get_db().get_user_snippets(
-        user_id,
-        flask_login.current_user.id if flask_login.current_user.is_authenticated else None
-    )
+    viewer_id = flask_login.current_user.id if flask_login.current_user.is_authenticated else None
+    user_snippets = get_db().get_user_snippets(user_id, viewer_id)
 
     if not is_owner:
         user_snippets = [snippet for snippet in user_snippets if snippet["is_public"]]  # Filter only public snippets
