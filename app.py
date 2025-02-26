@@ -95,13 +95,14 @@ def login():
         elif user is None:
             flask.flash("Invalid username or password!", "warning")
 
-        # TODO: Redirect to flask.request.args.get("next") instead
-        # This isn't implement right now because it's a potential attack vector
+        # TODO: Mitigate Open Redirect Vulnrebility
+        # Make sure next is on site
         if user is None:
             return flask.render_template("login.html", username=username)
         else:
             flask_login.login_user(user)
-            return flask.redirect(flask.url_for("index"))
+            next = flask.request.args.get("next")
+            return flask.redirect(next or flask.url_for("index"))
 
     else:
         return flask.render_template("login.html")
@@ -171,7 +172,10 @@ def profile():
             image = Image.open(BytesIO(image_data))
 
             if image.size[0] > 1024 or image.size[1] > 1024:
-                flask.flash("Cropped image is too large! Max allowed size is 1024x1024 pixels.", "warning")
+                flask.flash(
+                    "Cropped image is too large! Max allowed size is 1024x1024 pixels.",
+                    "warning",
+                )
                 return flask.redirect(flask.request.url)
 
             # Generate a unique filename
@@ -414,19 +418,28 @@ def update_snippet_visibility(snippet_id):
 @app.route("/share/<string:link>")
 def view_snippet_by_link(link):
     info = get_db().get_snippet_id_by_shareable_link(link)
-    if (info):
-      try:
-        user_id = flask_login.current_user.id
-      except AttributeError:
-        user_id = None
-      else:
-        snippet = get_db().get_snippet(info["id"], user_id)
-        if (snippet):
-          return flask.render_template(
-              "snippetDetail.html",
-              user=user_id,
-              snippet=snippet,
-          )
+
+    if info:
+        try:
+            user_id = flask_login.current_user.id
+        except AttributeError:
+            if not info["is_public"]:
+                return auth.login_manager.unauthorized()
+            else:
+                user_id = None
+
+    snippet = get_db().get_snippet(info["id"], user_id)
+
+    if snippet:
+        if snippet["parent_snippet_id"] is not None:
+            parent_snippet = get_db().get_snippet(snippet["parent_snippet_id"], user_id)
+        return flask.render_template(
+            "snippetDetail.html",
+            user=user_id,
+            snippet=snippet,
+            parent_snippet=parent_snippet,
+        )
+
     flask.flash("Unauthorized or snippet not found!", "danger")
     return flask.redirect(flask.url_for("index"))
 
@@ -479,9 +492,7 @@ def edit_snippet(snippet_id):
         description = flask.request.form.get("description")
         tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
-        print("HELLO IS IT PUBLIC: " + str(flask.request.form.get("is_public") == "1"))
         is_public = flask.request.form.get("is_public") == "1"
-        print("STORED VALUE IS: " + str(is_public))
         try:
             permitted_users = flask.request.form.getlist(
                 "permitted_users[]"
@@ -519,7 +530,6 @@ def edit_snippet(snippet_id):
         return flask.redirect(
             flask.url_for(
                 "view_snippet",
-                user=get_db().get_user_details(flask_login.current_user.id),
                 snippet_id=snippet_id,
             )
         )
@@ -542,19 +552,15 @@ def edit_snippet(snippet_id):
 
 
 @app.route("/deleteSnippet/<int:snippet_id>")
+@flask_login.login_required
 def delete_Snippet(snippet_id):
-    try:
-        current_user_id = flask_login.current_user.id 
-    except AttributeError:
+    current_user_id = flask_login.current_user.id
+    snippet = get_db().get_snippet(snippet_id, current_user_id)
+    if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
-        return flask.redirect(flask.url_for("index"))
-    else:
-      snippet = get_db().get_snippet(snippet_id, current_user_id)
-      if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
-          flask.flash("Unauthorized or snippet not found!", "danger")
-          return flask.redirect(flask.url_for("snippets"))
-      get_db().delete_snippet(snippet_id, snippet["user_id"])
-      return flask.redirect(flask.url_for("snippets"))
+        return flask.redirect(flask.url_for("snippets"))
+    get_db().delete_snippet(snippet_id, snippet["user_id"])
+    return flask.redirect(flask.url_for("snippets"))
 
 
 @app.route("/snippet/<int:snippet_id>/comment", methods=["POST"])
