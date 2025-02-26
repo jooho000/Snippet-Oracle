@@ -546,6 +546,7 @@ def delete_Snippet(snippet_id):
     try:
         current_user_id = flask_login.current_user.id 
     except AttributeError:
+        flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("index"))
     else:
       snippet = get_db().get_snippet(snippet_id, current_user_id)
