@@ -415,10 +415,11 @@ def update_snippet_visibility(snippet_id):
 def view_snippet_by_link(link):
     info = get_db().get_snippet_id_by_shareable_link(link)
     if (info):
-      user_id = None
       try:
         user_id = flask_login.current_user.id
       except AttributeError:
+        user_id = None
+      else:
         snippet = get_db().get_snippet(info["id"], user_id)
         if (snippet):
           return flask.render_template(
