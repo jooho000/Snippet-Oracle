@@ -22,10 +22,11 @@ $(function () {
         .click(function () {
           tag.remove();
           tags = tags.filter((t) => t !== tagText);
+          $(`#preset-${tagText}`).show();
         });
 
       tag.append(deleteBtn).insertBefore(tagInput);
-      tagInput.val("").attr("placeholder", "Type tags and press Enter");
+      tagInput.val("");
     } else tagInput.val("").attr("placeholder", "Already Tagged");
   }
 
@@ -35,24 +36,18 @@ $(function () {
         event.preventDefault();
         addTag(tagInput.val());
       }
-    },
-    beforeinput: function (event) {
-      const inputType = event.originalEvent.inputType;
-      if (
-        inputType === "deleteContentBackward" ||
-        inputType === "deleteContentForward"
-      )
-        return;
-      if (tagInput.val().length >= 20) event.preventDefault();
+      else if (!tagInput.val()){
+        tagInput.attr("placeholder", "Type tags and press Enter");
+      }tags
     },
   });
 
-  presetTags.map((index, tag) => {
-    tag.click(function (event) {
-      event.preventDefault();
-      addTag(tag.textContent);
+  for (const tag of presetTags){
+    $(tag).click(function () {
+      addTag($(tag).text());
+      $(tag).hide()
     });
-  });
+  }
 
   dropdownButton.click(function (event) {
     event.preventDefault();

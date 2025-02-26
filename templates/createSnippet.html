@@ -54,6 +54,7 @@
                   <input id="tag-input"
                         class="input tag-input is-flex-grow-1"
                         placeholder="Type tags and press Enter"
+                        maxlength="20"
                        />
                 </div>
               </div>
@@ -76,7 +77,7 @@
               </div>
               <div class="dropdown-menu" id="dropdown-menu" role="menu">
                 <div class="dropdown-content">
-                  {% for tag in preset_tags %}<a href="#" class="dropdown-item preset-tag">{{ tag }}</a>{% endfor %}
+                  {% for tag in preset_tags %}<a id="preset-{{ tag }}" class="dropdown-item preset-tag">{{ tag }}</a>{% endfor %}
                 </div>
               </div>
             </div>
