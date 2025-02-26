@@ -40,7 +40,7 @@
     <div class="snippet-card-tags tags-container tags">
       {% if snippet["tags"] %}
         <strong>Tags:</strong>
-        {{ macros.tagsDisplay(snippet) }}
+        {{ macros.tagsDisplay(snippet.get("tags", [])) }}
       {% else %}
         <em>No Tags</em>
       {% endif %}

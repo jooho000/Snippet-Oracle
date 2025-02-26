@@ -1,8 +1,8 @@
 {% macro snippetCard(elementId, snippet, editable=True) -%}
   <div {% if elementId %}id="{{ elementId }}"{% endif %}
        class="snippet-card has-text-left cell mb-2"
-       data-snippet-id='{{ snippet.get("id", None) }}'
-       data-code='{{ snippet.get("code", None) }}'>
+       data-snippet-id='{{ snippet.get('id', None) }}'
+       data-code='{{ snippet.get('code', None) }}'>
     <div class="box">
       <!-- Snippet Header: Name + Buttons + Visibility -->
       <div class="snippet-card-header columns mb-0">
@@ -60,7 +60,6 @@
           </button>
         </div>
       </div>
-      
       <!-- Snippet Header: Profile Picture & Owner Name -->
       <div class="snippet-card-user is-flex is-align-items-center">
         <!-- Profile Picture -->
@@ -69,38 +68,30 @@
             <figure class="image is-32x32">
               <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
                 <img class="is-rounded"
-                    src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png')) }}"
-                    alt="{{ snippet['author']['name'] }}'s profile picture">
+                     src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png') ) }}"
+                     alt="{{ snippet['author']['name'] }}'s profile picture">
               </a>
             </figure>
           </div>
-
           <!-- Owner Name -->
           <div class="media-content ml-2">
             <p class="title is-6">
-              <a href="{{ url_for('profile', username=snippet['author']['name']) }}" 
-                class="white-icon has-text-light has-text-weight-medium">
-                {{ snippet['author']['name'] }}
-              </a>
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}"
+                 class="white-icon has-text-light has-text-weight-medium">{{ snippet['author']['name'] }}</a>
             </p>
           </div>
         {% endif %}
       </div>
-
       <!-- Snippet Description (Middle) -->
-      <p class="snippet-card-summary column is-italic mb-4">
-        {{ snippet.get('description', '') }}
-      </p>
+      <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get('description', '') }}</p>
       <div class="columns">
         <div class="column">
-          <div class="snippet-card-tags tags-container tags">
-            {{ tagsDisplay(snippet) }}
-          </div>
+          <div class="snippet-card-tags tags-container tags">{{ tagsDisplay(snippet.get('tags', []), 6) }}</div>
         </div>
         <div class="column is-narrow">
           <div class="level">
             <div class="level-item">
-              <button class='snippet-card-like-button icon-text {% if snippet.get("is_liked", False) %}has-text-link{% endif %}'
+              <button class="snippet-card-like-button icon-text {% if snippet.get('is_liked', False) %}has-text-link{% endif %}"
                       onclick="likeSnippet($(this).closest('.snippet-card'))">
                 <span class="icon is-small"><i class="fas fa-thumbs-up"></i></span>
                 <span class="snippet-card-likes">{{ snippet.get('likes', 0) }}</span>
@@ -112,15 +103,11 @@
     </div>
   </div>
 {%- endmacro %}
-
-{% macro tagsDisplay(snippet) -%}
-  {% if snippet["tags"] %}
-    {% for tag in snippet["tags"][:10] %}
-      <a href="{{ url_for('index', q=':' + tag) }}" class="tag is-info search-tag">
-        {{ tag }}
-      </a>              
-    {% endfor %}
-  {% endif %}
+{% macro tagsDisplay(tags, limit=20) -%}
+  {% for tag in tags[:limit] %}
+    <a href="{{ url_for('index', q=':' + tag) }}"
+       class="tag is-info search-tag">{{ tag }}</a>
+  {% endfor %}
   <!-- Dummy tag to ensure spacing is correct even with no tags -->
   <span class="tag is-invisible"></span>
 {%- endmacro %}

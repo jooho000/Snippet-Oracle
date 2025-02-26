@@ -1,5 +1,6 @@
 $(function () {
   const tagInput = $("#tag-input");
+  const hiddenInput = $('#hidden-tags');
   const tagsContainer = $("#tags-container");
   const presetTags = $(".preset-tag");
   const dropdown = $("#tag-dropdown");
@@ -24,7 +25,8 @@ $(function () {
           tags = tags.filter((t) => t !== tagText);
           $(`#preset-${tagText}`).show();
         });
-
+      
+      hiddenInput.val(tags.join(','))
       tag.append(deleteBtn).insertBefore(tagInput);
       tagInput.val("");
     } else tagInput.val("").attr("placeholder", "Already Tagged");
@@ -59,15 +61,10 @@ $(function () {
     dropdown.removeClass("is-active");
   });
 
-  if (document.getElementById("edit")) {
-    const existingTags = JSON.parse(
-      document.getElementById("tags").textContent
-    );
-    existingTags.forEach((tag) => addTag(tag));
-  }
-
   if ($("#edit").length) {
     const existingTags = JSON.parse($("#tags").text());
     existingTags.map((tag) => addTag(tag));
   }
+
+
 });
