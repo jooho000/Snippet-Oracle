@@ -1,10 +1,9 @@
 $(function () {
-  const tagInput = document.getElementById("tag-input");
-  const tagsContainer = document.getElementById("tags-container");
-  const hiddenTags = document.getElementById("hidden-tags");
-  const presetTags = document.querySelectorAll(".preset-tag");
-  const dropdown = document.getElementById("tag-dropdown");
-  const dropdownButton = document.getElementById("dropdown-button");
+  const tagInput = $("#tag-input");
+  const tagsContainer = $("#tags-container");
+  const presetTags = $(".preset-tag");
+  const dropdown = $("#tag-dropdown");
+  const dropdownButton = $("#dropdown-button");
   let tags = [];
 
   function addTag(tagText) {
@@ -13,70 +12,56 @@ $(function () {
     if (tagText.length > 0 && !tags.includes(tagText)) {
       tags.push(tagText);
 
-      let tag = document.createElement("span");
-      tag.id = tagText;
-      tag.classList.add("tag", "is-info", "is-medium", "mr-2");
-      tag.textContent = tagText;
+      const tag = $(document.createElement("span"))
+        .attr("id", tagText)
+        .addClass("tag is-info is-medium mr-2")
+        .text(tagText);
 
-      let deleteBtn = document.createElement("button");
-      deleteBtn.className = "delete is-small";
-      deleteBtn.addEventListener("click", function () {
-        tag.remove();
-        tags = tags.filter((t) => t !== tagText);
-        // hiddenTags.value = tags.join(",");
-      });
+      const deleteBtn = $(document.createElement("button"))
+        .addClass("delete is-small")
+        .click(function () {
+          tag.remove();
+          tags = tags.filter((t) => t !== tagText);
+        });
 
-      tag.appendChild(deleteBtn);
-      tagsContainer.insertBefore(tag, tagInput);
-      $("#tag-input").val("");
-      $("#tag-input").attr('placeholder', 'Type tags and press Enter');
-      // hiddenTags.value = tags.join(",");
-    } else if (tags.includes(tagText)) {
-      $("#tag-input").val("");
-      $("#tag-input").attr('placeholder', 'Already Tagged');
-    }
+      tag.append(deleteBtn).insertBefore(tagInput);
+      tagInput.val("").attr("placeholder", "Type tags and press Enter");
+    } else tagInput.val("").attr("placeholder", "Already Tagged");
   }
 
-  tagInput.addEventListener("beforeinput", function (event) {
-    if (
-      event.inputType === "deleteContentBackward" ||
-      event.inputType === "deleteContentForward"
-    ) {
-      return;
-    }
-
-    if (tagInput.textContent.length >= 20) {
-      event.preventDefault();
-    }
+  tagInput.on({
+    keydown: function (event) {
+      if (event.key === "Enter" || event.key === ",") {
+        event.preventDefault();
+        addTag(tagInput.val());
+      }
+    },
+    beforeinput: function (event) {
+      const inputType = event.originalEvent.inputType;
+      if (
+        inputType === "deleteContentBackward" ||
+        inputType === "deleteContentForward"
+      )
+        return;
+      if (tagInput.val().length >= 20) event.preventDefault();
+    },
   });
 
-  tagInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter" || event.key === ",") {
-      event.preventDefault();
-      addTag($("#tag-input").val());
-    }
-  });
-
-  presetTags.forEach(function (tag) {
-    tag.addEventListener("click", function (event) {
+  presetTags.map((index, tag) => {
+    tag.click(function (event) {
       event.preventDefault();
       addTag(tag.textContent);
     });
   });
 
-  dropdownButton.addEventListener("click", function (event) {
+  dropdownButton.click(function (event) {
     event.preventDefault();
     event.stopPropagation();
-    dropdown.classList.toggle("is-active");
+    dropdown.toggleClass("is-active");
   });
 
-  document.addEventListener("click", function (event) {
-    if (
-      !dropdown.contains(event.target) &&
-      !dropdownButton.contains(event.target)
-    ) {
-      dropdown.classList.remove("is-active");
-    }
+  $(document).click(function () {
+    dropdown.removeClass("is-active");
   });
 
   if (document.getElementById("edit")) {
@@ -86,7 +71,8 @@ $(function () {
     existingTags.forEach((tag) => addTag(tag));
   }
 
-  for (const tag of tagInput.innerText.split(",")) {
-    addTag(tag);
+  if ($("#edit").length) {
+    const existingTags = JSON.parse($("#tags").text());
+    existingTags.map((tag) => addTag(tag));
   }
 });
