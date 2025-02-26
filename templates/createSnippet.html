@@ -50,11 +50,11 @@
               <div class="field is-grouped is-grouped-multiline">
                 <div id="tags-container"
                      class="tags is-flex is-flex-wrap-wrap is-flex-grow-1">
-                  <input type="hidden" name="tags" id="hidden-tags">
-                  <span id="tag-input"
+                     <!-- <input type="hidden" name="tags" id="hidden-tags"> -->
+                  <input id="tag-input"
                         class="input tag-input is-flex-grow-1"
                         placeholder="Type tags and press Enter"
-                        contenteditable="true">{{ ', '.join(snippet.tags) if snippet and snippet.tags else '' }}</span>
+                       />
                 </div>
               </div>
             </div>
