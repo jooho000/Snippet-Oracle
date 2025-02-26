@@ -66,7 +66,11 @@ async function doSearch() {
 
       // If there are results, display them as buttons
       let anyDescMatches = false;
+      let seenSnippetIds = new Set();
+
       for (const snippet of data.results) {
+        if (seenSnippetIds.has(snippet.id)) continue;
+
         // Add a disclaimer that these are only description matches
         if (!anyDescMatches && snippet.is_description_match) {
           anyDescMatches = true;
@@ -84,6 +88,8 @@ async function doSearch() {
             disclaimer.hide();
           }
         }
+
+        seenSnippetIds.add(snippet.id);
 
         // Add a snippet card to search results
         createSnippet(snippet).appendTo(
@@ -119,6 +125,28 @@ function createSnippet(snippet) {
   card.attr("data-snippet-id", snippet.id);
   card.attr("data-code", snippet.code);
   card.find(".snippet-card-name").text(snippet.name);
+
+  if (snippet.author && snippet.author.name) {
+    const profileContainer = $(`
+      <div class="is-flex is-align-items-center">
+        <figure class="image is-48x48">
+          <a href="/profile/${snippet.author.name}">
+            <img class="is-rounded" 
+                 src="/static/profile_pictures/${snippet.author.profile_picture}"
+                 alt="${snippet.author.name}'s profile picture">
+          </a>
+        </figure>
+        <p class="ml-2 title is-5">
+          <a href="/profile/${snippet.author.name}" 
+             class="white-icon has-text-light has-text-weight-bold">
+            ${snippet.author.name}
+          </a>
+        </p>
+      </div>
+    `);
+
+    card.find(".box").prepend(profileContainer);
+  }
 
   // Remove whichever public/private label isn't relevant
   if (snippet.is_public) card.find(".snippet-card-private").remove();

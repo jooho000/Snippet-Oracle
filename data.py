@@ -288,11 +288,23 @@ class Data:
         res = cur.fetchone()
         if res is None:
             return None
+        
+        cur.execute(
+            """
+            SELECT Platform, URL 
+            FROM Links 
+            WHERE UserID = ?
+            """,
+            [user_id],
+        )
+
+        social_links = [{"platform": row[0], "url": row[1]} for row in cur.fetchall()]
 
         return {
             "name": res[0],
             "bio": res[1] if res[1] else "",
-            "profile_picture": res[2],  # Return BLOB (frontend should handle display)
+            "profile_picture": res[2] if res[2] else "default_image.png",  # Return BLOB (frontend should handle display)
+            "social_links": social_links,
         }
 
     ## SNIPPETS ###
@@ -400,6 +412,8 @@ class Data:
         snippet = cur.fetchone()
 
         if snippet:
+            user_details = self.get_user_details(snippet[4])
+            
             return {
                 "id": snippet[0],
                 "name": snippet[1],
@@ -413,6 +427,7 @@ class Data:
                 "shareable_link": snippet[8],
                 "likes": self.get_likes(snippet[0]),
                 "is_liked": self.is_liked(snippet[0], viewer_id),
+                "author": user_details,  # Include (name, bio, profile_picture)
             }
 
         return None  # Snippet not found or not accessible
@@ -451,8 +466,11 @@ class Data:
         )
         snippets = cur.fetchall()
 
-        return [
-            {
+        snippets_list = []
+        for snippet in snippets:
+            user_details = self.get_user_details(snippet[4])
+
+            snippets_list.append({
                 "id": snippet[0],
                 "name": snippet[1],
                 "code": snippet[2],
@@ -460,13 +478,14 @@ class Data:
                 "user_id": snippet[4],
                 "parent_snippet_id": snippet[5],
                 "date": snippet[6],
-                "is_public": bool(snippet[7]),
+                "is_public": bool(snippet[7]),  # Fix index to correctly reference `is_public`
                 "tags": self.get_tags_for_snippet(snippet[0]),
                 "likes": self.get_likes(snippet[0]),
                 "is_liked": self.is_liked(snippet[0], viewer_id),
-            }
-            for snippet in snippets
-        ]
+                "author": user_details,  # Include (name, bio, profile_picture)
+            })
+
+        return snippets_list
 
     def set_snippet_visibility(self, snippet_id, is_public):
         """
@@ -584,8 +603,11 @@ class Data:
         cur = self._db.cursor()
         results = cur.execute(query, params)
 
-        return [
-            {
+        snippets_list = []
+        for res in results:
+            user_details = self.get_user_details(res[4])
+
+            snippets_list.append({
                 "id": res[0],
                 "name": res[1],
                 "code": res[2],
@@ -598,9 +620,10 @@ class Data:
                 "is_description_match": False,
                 "likes": self.get_likes(res[0]),
                 "is_liked": self.is_liked(res[0], viewer_id),
-            }
-            for res in results
-        ]
+                "author": user_details
+            })
+
+        return snippets_list
 
     def smart_search_snippets(self, query, viewer_id=None, public=True):
         """
@@ -684,8 +707,11 @@ class Data:
         )
         desc_matches = cur.fetchall()
 
-        results = [
-            {
+        results = []
+        for res in itertools.chain(name_matches, desc_matches):
+            user_details = self.get_user_details(res[4])
+            
+            results.append({
                 "id": res[0],
                 "name": res[1],
                 "code": res[2],
@@ -698,9 +724,9 @@ class Data:
                 "is_description_match": bool(res[8]),
                 "likes": self.get_likes(res[0]),
                 "is_liked": self.is_liked(res[0], viewer_id),
-            }
-            for res in itertools.chain(name_matches, desc_matches)
-        ]
+                "author": user_details
+            })
+
         return results
 
     def grant_snippet_permission(self, snippet_id, user_id):

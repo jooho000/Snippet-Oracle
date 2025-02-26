@@ -4,6 +4,35 @@
        data-snippet-id='{{ snippet.get("id", None) }}'
        data-code='{{ snippet.get("code", None) }}'>
     <div class="box">
+      <!-- Snippet Header: Profile Picture & Owner Name -->
+      <div class="is-flex is-align-items-center">
+        <!-- Profile Picture -->
+        {% if snippet.get("author") %}
+          <div class="media-left">
+            <figure class="image is-48x48">
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
+                <img class="is-rounded"
+                    src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png')) }}"
+                    alt="{{ snippet['author']['name'] }}'s profile picture">
+              </a>
+            </figure>
+          </div>
+
+          <!-- Owner Name -->
+          <div class="media-content ml-2">
+            <p class="title is-5">
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}" 
+                class="white-icon has-text-light has-text-weight-bold">
+                {{ snippet['author']['name'] }}
+              </a>
+            </p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Horizontal Divider -->
+      <hr class="has-background-grey-dark mb-2 mt-2">
+
       <!-- Snippet Header: Name + Buttons + Visibility -->
       <div class="snippet-card-header columns">
         <!-- Snippet Name (Left) -->

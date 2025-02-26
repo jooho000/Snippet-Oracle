@@ -154,10 +154,32 @@ def logout():
 
 # Add Route for Profile Page
 @app.route("/profile", methods=["GET", "POST"])
-@flask_login.login_required
-def profile():
+@app.route("/profile/<string:username>")
+def profile(username=None):
+    if (
+        username
+        and flask_login.current_user.is_authenticated
+        and username == flask_login.current_user.name
+    ):
+        return flask.redirect(flask.url_for("profile"))
+    
     cur = get_db()._db.cursor()
 
+    # Check if it's the logged-in user's profile
+    is_owner = False
+    if username is None and flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+        is_owner = True
+    else:
+        # Fetch user by username
+        user = get_db().get_user_by_name(username)
+        if not user:
+            flask.flash("User not found!", "danger")
+            return flask.redirect(flask.url_for("index"))
+        user_id = user["id"]
+        is_owner = flask_login.current_user.is_authenticated and user_id == flask_login.current_user.id
+
+    # If the profile owner is editing
     if flask.request.method == "POST":
         bio = flask.request.form.get("bio", "")
         links = flask.request.form.getlist("links")
@@ -165,7 +187,6 @@ def profile():
 
         # Handle base64-encoded image
         if profile_picture_base64:
-            # Extract the image content from base64 string
             header, encoded_image = profile_picture_base64.split(",", 1)
             image_data = base64.b64decode(encoded_image)
             image = Image.open(BytesIO(image_data))
@@ -183,74 +204,47 @@ def profile():
             image.save(file_path)
 
             # Remove old profile picture if exists
-            cur.execute(
-                "SELECT ProfilePicture FROM User WHERE ID = ?",
-                [flask_login.current_user.id],
-            )
+            cur.execute("SELECT ProfilePicture FROM User WHERE ID = ?", [user_id])
             old_profile_picture = cur.fetchone()[0]
             if old_profile_picture:
-                old_image_path = os.path.join(
-                    app.config["UPLOAD_FOLDER"], old_profile_picture
-                )
+                old_image_path = os.path.join(app.config["UPLOAD_FOLDER"], old_profile_picture)
                 if os.path.exists(old_image_path):
                     os.remove(old_image_path)
 
             # Update the user's profile picture in the database
-            cur.execute(
-                """
-                UPDATE User
-                SET ProfilePicture = ?
-                WHERE ID = ?
-            """,
-                [unique_filename, flask_login.current_user.id],
-            )
+            cur.execute("UPDATE User SET ProfilePicture = ? WHERE ID = ?", [unique_filename, user_id])
 
         # Update the user's bio
-        cur.execute(
-            """
-            UPDATE User
-            SET Bio = ?
-            WHERE ID = ?
-        """,
-            [bio, flask_login.current_user.id],
-        )
+        cur.execute("UPDATE User SET Bio = ? WHERE ID = ?", [bio, user_id])
 
         # Clear existing links and insert updated links
-        cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
+        cur.execute("DELETE FROM Links WHERE UserID = ?", [user_id])
         for link in links:
             if link.strip():
-                cur.execute(
-                    """
-                    INSERT INTO Links (UserID, Platform, URL)
-                    VALUES (?, ?, ?)
-                """,
-                    [flask_login.current_user.id, "Custom", link],
-                )
+                cur.execute("INSERT INTO Links (UserID, Platform, URL) VALUES (?, ?, ?)", [user_id, "Custom", link])
 
         get_db()._db.commit()
         flask.flash("Profile updated successfully!", "info")
 
-    cur.execute(
-        "SELECT Platform, URL FROM Links WHERE UserID = ?",
-        [flask_login.current_user.id],
-    )
+    # Fetch social links
+    cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [user_id])
     user_links = cur.fetchall()
 
     # Fetch Snippets with Pagination
     page = int(flask.request.args.get("page", 1))
     limit = 10
     offset = (page - 1) * limit
-    cur.execute(
-        """
-        SELECT ID, Name, Description FROM Snippet
-        WHERE UserID = ? ORDER BY Date DESC LIMIT ? OFFSET ?
-    """,
-        [flask_login.current_user.id, limit, offset],
-    )
+
+    # Fetch all snippets if owner, only public snippets if visitor
     user_snippets = get_db().get_user_snippets(
-        flask_login.current_user.id, flask_login.current_user.id
+        user_id,
+        flask_login.current_user.id if flask_login.current_user.is_authenticated else None
     )
-    user_details = get_db().get_user_details(flask_login.current_user.id)
+
+    if not is_owner:
+        user_snippets = [snippet for snippet in user_snippets if snippet["is_public"]]  # Filter only public snippets
+
+    user_details = get_db().get_user_details(user_id)
 
     return flask.render_template(
         "profile.html",
@@ -258,6 +252,7 @@ def profile():
         links=user_links,
         snippets=user_snippets,
         page=page,
+        is_owner=is_owner,  # Pass flag to template
         get_social_icon=get_social_icon,
     )
 
