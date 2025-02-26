@@ -5,12 +5,12 @@
        data-code='{{ snippet.get("code", None) }}'>
     <div class="box">
       <!-- Snippet Header: Name + Buttons + Visibility -->
-      <div class="snippet-card-header columns">
+      <div class="snippet-card-header columns mb-0">
         <!-- Snippet Name (Left) -->
         <a class="snippet-card-link column has-text-left"
            href="#"
            onclick="goToSnippet($(this).closest('.snippet-card'))">
-          <h2 class="snippet-card-name title pb-2 is-5">{{ snippet.get('name', '') }}</h2>
+          <h2 class="snippet-card-name title pb-2 is-4">{{ snippet.get('name', '') }}</h2>
         </a>
         <!-- Buttons + Visibility (Right) -->
         <div class="column has-text-right is-narrow">
@@ -60,8 +60,37 @@
           </button>
         </div>
       </div>
+      
+      <!-- Snippet Header: Profile Picture & Owner Name -->
+      <div class="snippet-card-user is-flex is-align-items-center">
+        <!-- Profile Picture -->
+        {% if snippet.get("author") %}
+          <div class="media-left">
+            <figure class="image is-32x32">
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
+                <img class="is-rounded"
+                    src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png')) }}"
+                    alt="{{ snippet['author']['name'] }}'s profile picture">
+              </a>
+            </figure>
+          </div>
+
+          <!-- Owner Name -->
+          <div class="media-content ml-2">
+            <p class="title is-6">
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}" 
+                class="white-icon has-text-light has-text-weight-medium">
+                {{ snippet['author']['name'] }}
+              </a>
+            </p>
+          </div>
+        {% endif %}
+      </div>
+
       <!-- Snippet Description (Middle) -->
-      <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get('description', '') }}</p>
+      <p class="snippet-card-summary column is-italic mb-4">
+        {{ snippet.get('description', '') }}
+      </p>
       <div class="columns">
         <div class="column">
           <div class="snippet-card-tags tags-container tags">
