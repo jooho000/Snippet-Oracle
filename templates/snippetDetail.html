@@ -116,7 +116,7 @@
                       <i class="fas fa-reply"></i>
                     </span>
                   </a>
-                  {% if comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
+                  {% if current_user.is_authenticated and (comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
                     <button class="icon is-small has-text-danger"
                             comment-info=""
                             {{ comment }}
@@ -126,21 +126,25 @@
                   {% endif %}
                 </div>
               </nav>
-              <!-- Reply Form -->
-              <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">
-                <form action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-' ~ comment['id']) }}"
-                      method="post">
-                  <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
-                  <textarea class="textarea"
-                            name="comment"
-                            placeholder="Write a reply..."
-                            required></textarea>
-                  <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
-                </form>
-              </div>
+              {% if current_user.is_authenticated %}
+                <!-- Reply Form -->
+                <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">
+                  <form action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-' ~ comment['id']) }}"
+                        method="post">
+                    <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
+                    <textarea class="textarea"
+                              name="comment"
+                              placeholder="Write a reply..."
+                              required></textarea>
+                    <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
+                  </form>
+                </div>
+              {% endif %}
               <!-- Nested Replies -->
               {% if comment["replies"] %}
-                <span class="toggle-replies-icon" onclick="toggleReplies('{{ comment['id'] }}')" id="toggle-arrow-{{ comment['id'] }}">
+                <span class="toggle-replies-icon"
+                      onclick="toggleReplies('{{ comment['id'] }}')"
+                      id="toggle-arrow-{{ comment['id'] }}">
                   <i class="fas fa-chevron-right"></i>
                   <span id="reply-count-{{ comment['id'] }}">{{ comment["replies"] | length }} {{ "reply" if comment["replies"] | length == 1 else "replies" }}</span>
                 </span>
@@ -150,33 +154,34 @@
                       <figure class="media-left">
                         <p class="image is-64x64">
                           <img class="is-rounded"
-                              src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
-                              alt="Profile Picture">
+                               src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
+                               alt="Profile Picture">
                         </p>
                       </figure>
                       <div class="media-content">
                         <div class="content">
                           <strong>{{ reply["user_name"] }}</strong>
                           <small class="has-text-grey-light timestamp"
-                                data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
+                                 data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
                           <p>{{ reply["content"] }}</p>
                         </div>
-                      <!-- Reply Actions -->
-                      <nav class="level is-mobile">
-                        <div class="level-left">
-                          {% if reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                            <button class="icon is-small has-text-danger"
-                                    comment-info=""
-                                    {{ comment }}
-                                    onclick="confirmCommentDelete('{{ reply['id'] }}')">
-                              <i class="fas fa-trash"></i>
-                            </button>
-                          {% endif %}
-                        </div>
-                      </nav>
-                    </div>
-                  </article>
-                {% endfor %}
+                        <!-- Reply Actions -->
+                        <nav class="level is-mobile">
+                          <div class="level-left">
+                            {% if current_user.is_authenticated and (reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
+                              <button class="icon is-small has-text-danger"
+                                      comment-info=""
+                                      {{ comment }}
+                                      onclick="confirmCommentDelete('{{ reply['id'] }}')">
+                                <i class="fas fa-trash"></i>
+                              </button>
+                            {% endif %}
+                          </div>
+                        </nav>
+                      </div>
+                    </article>
+                  {% endfor %}
+                </div>
               {% endif %}
             </div>
           </article>
@@ -184,33 +189,36 @@
           <p>No comments yet. Be the first to comment!</p>
         {% endfor %}
       </div>
-      <!-- Add New Comment -->
-      <article class="media">
-        <figure class="media-left">
-        </figure>
-        <div class="media-content">
-          <form id="comment-form"
-                action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-form') }}"
-                method="post">
-            <div class="field">
-              <p class="control">
-                <textarea class="textarea" 
-                name="comment" 
-                id="comment-input"
-                placeholder="Write your comment here..." maxlength="500" required
-                oninput="updateCharacterCount()"></textarea>
-                <p id="char-count" class="has-text-grey-light">0/500</p>
-      
-              </p>
-            </div>
-            <div class="field">
-              <p class="control">
-                <button class="button is-link">Post Comment</button>
-              </p>
-            </div>
-          </form>
-        </div>
-      </article>
+      {% if current_user.is_authenticated %}
+        <!-- Add New Comment -->
+        <article class="media">
+          <figure class="media-left">
+          </figure>
+          <div class="media-content">
+            <form id="comment-form"
+                  action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-form') }}"
+                  method="post">
+              <div class="field">
+                <p class="control">
+                  <textarea class="textarea"
+                            name="comment"
+                            id="comment-input"
+                            placeholder="Write your comment here..."
+                            maxlength="500"
+                            required
+                            oninput="updateCharacterCount()"></textarea>
+                  <p id="char-count" class="has-text-grey-light">0/500</p>
+                </p>
+              </div>
+              <div class="field">
+                <p class="control">
+                  <button class="button is-link">Post Comment</button>
+                </p>
+              </div>
+            </form>
+          </div>
+        </article>
+      {% endif %}
     </div>
     <!-- Message for users viewing a shared snippet -->
     {% if request.path.startswith('/share/') %}
@@ -235,11 +243,11 @@
   <script src="{{ url_for('static', filename='copy.js') }}"></script>
   <script src="{{ url_for('static', filename='comments.js') }}"></script>
   <script>
-    document.getElementById("copyShareLink")?.addEventListener("click", function() {
-      const input = document.getElementById("shareableLink");
-      input.select();
-      document.execCommand("copy");
-      alert("Shareable link copied!");
-    });
+  document.getElementById("copyShareLink")?.addEventListener("click", function() {
+    const input = document.getElementById("shareableLink");
+    input.select();
+    document.execCommand("copy");
+    alert("Shareable link copied!");
+  });
   </script>
 {% endblock %}
