@@ -18,7 +18,7 @@ function toggleSnippet(card) {
  */
 function openSnippet(card) {
   const summary = card.find(".snippet-card-summary");
-  const header = card.find(".snippet-card-header");
+  const header = card.find(".snippet-card-user");
   const modal = $("#snippet-modal");
 
   // Close currently opened snippet card

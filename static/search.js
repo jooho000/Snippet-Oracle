@@ -129,23 +129,23 @@ function createSnippet(snippet) {
   if (snippet.author && snippet.author.name) {
     const profileContainer = $(`
       <div class="is-flex is-align-items-center">
-        <figure class="image is-48x48">
+        <figure class="image is-32x32">
           <a href="/profile/${snippet.author.name}">
             <img class="is-rounded" 
                  src="/static/profile_pictures/${snippet.author.profile_picture}"
                  alt="${snippet.author.name}'s profile picture">
           </a>
         </figure>
-        <p class="ml-2 title is-5">
+        <p class="ml-2 title is-6">
           <a href="/profile/${snippet.author.name}" 
-             class="white-icon has-text-light has-text-weight-bold">
+             class="white-icon has-text-light has-text-weight-medium">
             ${snippet.author.name}
           </a>
         </p>
       </div>
     `);
 
-    card.find(".box").prepend(profileContainer);
+    card.find(".snippet-card-name").after(profileContainer);
   }
 
   // Remove whichever public/private label isn't relevant
