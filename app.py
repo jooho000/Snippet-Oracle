@@ -79,11 +79,17 @@ def index():
         )
         user_data = get_db().get_user_details(flask_login.current_user.id)
 
-    return flask.render_template("index.html", snippets=user_snippets, user=user_data, query=query)
+    return flask.render_template(
+        "index.html", snippets=user_snippets, user=user_data, query=query
+    )
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if flask.request.method == "POST":
+    if flask_login.current_user.is_authenticated:
+        return flask.redirect(flask.url_for("index"))
+
+    elif flask.request.method == "POST":
         username = flask.request.form.get("username")
         password = flask.request.form.get("password")
 
@@ -111,7 +117,10 @@ def login():
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-    if flask.request.method == "POST":
+    if flask_login.current_user.is_authenticated:
+        return flask.redirect(flask.url_for("index"))
+
+    elif flask.request.method == "POST":
         username = flask.request.form.get("username")
         password = flask.request.form.get("password")
         repeat_password = flask.request.form.get("repeatPassword")
@@ -164,7 +173,7 @@ def profile(username=None):
         and username == flask_login.current_user.name
     ):
         return flask.redirect(flask.url_for("profile"))
-    
+
     cur = get_db()._db.cursor()
 
     # Check if it's the logged-in user's profile
@@ -172,6 +181,8 @@ def profile(username=None):
     if username is None and flask_login.current_user.is_authenticated:
         user_id = flask_login.current_user.id
         is_owner = True
+    elif username is None:
+        return auth.login_manager.unauthorized()
     else:
         # Fetch user by username
         user = get_db().get_user_by_name(username)
@@ -179,7 +190,10 @@ def profile(username=None):
             flask.flash("User not found!", "danger")
             return flask.redirect(flask.url_for("index"))
         user_id = user["id"]
-        is_owner = flask_login.current_user.is_authenticated and user_id == flask_login.current_user.id
+        is_owner = (
+            flask_login.current_user.is_authenticated
+            and user_id == flask_login.current_user.id
+        )
 
     # If the profile owner is editing
     if flask.request.method == "POST":
@@ -212,12 +226,17 @@ def profile(username=None):
             cur.execute("SELECT ProfilePicture FROM User WHERE ID = ?", [user_id])
             old_profile_picture = cur.fetchone()[0]
             if old_profile_picture:
-                old_image_path = os.path.join(app.config["UPLOAD_FOLDER"], old_profile_picture)
+                old_image_path = os.path.join(
+                    app.config["UPLOAD_FOLDER"], old_profile_picture
+                )
                 if os.path.exists(old_image_path):
                     os.remove(old_image_path)
 
             # Update the user's profile picture in the database
-            cur.execute("UPDATE User SET ProfilePicture = ? WHERE ID = ?", [unique_filename, user_id])
+            cur.execute(
+                "UPDATE User SET ProfilePicture = ? WHERE ID = ?",
+                [unique_filename, user_id],
+            )
 
         # Update the user's bio
         cur.execute("UPDATE User SET Bio = ? WHERE ID = ?", [bio, user_id])
@@ -226,7 +245,10 @@ def profile(username=None):
         cur.execute("DELETE FROM Links WHERE UserID = ?", [user_id])
         for link in links:
             if link.strip():
-                cur.execute("INSERT INTO Links (UserID, Platform, URL) VALUES (?, ?, ?)", [user_id, "Custom", link])
+                cur.execute(
+                    "INSERT INTO Links (UserID, Platform, URL) VALUES (?, ?, ?)",
+                    [user_id, "Custom", link],
+                )
 
         get_db()._db.commit()
         flask.flash("Profile updated successfully!", "info")
@@ -241,11 +263,17 @@ def profile(username=None):
     offset = (page - 1) * limit
 
     # Fetch all snippets if owner, only public snippets if visitor
-    viewer_id = flask_login.current_user.id if flask_login.current_user.is_authenticated else None
+    viewer_id = (
+        flask_login.current_user.id
+        if flask_login.current_user.is_authenticated
+        else None
+    )
     user_snippets = get_db().get_user_snippets(user_id, viewer_id)
 
     if not is_owner:
-        user_snippets = [snippet for snippet in user_snippets if snippet["is_public"]]  # Filter only public snippets
+        user_snippets = [
+            snippet for snippet in user_snippets if snippet["is_public"]
+        ]  # Filter only public snippets
 
     user_details = get_db().get_user_details(user_id)
 
