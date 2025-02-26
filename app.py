@@ -416,17 +416,16 @@ def view_snippet_by_link(link):
     info = get_db().get_snippet_id_by_shareable_link(link)
 
     if info:
-        try:
+        user_id = None
+        if flask_login.current_user.is_authenticated:
             user_id = flask_login.current_user.id
-        except AttributeError:
-            if not info["is_public"]:
-                return auth.login_manager.unauthorized()
-            else:
-                user_id = None
+        elif not info["is_public"]:
+            return auth.login_manager.unauthorized()
 
     snippet = get_db().get_snippet(info["id"], user_id)
 
     if snippet:
+        parent_snippet = None
         if snippet["parent_snippet_id"] is not None:
             parent_snippet = get_db().get_snippet(snippet["parent_snippet_id"], user_id)
         return flask.render_template(
