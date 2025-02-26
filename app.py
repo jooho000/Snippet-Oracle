@@ -543,13 +543,17 @@ def edit_snippet(snippet_id):
 
 @app.route("/deleteSnippet/<int:snippet_id>")
 def delete_Snippet(snippet_id):
-    current_user_id = flask_login.current_user.id  # Get the current user's ID
-    snippet = get_db().get_snippet(snippet_id, current_user_id)
-    if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
-        flask.flash("Unauthorized or snippet not found!", "danger")
-        return flask.redirect(flask.url_for("snippets"))
-    get_db().delete_snippet(snippet_id, snippet["user_id"])
-    return flask.redirect(flask.url_for("snippets"))
+    try:
+        current_user_id = flask_login.current_user.id 
+    except AttributeError:
+        return flask.redirect(flask.url_for("index"))
+    else:
+      snippet = get_db().get_snippet(snippet_id, current_user_id)
+      if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
+          flask.flash("Unauthorized or snippet not found!", "danger")
+          return flask.redirect(flask.url_for("snippets"))
+      get_db().delete_snippet(snippet_id, snippet["user_id"])
+      return flask.redirect(flask.url_for("snippets"))
 
 
 @app.route("/snippet/<int:snippet_id>/comment", methods=["POST"])
