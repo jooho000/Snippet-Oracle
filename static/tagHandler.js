@@ -23,13 +23,17 @@ $(function () {
       deleteBtn.addEventListener("click", function () {
         tag.remove();
         tags = tags.filter((t) => t !== tagText);
-        hiddenTags.value = tags.join(",");
+        // hiddenTags.value = tags.join(",");
       });
 
       tag.appendChild(deleteBtn);
       tagsContainer.insertBefore(tag, tagInput);
-      tagInput.textContent = "";
-      hiddenTags.value = tags.join(",");
+      $("#tag-input").val("");
+      $("#tag-input").attr('placeholder', 'Type tags and press Enter');
+      // hiddenTags.value = tags.join(",");
+    } else if (tags.includes(tagText)) {
+      $("#tag-input").val("");
+      $("#tag-input").attr('placeholder', 'Already Tagged');
     }
   }
 
@@ -49,7 +53,7 @@ $(function () {
   tagInput.addEventListener("keydown", function (event) {
     if (event.key === "Enter" || event.key === ",") {
       event.preventDefault();
-      addTag(tagInput.textContent);
+      addTag($("#tag-input").val());
     }
   });
 
