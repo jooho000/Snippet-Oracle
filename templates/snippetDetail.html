@@ -114,13 +114,12 @@
                     </span>
                   </a>
                   {% if comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                    <form action="{{ url_for('delete_comment', comment_id=comment['id'], _anchor='comments-section') }}"
-                          method="post"
-                          class="level-item">
-                      <button class="icon is-small has-text-danger" type="submit">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </form>
+                    <button class="icon is-small has-text-danger" 
+                            comment-info=""{{ comment }}
+                            onclick="confirmCommentDelete('{{ comment['id'] }}')"
+                            >
+                      <i class="fas fa-trash"></i>
+                    </button>
                   {% endif %}
                 </div>
               </nav>
@@ -158,13 +157,12 @@
                       <nav class="level is-mobile">
                         <div class="level-left">
                           {% if reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                            <form action="{{ url_for('delete_comment', comment_id=reply['id'], _anchor='comment-' ~ comment['id']) }}"
-                                  method="post"
-                                  class="level-item">
-                              <button class="icon is-small has-text-danger" type="submit">
-                                <i class="fas fa-trash"></i>
-                              </button>
-                            </form>
+                            <button class="icon is-small has-text-danger" 
+                            comment-info=""{{ comment }}
+                            onclick="confirmCommentDelete('{{ reply['id'] }}')"
+                            >
+                              <i class="fas fa-trash"></i>
+                            </button>
                           {% endif %}
                         </div>
                       </nav>

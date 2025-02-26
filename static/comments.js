@@ -45,6 +45,20 @@ function timeAgo(dateString) {
   return "just now";
 }
 
+/**
+   * Bring up a confirm dialogue for Comment/Reply deletion.
+   * @param {JQuery} card
+   */
+async function confirmCommentDelete(id) {
+  const message = 'Are you sure you want to delete this comment?';
+  if (window.confirm(message)) {
+    await fetch(`/comment/${id}/delete`, {
+      method: 'POST',
+    });
+    window.location.reload();
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll(".timestamp").forEach(function (element) {
     let timestamp = element.dataset.timestamp;
