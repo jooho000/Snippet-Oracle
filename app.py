@@ -413,22 +413,21 @@ def update_snippet_visibility(snippet_id):
 # Allow users to access private snippets via shareable links
 @app.route("/share/<string:link>")
 def view_snippet_by_link(link):
-    snippet_id = get_db().get_snippet_id_by_shareable_link(link)
-    if snippet_id is not None:
-        user_id = (
-            flask_login.current_user.id
-            if flask_login.current_user.is_authenticated
-            else None
-        )
-        snippet = get_db().get_snippet(snippet_id, user_id)
-        return flask.render_template(
-            "snippetDetail.html",
-            user=get_db().get_user_details(flask_login.current_user.id),
-            snippet=snippet,
-        )
-    else:
-        flask.flash("Invalid or expired link!", "warning")
-        return flask.redirect(flask.url_for("index"))
+    info = get_db().get_snippet_id_by_shareable_link(link)
+    if (info):
+      user_id = None
+      try:
+        user_id = flask_login.current_user.id
+      except AttributeError:
+        snippet = get_db().get_snippet(info["id"], user_id)
+        if (snippet):
+          return flask.render_template(
+              "snippetDetail.html",
+              user=user_id,
+              snippet=snippet,
+          )
+    flask.flash("Unauthorized or snippet not found!", "danger")
+    return flask.redirect(flask.url_for("index"))
 
 
 @app.route("/search/", methods=["GET"])
