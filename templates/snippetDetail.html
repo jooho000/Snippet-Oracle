@@ -38,10 +38,13 @@
       <strong>Created at:</strong> {{ snippet["date"] }}
     </p>
     <div class="snippet-card-tags tags-container tags">
-      <strong>Tags:</strong>
-      {{ macros.tagsDisplay(snippet) }}
+      {% if snippet["tags"] %}
+        <strong>Tags:</strong>
+        {{ macros.tagsDisplay(snippet) }}
+      {% else %}
+        <em>No Tags</em>
+      {% endif %}
     </div>
-
     <div class="field">
       <div class="control">
         <button class="button is-link" id="copyButton">Copy Code</button>
@@ -114,13 +117,12 @@
                     </span>
                   </a>
                   {% if comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                    <form action="{{ url_for('delete_comment', comment_id=comment['id'], _anchor='comments-section') }}"
-                          method="post"
-                          class="level-item">
-                      <button class="icon is-small has-text-danger" type="submit">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </form>
+                    <button class="icon is-small has-text-danger"
+                            comment-info=""
+                            {{ comment }}
+                            onclick="confirmCommentDelete('{{ comment['id'] }}')">
+                      <i class="fas fa-trash"></i>
+                    </button>
                   {% endif %}
                 </div>
               </nav>
@@ -138,33 +140,37 @@
               </div>
               <!-- Nested Replies -->
               {% if comment["replies"] %}
-                {% for reply in comment["replies"] %}
-                  <article id="comment-{{ reply['id'] }}" class="media">
-                    <figure class="media-left">
-                      <p class="image is-64x64">
-                        <img class="is-rounded"
-                             src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
-                             alt="Profile Picture">
-                      </p>
-                    </figure>
-                    <div class="media-content">
-                      <div class="content">
-                        <strong>{{ reply["user_name"] }}</strong>
-                        <small class="has-text-grey-light timestamp"
-                               data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
-                        <p>{{ reply["content"] }}</p>
-                      </div>
+                <span class="toggle-replies-icon" onclick="toggleReplies('{{ comment['id'] }}')" id="toggle-arrow-{{ comment['id'] }}">
+                  <i class="fas fa-chevron-right"></i>
+                  <span id="reply-count-{{ comment['id'] }}">{{ comment["replies"] | length }} {{ "reply" if comment["replies"] | length == 1 else "replies" }}</span>
+                </span>
+                <div id="replies-{{ comment['id'] }}" class="is-hidden">
+                  {% for reply in comment["replies"] %}
+                    <article id="comment-{{ reply['id'] }}" class="media ml-5">
+                      <figure class="media-left">
+                        <p class="image is-64x64">
+                          <img class="is-rounded"
+                              src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
+                              alt="Profile Picture">
+                        </p>
+                      </figure>
+                      <div class="media-content">
+                        <div class="content">
+                          <strong>{{ reply["user_name"] }}</strong>
+                          <small class="has-text-grey-light timestamp"
+                                data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
+                          <p>{{ reply["content"] }}</p>
+                        </div>
                       <!-- Reply Actions -->
                       <nav class="level is-mobile">
                         <div class="level-left">
                           {% if reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int %}
-                            <form action="{{ url_for('delete_comment', comment_id=reply['id'], _anchor='comment-' ~ comment['id']) }}"
-                                  method="post"
-                                  class="level-item">
-                              <button class="icon is-small has-text-danger" type="submit">
-                                <i class="fas fa-trash"></i>
-                              </button>
-                            </form>
+                            <button class="icon is-small has-text-danger"
+                                    comment-info=""
+                                    {{ comment }}
+                                    onclick="confirmCommentDelete('{{ reply['id'] }}')">
+                              <i class="fas fa-trash"></i>
+                            </button>
                           {% endif %}
                         </div>
                       </nav>
@@ -188,10 +194,13 @@
                 method="post">
             <div class="field">
               <p class="control">
-                <textarea class="textarea"
-                          name="comment"
-                          placeholder="Write your comment here..."
-                          required></textarea>
+                <textarea class="textarea" 
+                name="comment" 
+                id="comment-input"
+                placeholder="Write your comment here..." maxlength="500" required
+                oninput="updateCharacterCount()"></textarea>
+                <p id="char-count" class="has-text-grey-light">0/500</p>
+      
               </p>
             </div>
             <div class="field">

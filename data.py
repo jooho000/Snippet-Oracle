@@ -510,14 +510,18 @@ class Data:
 
         cur = self._db.cursor()
         cur.execute(
-            "SELECT ID FROM Snippet WHERE ShareableLink = ?",
+            "SELECT ID, IsPublic FROM Snippet WHERE ShareableLink = ?",
             [link],
         )
-        result = cur.fetchone()
-        if result is None:
+        snippet = cur.fetchone()
+
+        if snippet is None:
             return None
         else:
-            return result[0]
+            return {
+                "id": snippet[0],
+                "is_public": bool(snippet[1]),
+            }
 
     def search_snippets(
         self, names=None, tags=None, desc=None, viewer_id=None, public=True
@@ -965,10 +969,10 @@ class Data:
         self.set_snippet_visibility(id, is_public)
         self.clear_snippet_permission(id)
 
-        if(not is_public):
-          if users:
-              for user in users:
-                  self.grant_snippet_permission(id, user)
+        if not is_public:
+            if users:
+                for user in users:
+                    self.grant_snippet_permission(id, user)
 
         return id
 

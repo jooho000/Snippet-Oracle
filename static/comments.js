@@ -45,9 +45,46 @@ function timeAgo(dateString) {
   return "just now";
 }
 
+/**
+   * Bring up a confirm dialogue for Comment/Reply deletion.
+   * @param {JQuery} card
+   */
+async function confirmCommentDelete(id) {
+  const message = 'Are you sure you want to delete this comment?';
+  if (window.confirm(message)) {
+    await fetch(`/comment/${id}/delete`, {
+      method: 'POST',
+    });
+    window.location.reload();
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll(".timestamp").forEach(function (element) {
     let timestamp = element.dataset.timestamp;
     element.textContent = timeAgo(timestamp);
   });
 });
+
+function updateCharacterCount() {
+  const input = document.getElementById("comment-input");
+  const countDisplay = document.getElementById("char-count");
+  countDisplay.textContent = `${input.value.length}/500`;
+}
+
+
+function toggleReplies(commentId) {
+  const replySection = document.getElementById(`replies-${commentId}`);
+  const arrowIcon = document.getElementById(`toggle-arrow-${commentId}`).querySelector("i");
+
+  if (replySection) {
+    replySection.classList.toggle("is-hidden");
+    arrowIcon.classList.toggle("fa-chevron-right");
+    arrowIcon.classList.toggle("fa-chevron-down"); // Rotates arrow when expanded
+  }
+}
+
+
+
+
+

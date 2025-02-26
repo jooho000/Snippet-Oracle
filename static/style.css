@@ -92,3 +92,8 @@
   display: flex;
   flex: 1;
 }
+
+.stick-top {
+  position: sticky;
+  top: 0;
+}
