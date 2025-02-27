@@ -77,6 +77,14 @@ function copySnippet(card) {
  * @param {JQuery} card
  */
 async function likeSnippet(card) {
+  // When not logged in, redirect to login page
+  if (current_user_id === null) {
+    const url = new URL(script_root + "/login", location.href);
+    url.searchParams.append("next", location.pathname);
+    location.href = url.href;
+    return;
+  }
+
   const id = card.attr("data-snippet-id");
   const button = card.find(".snippet-card-like-button");
   const likes = card.find(".snippet-card-likes");

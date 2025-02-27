@@ -76,7 +76,14 @@
               </div>
               <div class="dropdown-menu" id="dropdown-menu" role="menu">
                 <div class="dropdown-content">
-                  {% for tag in preset_tags %}<a id="preset-{{ tag }}" class="dropdown-item preset-tag">{{ tag }}</a>{% endfor %}
+                  <div class="dropdown-item">
+                    <div class="grid is-gap-0">
+                      {% for tag in preset_tags %}
+                        <a id="preset-{{ tag }}"
+                           class="cell dropdown-item preset-tag has-text-inherit">{{ tag }}</a>
+                      {% endfor %}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -99,9 +106,7 @@
             </div>
           </div>
           <!-- User Selection (Only visible if Private) -->
-          <div class="field"
-               id="permittedUsersField"
-               style="display: none">
+          <div class="field" id="permittedUsersField" style="display: none">
             <label class="label">Share with Specific Users</label>
             <div class="box is-shadowless">
               <div class="field">
@@ -111,9 +116,7 @@
                        class="input"
                        placeholder="Search users...">
               </div>
-              <div id="user-selection"
-                   class="box is-light"
-                   style="display: none"></div>
+              <div id="user-selection" class="box is-light" style="display: none"></div>
             </div>
           </div>
           <!-- Submit Button -->
@@ -128,7 +131,8 @@
         <!-- Back Button -->
         {% block backButton %}
           <div class="has-text-centered mt-4">
-            <a class="button is-fullwidth is-light is-rounded" href="{{ url_for("snippets") }}">Back to My Snippets</a>
+            <a class="button is-fullwidth is-light is-rounded"
+               href="{{ url_for("snippets") }}">Back to My Snippets</a>
           </div>
         {% endblock %}
       </div>

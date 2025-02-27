@@ -40,7 +40,7 @@
     <div class="snippet-card-tags tags-container tags">
       {% if snippet["tags"] %}
         <strong>Tags:</strong>
-        {{ macros.tagsDisplay(snippet.get("tags", [])) }}
+        {{ macros.tagsDisplay(snippet.get("tags", []) ) }}
       {% else %}
         <em>No Tags</em>
       {% endif %}
@@ -55,7 +55,7 @@
             <span class="icon"><i class="fas fa-edit"></i></span>
           </a>
           <a class="button is-link"
-             href="{{ url_for('delete_Snippet', snippet_id=snippet['id']) }}">
+             href="{{ url_for('delete_snippet', snippet_id=snippet['id']) }}">
             <span class="icon"><i class="fas fa-trash"></i></span>
           </a>
         {% endif %}
