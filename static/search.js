@@ -21,7 +21,6 @@ $(function () {
 
 /**
  * Start a search immediately, updating search results when complete.
- * Results are ignored if another search is started before this search completes.
  */
 async function doSearch() {
   const query = searchInput.val();
@@ -43,7 +42,6 @@ async function doSearch() {
     return;
   }
   $("#snippets").hide();
-  // Show loading spinner
   searchInput.parent().addClass("is-loading");
 
   // Send the query to the server via AJAX (using fetch)
@@ -57,16 +55,20 @@ async function doSearch() {
   })
     .then((response) => response.json())
     .then((data) => {
-      // Ignore results if another
+      // Ignore results if another search is pending
       if (searchUrl !== pendingSearchUrl) return;
 
-      resultsContainer.empty(); // Clear previous results
+      resultsContainer.empty();
       descResultsContainer.empty();
       $(".search-disclaimer").remove();
 
-      // If there are results, display them as buttons
+      // If there are results, display them as snippet cards
       let anyDescMatches = false;
+      let seenSnippetIds = new Set();
+
       for (const snippet of data.results) {
+        if (seenSnippetIds.has(snippet.id)) continue;
+
         // Add a disclaimer that these are only description matches
         if (!anyDescMatches && snippet.is_description_match) {
           anyDescMatches = true;
@@ -85,7 +87,9 @@ async function doSearch() {
           }
         }
 
-        // Add a snippet card to search results
+        seenSnippetIds.add(snippet.id);
+
+        // Add snippet to results
         createSnippet(snippet).appendTo(
           snippet.is_description_match ? descResultsContainer : resultsContainer
         );
@@ -94,6 +98,8 @@ async function doSearch() {
       if (data.results.length === 0) {
         resultsContainer.text("No snippets found.");
       }
+
+      attachTagListeners(); // Ensure tags are clickable after search results update
     })
     .catch((error) => {
       console.error("Error fetching search results:", error);
@@ -109,7 +115,6 @@ async function doSearch() {
 
 /**
  * Creates a snippet card from the given info.
- * @param {{id: number, user_id: number, name: string, description: string, code: string, tags: Array<string>, likes: number, is_liked: boolean}} snippet
  */
 function createSnippet(snippet) {
   const card = snippetTemplate.clone();
@@ -120,7 +125,29 @@ function createSnippet(snippet) {
   card.attr("data-code", snippet.code);
   card.find(".snippet-card-name").text(snippet.name);
 
-  // Remove whichever public/private label isn't relevant
+  if (snippet.author && snippet.author.name) {
+    const profileContainer = $(`
+      <div class="is-flex is-align-items-center">
+        <figure class="image is-32x32">
+          <a href="/profile/${snippet.author.name}">
+            <img class="is-rounded" 
+                 src="/static/profile_pictures/${snippet.author.profile_picture}"
+                 alt="${snippet.author.name}'s profile picture">
+          </a>
+        </figure>
+        <p class="ml-2 title is-6">
+          <a href="/profile/${snippet.author.name}" 
+             class="white-icon has-text-light has-text-weight-medium">
+            ${snippet.author.name}
+          </a>
+        </p>
+      </div>
+    `);
+
+    card.find(".snippet-card-name").after(profileContainer);
+  }
+
+  // Remove irrelevant public/private labels
   if (snippet.is_public) card.find(".snippet-card-private").remove();
 
   // Remove edit/delete links if not the owner
@@ -131,15 +158,16 @@ function createSnippet(snippet) {
     deleteButton.remove();
   }
 
-  // Update summary
-  const summary = (snippet.description || "").trim();
-  card.find(".snippet-card-summary").text(summary);
+  // Update description
+  card.find(".snippet-card-summary").text((snippet.description || "").trim());
 
-  // Add tags
+  // Add tags with clickable links
   const tagList = card.find(".snippet-card-tags");
+  tagList.empty();
   for (const tagName of snippet.tags) {
-    const tagElem = $(document.createElement("span"));
-    tagElem.addClass("tag is-info");
+    const tagElem = $(document.createElement("a"));
+    tagElem.addClass("tag is-info search-tag");
+    tagElem.attr("href", "/?q=:" + encodeURIComponent(tagName));
     tagElem.text(tagName);
     tagElem.appendTo(tagList);
   }
@@ -150,11 +178,18 @@ function createSnippet(snippet) {
   if (snippet.is_liked) likesButton.addClass("has-text-link");
   likes.text(snippet.likes);
 
-  // Move spacer tag to the end of list
-  const dummyTag = tagList.find(".is-invisible");
-  dummyTag.remove().appendTo(tagList);
-
   return card;
+}
+
+/**
+ * Ensures event listeners are attached to dynamically created tags.
+ */
+function attachTagListeners() {
+  $(".search-tag").off("click").on("click", function (event) {
+    event.preventDefault();
+    const tag = $(this).text().trim();
+    window.location.href = "/?q=:" + encodeURIComponent(tag);
+  });
 }
 
 // Global Set to track selected tags
@@ -190,7 +225,6 @@ function removeTag(tag) {
   const tagElement = document.getElementById(`selected-tag-${tag}`);
   if (tagElement) tagElement.remove();
 
-  // Ensure correct filtering happens after tag removal
   updateSnippetGrid();
 }
 
@@ -204,20 +238,15 @@ function updateSnippetGrid() {
     ).map((tagElement) => tagElement.textContent.trim());
 
     // Check if the snippet has all selected tags
-    // chnage it to the parent element
     const matchesAllTags = [...selectedTags].every((tag) =>
       snippetTags.includes(tag)
     );
 
-    if (matchesAllTags) {
-      snippet.parentElement.style.display = "";
-    } else {
-      snippet.parentElement.style.display = "none";
-    }
+    snippet.parentElement.style.display = matchesAllTags ? "" : "none";
   });
 }
 
-//helper funcs
+// Helper functions
 addEventListener("keydown", function (event) {
   if (event.ctrlKey && event.key === "k") {
     event.preventDefault();
@@ -231,28 +260,24 @@ addEventListener("keydown", function (event) {
 
 function changeTitle() {
   if ($("#search-input").val().trim()) {
-    if ($("#search-icon").hasClass("fa-globe")) title.text("Global Search");
-    else title.text("Local Search");
+    title.text($("#search-icon").hasClass("fa-globe") ? "Global Search" : "Local Search");
     doSearch();
   } else title.text("Your Snippets");
 }
 
 function toggleSearch() {
-  if ($("#search-icon").hasClass("fa-lock")) {
-    $("#search-icon").removeClass("fa-lock");
-    $("#search-type").removeClass("is-danger");
-    $("#search-type").addClass("is-success");
-    $("#search-icon").addClass("fa-globe");
-  } else {
-    $("#search-type").removeClass("is-success");
-    $("#search-icon").removeClass("fa-globe");
-    $("#search-icon").addClass("fa-lock");
-    $("#search-type").addClass("is-danger");
-  }
+  $("#search-icon").toggleClass("fa-lock fa-globe");
+  $("#search-type").toggleClass("is-danger is-success");
   doSearch();
   changeTitle();
 }
 
-$(function () {
-  changeTitle();
+$(document).ready(function () {
+  attachTagListeners(); // Ensure initial tags are clickable
+
+  const query = new URLSearchParams(window.location.search).get("q");
+  if (query) {
+    $("#search-input").val(query);  
+    doSearch();  
+  }
 });

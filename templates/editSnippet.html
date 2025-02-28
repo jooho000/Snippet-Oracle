@@ -4,18 +4,12 @@
 {% block snippetName %}value="{{ snippet["name"] }}"{% endblock %}
 {% block snippetCode %}{{ snippet["code"] }}{% endblock %}
 {% block snippetDesc %}{{ snippet["description"] }}{% endblock %}
-{% block buttons %}
-  <!-- Submit Button -->
-  <div class="field mt-4">
-    <div class="control">
-      <button class="button is-primary is-medium is-rounded">Confirm</button>
-    </div>
-  </div>
-</form>
+{% block submitText %}Save Changes{% endblock %}
 <!-- Back Button -->
-<div class="has-text-centered mt-4">
-  <a class="button is-light is-rounded" id="cancel">Cancel</a>
-</div>
+{% block backButton %}
+  <div class="has-text-centered mt-4">
+    <a class="button is-light is-fullwidth is-rounded" id="cancel">Cancel</a>
+  </div>
 {% endblock %}
 {% block data %}
   {{ super() }}

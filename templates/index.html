@@ -16,10 +16,11 @@
       <div class="field mt-5">
         <div class="control has-icons-left has-icons-right is-large">
           <input class="input is-large is-primary"
-                 id="search-input"
-                 type="text"
-                 maxlength="300"
-                 placeholder="Search for snippets...(name | -desc | :tag)" />
+            id="search-input"
+            type="text"
+            maxlength="300"
+            placeholder="Search for snippets...(name | -desc | :tag)"
+            value="{{ request.args.get('q', '') }}" />
           <span class="icon is-small is-left">
             <i class="fas fa-search"></i>
           </span>

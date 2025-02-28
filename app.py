@@ -67,22 +67,29 @@ def close_connection(exception):
 @app.route("/")
 def index():
     """
-    Render the homepage with the list of snippets.
+    Render the homepage with optional search results.
     """
     user_snippets = []
     user_data = None
+    query = request.args.get("q", "").strip()
 
     if flask_login.current_user.is_authenticated:
         user_snippets = get_db().get_user_snippets(
             flask_login.current_user.id, flask_login.current_user.id
         )
         user_data = get_db().get_user_details(flask_login.current_user.id)
-    return flask.render_template("index.html", snippets=user_snippets, user=user_data)
+
+    return flask.render_template(
+        "index.html", snippets=user_snippets, user=user_data, query=query
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if flask.request.method == "POST":
+    if flask_login.current_user.is_authenticated:
+        return flask.redirect(flask.url_for("index"))
+
+    elif flask.request.method == "POST":
         username = flask.request.form.get("username")
         password = flask.request.form.get("password")
 
@@ -95,13 +102,14 @@ def login():
         elif user is None:
             flask.flash("Invalid username or password!", "warning")
 
-        # TODO: Redirect to flask.request.args.get("next") instead
-        # This isn't implement right now because it's a potential attack vector
+        # TODO: Mitigate Open Redirect Vulnrebility
+        # Make sure next is on site
         if user is None:
             return flask.render_template("login.html", username=username)
         else:
             flask_login.login_user(user)
-            return flask.redirect(flask.url_for("index"))
+            next = flask.request.args.get("next")
+            return flask.redirect(next or flask.url_for("index"))
 
     else:
         return flask.render_template("login.html")
@@ -109,7 +117,10 @@ def login():
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-    if flask.request.method == "POST":
+    if flask_login.current_user.is_authenticated:
+        return flask.redirect(flask.url_for("index"))
+
+    elif flask.request.method == "POST":
         username = flask.request.form.get("username")
         password = flask.request.form.get("password")
         repeat_password = flask.request.form.get("repeatPassword")
@@ -154,10 +165,37 @@ def logout():
 
 # Add Route for Profile Page
 @app.route("/profile", methods=["GET", "POST"])
-@flask_login.login_required
-def profile():
+@app.route("/profile/<string:username>")
+def profile(username=None):
+    if (
+        username
+        and flask_login.current_user.is_authenticated
+        and username == flask_login.current_user.name
+    ):
+        return flask.redirect(flask.url_for("profile"))
+
     cur = get_db()._db.cursor()
 
+    # Check if it's the logged-in user's profile
+    is_owner = False
+    if username is None and flask_login.current_user.is_authenticated:
+        user_id = flask_login.current_user.id
+        is_owner = True
+    elif username is None:
+        return auth.login_manager.unauthorized()
+    else:
+        # Fetch user by username
+        user = get_db().get_user_by_name(username)
+        if not user:
+            flask.flash("User not found!", "danger")
+            return flask.redirect(flask.url_for("index"))
+        user_id = user["id"]
+        is_owner = (
+            flask_login.current_user.is_authenticated
+            and user_id == flask_login.current_user.id
+        )
+
+    # If the profile owner is editing
     if flask.request.method == "POST":
         bio = flask.request.form.get("bio", "")
         links = flask.request.form.getlist("links")
@@ -165,13 +203,15 @@ def profile():
 
         # Handle base64-encoded image
         if profile_picture_base64:
-            # Extract the image content from base64 string
             header, encoded_image = profile_picture_base64.split(",", 1)
             image_data = base64.b64decode(encoded_image)
             image = Image.open(BytesIO(image_data))
 
             if image.size[0] > 1024 or image.size[1] > 1024:
-                flask.flash("Cropped image is too large! Max allowed size is 1024x1024 pixels.", "warning")
+                flask.flash(
+                    "Cropped image is too large! Max allowed size is 1024x1024 pixels.",
+                    "warning",
+                )
                 return flask.redirect(flask.request.url)
 
             # Generate a unique filename
@@ -183,10 +223,7 @@ def profile():
             image.save(file_path)
 
             # Remove old profile picture if exists
-            cur.execute(
-                "SELECT ProfilePicture FROM User WHERE ID = ?",
-                [flask_login.current_user.id],
-            )
+            cur.execute("SELECT ProfilePicture FROM User WHERE ID = ?", [user_id])
             old_profile_picture = cur.fetchone()[0]
             if old_profile_picture:
                 old_image_path = os.path.join(
@@ -197,60 +234,48 @@ def profile():
 
             # Update the user's profile picture in the database
             cur.execute(
-                """
-                UPDATE User
-                SET ProfilePicture = ?
-                WHERE ID = ?
-            """,
-                [unique_filename, flask_login.current_user.id],
+                "UPDATE User SET ProfilePicture = ? WHERE ID = ?",
+                [unique_filename, user_id],
             )
 
         # Update the user's bio
-        cur.execute(
-            """
-            UPDATE User
-            SET Bio = ?
-            WHERE ID = ?
-        """,
-            [bio, flask_login.current_user.id],
-        )
+        cur.execute("UPDATE User SET Bio = ? WHERE ID = ?", [bio, user_id])
 
         # Clear existing links and insert updated links
-        cur.execute("DELETE FROM Links WHERE UserID = ?", [flask_login.current_user.id])
+        cur.execute("DELETE FROM Links WHERE UserID = ?", [user_id])
         for link in links:
             if link.strip():
                 cur.execute(
-                    """
-                    INSERT INTO Links (UserID, Platform, URL)
-                    VALUES (?, ?, ?)
-                """,
-                    [flask_login.current_user.id, "Custom", link],
+                    "INSERT INTO Links (UserID, Platform, URL) VALUES (?, ?, ?)",
+                    [user_id, "Custom", link],
                 )
 
         get_db()._db.commit()
         flask.flash("Profile updated successfully!", "info")
 
-    cur.execute(
-        "SELECT Platform, URL FROM Links WHERE UserID = ?",
-        [flask_login.current_user.id],
-    )
+    # Fetch social links
+    cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [user_id])
     user_links = cur.fetchall()
 
     # Fetch Snippets with Pagination
     page = int(flask.request.args.get("page", 1))
     limit = 10
     offset = (page - 1) * limit
-    cur.execute(
-        """
-        SELECT ID, Name, Description FROM Snippet
-        WHERE UserID = ? ORDER BY Date DESC LIMIT ? OFFSET ?
-    """,
-        [flask_login.current_user.id, limit, offset],
+
+    # Fetch all snippets if owner, only public snippets if visitor
+    viewer_id = (
+        flask_login.current_user.id
+        if flask_login.current_user.is_authenticated
+        else None
     )
-    user_snippets = get_db().get_user_snippets(
-        flask_login.current_user.id, flask_login.current_user.id
-    )
-    user_details = get_db().get_user_details(flask_login.current_user.id)
+    user_snippets = get_db().get_user_snippets(user_id, viewer_id)
+
+    if not is_owner:
+        user_snippets = [
+            snippet for snippet in user_snippets if snippet["is_public"]
+        ]  # Filter only public snippets
+
+    user_details = get_db().get_user_details(user_id)
 
     return flask.render_template(
         "profile.html",
@@ -258,6 +283,7 @@ def profile():
         links=user_links,
         snippets=user_snippets,
         page=page,
+        is_owner=is_owner,  # Pass flag to template
         get_social_icon=get_social_icon,
     )
 
@@ -413,22 +439,30 @@ def update_snippet_visibility(snippet_id):
 # Allow users to access private snippets via shareable links
 @app.route("/share/<string:link>")
 def view_snippet_by_link(link):
-    snippet_id = get_db().get_snippet_id_by_shareable_link(link)
-    if snippet_id is not None:
-        user_id = (
-            flask_login.current_user.id
-            if flask_login.current_user.is_authenticated
-            else None
-        )
-        snippet = get_db().get_snippet(snippet_id, user_id)
+    info = get_db().get_snippet_id_by_shareable_link(link)
+
+    if info:
+        user_id = None
+        if flask_login.current_user.is_authenticated:
+            user_id = flask_login.current_user.id
+        elif not info["is_public"]:
+            return auth.login_manager.unauthorized()
+
+    snippet = get_db().get_snippet(info["id"], user_id)
+
+    if snippet:
+        parent_snippet = None
+        if snippet["parent_snippet_id"] is not None:
+            parent_snippet = get_db().get_snippet(snippet["parent_snippet_id"], user_id)
         return flask.render_template(
             "snippetDetail.html",
-            user=get_db().get_user_details(flask_login.current_user.id),
+            user=user_id,
             snippet=snippet,
+            parent_snippet=parent_snippet,
         )
-    else:
-        flask.flash("Invalid or expired link!", "warning")
-        return flask.redirect(flask.url_for("index"))
+
+    flask.flash("Unauthorized or snippet not found!", "danger")
+    return flask.redirect(flask.url_for("index"))
 
 
 @app.route("/search/", methods=["GET"])
@@ -479,9 +513,7 @@ def edit_snippet(snippet_id):
         description = flask.request.form.get("description")
         tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
-        print("HELLO IS IT PUBLIC: " + str(flask.request.form.get("is_public") == "1"))
         is_public = flask.request.form.get("is_public") == "1"
-        print("STORED VALUE IS: " + str(is_public))
         try:
             permitted_users = flask.request.form.getlist(
                 "permitted_users[]"
@@ -519,7 +551,6 @@ def edit_snippet(snippet_id):
         return flask.redirect(
             flask.url_for(
                 "view_snippet",
-                user=get_db().get_user_details(flask_login.current_user.id),
                 snippet_id=snippet_id,
             )
         )
@@ -542,8 +573,9 @@ def edit_snippet(snippet_id):
 
 
 @app.route("/deleteSnippet/<int:snippet_id>")
+@flask_login.login_required
 def delete_Snippet(snippet_id):
-    current_user_id = flask_login.current_user.id  # Get the current user's ID
+    current_user_id = flask_login.current_user.id
     snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")

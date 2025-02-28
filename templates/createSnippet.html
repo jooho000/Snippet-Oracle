@@ -50,11 +50,11 @@
               <div class="field is-grouped is-grouped-multiline">
                 <div id="tags-container"
                      class="tags is-flex is-flex-wrap-wrap is-flex-grow-1">
-                  <input type="hidden" name="tags" id="hidden-tags">
-                  <span id="tag-input"
-                        class="input tag-input is-flex-grow-1"
-                        placeholder="Type tags and press Enter"
-                        contenteditable="true">{{ ', '.join(snippet.tags) if snippet and snippet.tags else '' }}</span>
+                  <input type="hidden" name="tags" id="hidden-tags" />
+                  <input id="tag-input"
+                         class="input tag-input is-flex-grow-1"
+                         placeholder="Type tags and press Enter"
+                         maxlength="20" />
                 </div>
               </div>
             </div>
@@ -76,7 +76,7 @@
               </div>
               <div class="dropdown-menu" id="dropdown-menu" role="menu">
                 <div class="dropdown-content">
-                  {% for tag in preset_tags %}<a href="#" class="dropdown-item preset-tag">{{ tag }}</a>{% endfor %}
+                  {% for tag in preset_tags %}<a id="preset-{{ tag }}" class="dropdown-item preset-tag">{{ tag }}</a>{% endfor %}
                 </div>
               </div>
             </div>
@@ -85,9 +85,7 @@
           <div class="field">
             <label class="label">Visibility</label>
             <div class="control">
-              <button type="button"
-                      id="visibilityToggle"
-                      class="button is-light is-rounded">
+              <button type="button" id="visibilityToggle" class="button is-light">
                 <span class="icon">
                   <i id="visibilityIcon"
                      class="{{ 'fas fa-globe' if snippet and snippet.is_public else 'fas fa-lock' }}"></i>
@@ -101,32 +99,36 @@
             </div>
           </div>
           <!-- User Selection (Only visible if Private) -->
-          <div class="field" id="permittedUsersField" style="display: none;">
+          <div class="field"
+               id="permittedUsersField"
+               style="display: none">
             <label class="label">Share with Specific Users</label>
             <div class="box is-shadowless">
               <div class="field">
                 <div id="selected-users" class="tags are-medium"></div>
                 <input type="text"
                        id="userSearch"
-                       class="input is-rounded"
+                       class="input"
                        placeholder="Search users...">
               </div>
-              <div id="user-selection" class="box is-light" style="display: none;"></div>
+              <div id="user-selection"
+                   class="box is-light"
+                   style="display: none"></div>
             </div>
           </div>
-          {% block buttons %}
-            <!-- Submit Button -->
-            <div class="field mt-4">
-              <div class="control">
-                <button class="button is-primary is-fullwidth is-medium is-rounded">
-                  {{ 'Create Remix' if snippet else 'Create Snippet' }}
-                </button>
-              </div>
+          <!-- Submit Button -->
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-primary is-fullwidth is-medium is-rounded">
+                {% block submitText %}{{ 'Create Remix' if snippet else 'Create Snippet' }}{% endblock %}
+              </button>
             </div>
-          </form>
-          <!-- Back Button -->
+          </div>
+        </form>
+        <!-- Back Button -->
+        {% block backButton %}
           <div class="has-text-centered mt-4">
-            <a class="button is-light is-rounded" href="{{ url_for("snippets") }}">Back to My Snippets</a>
+            <a class="button is-fullwidth is-light is-rounded" href="{{ url_for("snippets") }}">Back to My Snippets</a>
           </div>
         {% endblock %}
       </div>
