@@ -104,9 +104,9 @@
 
 .navbar-fill-middle {
   display: flex;
-  flex: 1;
+  flex: 0.8;
+  padding-left: 5%;
 }
-
 
 .content {
   word-break: break-all;
