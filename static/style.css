@@ -105,7 +105,14 @@
 .navbar-fill-middle {
   display: flex;
   flex: 0.8;
-  padding-left: 5%;
+}
+
+.mobile-padding{
+  padding-left: 10%;
+}
+
+.desktop-padding{
+  padding-left: 5em;
 }
 
 .content {

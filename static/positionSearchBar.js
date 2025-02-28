@@ -8,18 +8,14 @@ let resizing = false;
 /**
  * Triggers searchbar move once scrolled past
  */
-addEventListener("scroll", () => {
-  checkScrollHeight();
-});
+addEventListener("scroll", checkScrollHeight);
 
 /**
  *
  * trigger search bar resizing on window size change
  */
 addEventListener("resize", () => {
-  if (past){
-    resizeSearchbar();
-  }
+  if (past) resizeSearchbar();
 });
 
 /**
