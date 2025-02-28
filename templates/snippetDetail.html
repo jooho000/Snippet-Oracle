@@ -106,7 +106,7 @@
                 <strong>{{ comment["user_name"] }}</strong>
                 <small class="has-text-grey-light timestamp"
                        data-timestamp="{{ comment['date'] }}">{{ comment["date"] }}</small>
-                <p>{{ comment["content"] }}</p>
+                  <p>{{ comment["content"] | replace("\n", "<br>") | safe }}</p>
               </div>
               <!-- Comment Actions -->
               <nav class="level is-mobile">
@@ -132,10 +132,13 @@
                   <form action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-' ~ comment['id']) }}"
                         method="post">
                     <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
-                    <textarea class="textarea"
-                              name="comment"
-                              placeholder="Write a reply..."
-                              required></textarea>
+                          <textarea class="textarea"
+                          name="comment"
+                          id="reply-input-{{ comment['id'] }}"
+                          placeholder="Write a reply..."
+                          maxlength="500" required
+                          oninput="updateCharacterCount('reply-input-{{ comment['id'] }}', 'reply-char-count-{{ comment['id'] }}')"></textarea>
+                    <p id="reply-char-count-{{ comment['id'] }}" class="has-text-grey-light">0/500</p>
                     <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
                   </form>
                 </div>
@@ -163,7 +166,7 @@
                           <strong>{{ reply["user_name"] }}</strong>
                           <small class="has-text-grey-light timestamp"
                                  data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
-                          <p>{{ reply["content"] }}</p>
+                          <p>{{ reply["content"] | replace("\n", "<br>") | safe }}</p>
                         </div>
                         <!-- Reply Actions -->
                         <nav class="level is-mobile">
@@ -203,10 +206,9 @@
                   <textarea class="textarea"
                             name="comment"
                             id="comment-input"
-                            placeholder="Write your comment here..."
-                            maxlength="500"
-                            required
-                            oninput="updateCharacterCount()"></textarea>
+                            placeholder="Write your comment here..." 
+                            maxlength="500" required
+                            oninput="updateCharacterCount('comment-input', 'char-count')"></textarea>
                   <p id="char-count" class="has-text-grey-light">0/500</p>
                 </p>
               </div>

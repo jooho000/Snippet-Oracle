@@ -588,10 +588,16 @@ def delete_Snippet(snippet_id):
 @flask_login.login_required
 def add_comment(snippet_id):
     comment_content = flask.request.form.get("comment")
-    parent_id = flask.request.form.get("parent_id")  # Get Parent Comment ID
+    parent_id = flask.request.form.get("parent_id")
 
     if not comment_content.strip():
         flask.flash("Comment cannot be empty!", "warning")
+        return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+    
+    comment_content = comment_content.replace("\r\n", "\n")
+
+    if len(comment_content) > 500:
+        flask.flash("Comments cannot exceed 500 characters!", "danger")
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
 
     user_id = flask_login.current_user.id
