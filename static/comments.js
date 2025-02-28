@@ -52,10 +52,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-function updateCharacterCount() {
-  const input = document.getElementById("comment-input");
-  const countDisplay = document.getElementById("char-count");
-  countDisplay.textContent = `${input.value.length}/500`;
+function updateCharacterCount(inputId, countDisplayId) {
+  const input = document.getElementById(inputId);
+  const countDisplay = document.getElementById(countDisplayId);
+
+  if (input && countDisplay) {
+    countDisplay.textContent = `${input.value.length}/500`;
+  }
 }
 
 
@@ -69,8 +72,5 @@ function toggleReplies(commentId) {
     arrowIcon.classList.toggle("fa-chevron-down"); // Rotates arrow when expanded
   }
 }
-
-
-
 
 
