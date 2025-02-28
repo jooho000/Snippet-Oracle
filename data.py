@@ -688,7 +688,7 @@ class Data:
             WITH DescMatches AS (
                 SELECT SnippetID
                 FROM SnippetEmbedding
-                WHERE Embedding MATCH ? AND k = 51
+                WHERE Embedding MATCH ? AND k = 50
                 ORDER BY distance
             )
             SELECT
