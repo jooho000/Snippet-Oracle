@@ -468,7 +468,7 @@ def view_snippet_by_link(link):
 @app.route("/search/", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "")  # Get the search query from the URL
-    public = True if request.headers.get("Search-Type") == "true" else False
+    public = request.args.get("public") == "1"
     if len(query) > 300:
         query = query[:300]
     terms = query.split(" ")
@@ -478,9 +478,11 @@ def search_snippets():
     for term in terms:
         if term != "":
             if term[0] == ":":
-                tags.add(term[1:])
+                if len(term) > 1:
+                    tags.add(term[1:])
             elif term[0] == "-":
-                desc_has.append(term[1:])
+                if len(term) > 1:
+                    desc_has.append(term[1:])
             else:
                 names.add(term)
 
@@ -488,12 +490,16 @@ def search_snippets():
     if flask_login.current_user.is_authenticated:
         user_id = flask_login.current_user.id
 
-    if len(tags) or len(desc_has) > 0:
-        results = get_db().search_snippets(names, tags, desc_has, user_id, public)
-    else:
-        results = get_db().smart_search_snippets(query, user_id, public)
-
-    return jsonify({"results": results})
+    return jsonify(
+        {
+            "tags": list(tags) if tags else get_db().search_tags(query),
+            "users": get_db().search_users(query),
+            "snippets": get_db().search_snippets(
+                names, tags, desc_has, user_id, public
+            ),
+            "similar": get_db().smart_search_snippets(query),
+        }
+    )
 
 
 @app.route("/editSnippet/<int:snippet_id>", methods=["GET", "POST"])
@@ -574,7 +580,7 @@ def edit_snippet(snippet_id):
 
 @app.route("/deleteSnippet/<int:snippet_id>")
 @flask_login.login_required
-def delete_Snippet(snippet_id):
+def delete_snippet(snippet_id):
     current_user_id = flask_login.current_user.id
     snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:

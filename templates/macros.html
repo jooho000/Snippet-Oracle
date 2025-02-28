@@ -5,7 +5,7 @@
        data-code='{{ snippet.get('code', None) }}'>
     <div class="box">
       <!-- Snippet Header: Name + Buttons + Visibility -->
-      <div class="snippet-card-header columns mb-0">
+      <div class="snippet-card-header columns is-mobile mb-0">
         <!-- Snippet Name (Left) -->
         <a class="snippet-card-link column has-text-left"
            href="#"
@@ -84,12 +84,12 @@
       </div>
       <!-- Snippet Description (Middle) -->
       <p class="snippet-card-summary column is-italic mb-4">{{ snippet.get('description', '') }}</p>
-      <div class="columns">
+      <div class="columns is-mobile">
         <div class="column">
-          <div class="snippet-card-tags tags-container tags">{{ tagsDisplay(snippet.get('tags', []), 6) }}</div>
+          <div class="snippet-card-tags tags-container tags">{{ tagsDisplay(snippet.get('tags', []) , 6) }}</div>
         </div>
         <div class="column is-narrow">
-          <div class="level">
+          <div class="level is-mobile">
             <div class="level-item">
               <button class="snippet-card-like-button icon-text {% if snippet.get('is_liked', False) %}has-text-link{% endif %}"
                       onclick="likeSnippet($(this).closest('.snippet-card'))">

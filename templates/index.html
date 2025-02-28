@@ -1,5 +1,25 @@
 {% extends "layout.html" %}
 {% import "macros.html" as macros %}
+{% macro resultsSection(id, name, icon) -%}
+  <div class="results-section block">
+    <div class="level is-mobile is-clickable">
+      <div class="level-left">
+        <div class="level-item">
+          <span class="icon mr-1">
+            <i class="fas {{ icon }}"></i>
+          </span>
+          {{ name }} (<span id="{{ id }}-count" class="results-count">0</span>)
+        </div>
+      </div>
+      <div class="level-item">
+        <div class="tiny-horiz-line"></div>
+        <div class="results-show-all has-text-grey is-size-7"></div>
+        <div class="horiz-line"></div>
+      </div>
+    </div>
+    <div class="results-collapse-wrapper">{{ caller() }}</div>
+  </div>
+{%- endmacro %}
 {% block title %}Welcome - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
@@ -10,48 +30,70 @@
       <div class="control is-centered mt-5">
         <a class="button is-primary is-large"
            href="{{ url_for("createSnippet") }}">Create Snippet</a>
-        <a class="button is-link is-large" href="{{ url_for("snippets") }}">View My Snippets</a>
+        <a class="button is-link is-large" href="{{ url_for("profile") }}">View My Snippets</a>
       </div>
       <!-- Search Bar -->
       <div class="field mt-5">
         <div class="control has-icons-left has-icons-right is-large">
           <input class="input is-large is-primary"
-            id="search-input"
-            type="text"
-            maxlength="300"
-            placeholder="Search for snippets...(name | -desc | :tag)"
-            value="{{ request.args.get('q', '') }}" />
+                 id="search-input"
+                 type="text"
+                 maxlength="300"
+                 placeholder="Search for snippets... (name | -desc | :tag)"
+                 value="{{ request.args.get('q', '') }}" />
           <span class="icon is-small is-left">
             <i class="fas fa-search"></i>
           </span>
         </div>
       </div>
-      <div hidden>{{ macros.snippetCard('snippet-template', {}) }}</div>
-      <!-- Selected Tags Display (Tags that were clicked will appear here) -->
-      <div id="selected-tags" class="tags are-medium mt-3"></div>
-      <!-- Search Results -->
-      <div id="search-results" class="grid is-col-min-16 mt-5"></div>
-      <!-- Description Matches -->
-      <div id="search-results-desc" class="grid is-col-min-16"></div>
-    </div>
-  </section>
-  <!-- Snippet Grid -->
-  <section class="section">
-    <h1 class="title">Your Snippets</h1>
-    {% if snippets %}
-      <div class="grid is-col-min-20">
-        {% for snippet in snippets %}{{ macros.snippetCard(None, snippet) }}{% endfor %}
-        <!-- Fill up rightmost grid slots when there are only one or two snippets -->
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
+      <div id="results" class="block has-text-left pt-2">
+        {% call resultsSection("results-tags", "Tags", "fa-tag") %}
+          <section id="results-tags" class="results-container block pl-6 tags">
+          </section>
+        {% endcall %}
+        {% call resultsSection("results-users", "Users", "fa-user") %}
+          <section class="block pl-6">
+            <div id="results-users" class="results-container grid is-col-min-12"></div>
+          </section>
+        {% endcall %}
+        {% call resultsSection("results-snippets", "Snippets", "fa-code") %}
+          <section class="block pl-4">
+            <div id="results-snippets" class="results-container grid is-col-min-16"></div>
+          </section>
+        {% endcall %}
+        {% call resultsSection("results-similar", "Similar Public Snippets", "fa-globe") %}
+          <section class="block pl-4">
+            <div id="results-similar" class="results-container grid is-col-min-16"></div>
+          </section>
+        {% endcall %}
       </div>
-    {% else %}
-      <p class="has-text-centered">No snippets found. Create one!</p>
-    {% endif %}
-  </section>
-{% endblock %}
-{% block scripts %}
-  {{ super() }}
-  <script src="{{ url_for('static', filename='search.js') }}"></script>
-{% endblock %}
+      <!-- Templates to be cloned during search -->
+      <div hidden>
+        {{ macros.snippetCard('snippet-template', {}) }}
+        <div id="user-card-template" class="cell is-clickable">
+          <div class="card">
+            <div class="card-content">
+              <div class="media">
+                <div class="media-left">
+                  <figure class="image is-32x32">
+                    <img class="user-card-picture is-rounded"
+                         src="{{ url_for('static', filename='profile_pictures/default_image.png') }}"
+                         alt="Profile Picture"
+                         width="32"
+                         height="32" />
+                  </figure>
+                </div>
+                <div class="media-content">
+                  <p class="user-card-name subtitle is-4">John Smith</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  {% endblock %}
+  {% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='search.js') }}"></script>
+  {% endblock %}

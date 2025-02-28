@@ -1,16 +1,36 @@
 const searchInput = $("#search-input");
-const resultsContainer = $("#search-results");
-const descResultsContainer = $("#search-results-desc");
+const allResults = $("#results");
 const snippetTemplate = $("#snippet-template");
+const userCardTemplate = $("#user-card-template");
+const title = $("#title");
 const searchDelayMs = 250;
 
-const title = $("#title");
+// Containers for search results
+const tagResults = $("#results-tags");
+const tagCount = $("#results-tags-count");
+const userResults = $("#results-users");
+const userCount = $("#results-users-count");
+const snippetResults = $("#results-snippets");
+const snippetCount = $("#results-snippets-count");
+const similarResults = $("#results-similar");
+const similarCount = $("#results-similar-count");
 
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
-// Start search after the user stops typing
+toggleResults("results-tags", false);
+toggleResults("results-users", false);
+toggleResults("results-snippets", true);
+toggleResults("results-similar", true);
+allResults.hide();
+
+$(".results-section > .level").on("click", function (event) {
+  const id = $(event.currentTarget).parent().find(".results-container")[0].id;
+  toggleResults(id);
+});
+
 $(function () {
+  // Start search after the user stops typing
   searchInput.on("input", function () {
     if (searchTimeout !== null) {
       clearTimeout(searchTimeout);
@@ -28,89 +48,103 @@ async function doSearch() {
 
   // Don't search if input is empty
   if (!query.trim()) {
-    resultsContainer.empty();
-    descResultsContainer.empty();
-    changeTitle();
-    $("#search-type").removeClass("is-success");
-    $("#search-icon").removeClass("fa-globe");
-    $("#search-icon").addClass("fa-lock");
-    $("#search-type").addClass("is-danger");
-    $(".search-disclaimer").remove();
-    $("#show-similar-snippets").hide();
-    $("#snippets").show();
-    $("#search-results-desc").hide();
+    allResults.hide();
     return;
   }
-  $("#snippets").hide();
+
   searchInput.parent().addClass("is-loading");
 
   // Send the query to the server via AJAX (using fetch)
-  const searchUrl = `/search?q=${encodeURIComponent(query)}`;
+  const searchUrl = new URL(script_root + "/search", location.href);
+  searchUrl.searchParams.append("q", query);
+  searchUrl.searchParams.append("public", 1);
   pendingSearchUrl = searchUrl;
 
-  fetch(searchUrl, {
-    headers: {
-      "Search-Type": $("#search-icon").hasClass("fa-lock") ? false : true,
-    },
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      // Ignore results if another search is pending
-      if (searchUrl !== pendingSearchUrl) return;
+  try {
+    const json = await fetch(searchUrl).then((response) => response.json());
+    allResults.show();
 
-      resultsContainer.empty();
-      descResultsContainer.empty();
-      $(".search-disclaimer").remove();
+    // Ignore results if another search is pending
+    if (searchUrl !== pendingSearchUrl) return;
 
-      // If there are results, display them as snippet cards
-      let anyDescMatches = false;
-      let seenSnippetIds = new Set();
+    $(".results-container").empty();
 
-      for (const snippet of data.results) {
-        if (seenSnippetIds.has(snippet.id)) continue;
+    // Tag text matches
+    tagCount.text(json.tags.length);
+    for (const tag of json.tags) createTag(tag).appendTo(tagResults);
+    if (!json.tags.length) tagResults.hide();
+    else tagResults.show();
 
-        // Add a disclaimer that these are only description matches
-        if (!anyDescMatches && snippet.is_description_match) {
-          anyDescMatches = true;
-          const disclaimer = $(document.createElement("h5"));
-          disclaimer.addClass("subtitle mt-6 is-5 search-disclaimer");
-          disclaimer.text("Similar public snippets");
-          descResultsContainer.before(disclaimer);
+    // Username matches
+    userCount.text(json.users.length);
+    for (const user of json.users) createUserCard(user).appendTo(userResults);
+    if (!json.users.length) userResults.hide();
+    else userResults.show();
 
-          if ($("#search-icon").hasClass("fa-lock")) {
-            $("#show-similar-snippets").show();
-            $("#search-results-desc").hide();
-          } else {
-            $("#show-similar-snippets").hide();
-            $("#search-results-desc").show();
-            disclaimer.hide();
-          }
-        }
+    // Name match snippet cards
+    snippetCount.text(json.snippets.length);
+    for (const snippet of json.snippets)
+      createSnippet(snippet).appendTo(snippetResults);
+    if (!json.snippets.length) snippetResults.hide();
+    else snippetResults.show();
 
-        seenSnippetIds.add(snippet.id);
+    // Similar description snippet cards
+    similarCount.text(json.similar.length);
+    for (const snippet of json.similar)
+      createSnippet(snippet).appendTo(similarResults);
+    if (!json.similar.length) similarResults.hide();
+    else similarResults.show();
 
-        // Add snippet to results
-        createSnippet(snippet).appendTo(
-          snippet.is_description_match ? descResultsContainer : resultsContainer
-        );
-      }
+    attachTagListeners(); // Ensure tags are clickable after search results update
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    snippetResults.text("Error occurred while searching.");
+  }
 
-      if (data.results.length === 0) {
-        resultsContainer.text("No snippets found.");
-      }
+  if (searchUrl === pendingSearchUrl) {
+    pendingSearchUrl = null;
+    searchInput.parent().removeClass("is-loading");
+  }
+}
 
-      attachTagListeners(); // Ensure tags are clickable after search results update
-    })
-    .catch((error) => {
-      console.error("Error fetching search results:", error);
-      resultsContainer.text("Error occurred while searching.");
-    })
-    .finally(() => {
-      if (searchUrl === pendingSearchUrl) {
-        pendingSearchUrl = null;
-        searchInput.parent().removeClass("is-loading");
-      }
-    });
+/**
+ * Creates a tag button from the given text.
+ */
+function createTag(tag) {
+  const elem = $(document.createElement("a"));
+  elem.text(tag);
+  elem.addClass("tag is-info searhc-tag");
+
+  // Update link
+  const url = new URL(script_root, location.href);
+  url.searchParams.append("q", ":" + tag);
+  elem.attr("href", url.href);
+
+  return elem;
+}
+
+function createUserCard(user) {
+  const elem = userCardTemplate.clone();
+  const pic = elem.find(".user-card-picture");
+  const name = elem.find(".user-card-name");
+
+  elem.removeAttr("id");
+  elem.on("click", function () {
+    location.href = new URL(
+      script_root + "/profile/" + user.name,
+      location.href
+    ).href;
+  });
+
+  name.text(user.name);
+  if (user.profile_picture) {
+    pic.attr(
+      "src",
+      script_root + "/static/profile_pictures/" + user.profile_picture
+    );
+  }
+
+  return elem;
 }
 
 /**
@@ -182,68 +216,39 @@ function createSnippet(snippet) {
 }
 
 /**
+ * Show or hide a category of search results.
+ * @param {string} name
+ */
+function toggleResults(id, visible) {
+  const container = $("#" + id).closest(".results-collapse-wrapper");
+  const showAll = container
+    .closest(".results-section")
+    .find(".results-show-all");
+
+  if (visible == undefined) {
+    visible = container.is(":hidden");
+  }
+
+  if (visible) {
+    container.show();
+    showAll.text("hide");
+  } else {
+    container.hide();
+    showAll.text("show");
+  }
+}
+
+/**
  * Ensures event listeners are attached to dynamically created tags.
  */
 function attachTagListeners() {
-  $(".search-tag").off("click").on("click", function (event) {
-    event.preventDefault();
-    const tag = $(this).text().trim();
-    window.location.href = "/?q=:" + encodeURIComponent(tag);
-  });
-}
-
-// Global Set to track selected tags
-let selectedTags = new Set();
-
-function filterByTag(tag) {
-  const selectedTagsContainer = document.getElementById("selected-tags");
-
-  if (selectedTags.has(tag)) {
-    return; // Avoid adding duplicates
-  }
-
-  selectedTags.add(tag);
-
-  // Create a removable tag button
-  const tagElement = document.createElement("span");
-  tagElement.className = "tag is-primary is-rounded";
-  tagElement.id = `selected-tag-${tag}`;
-  tagElement.innerHTML = `${tag} <button class="delete is-small" onclick="removeTag('${tag}')"></button>`;
-
-  // Append to the selected tags container
-  selectedTagsContainer.appendChild(tagElement);
-
-  updateSnippetGrid();
-}
-
-function removeTag(tag) {
-  if (!selectedTags.has(tag)) return;
-
-  selectedTags.delete(tag);
-
-  // Remove the tag from the UI
-  const tagElement = document.getElementById(`selected-tag-${tag}`);
-  if (tagElement) tagElement.remove();
-
-  updateSnippetGrid();
-}
-
-function updateSnippetGrid() {
-  const snippets = document.querySelectorAll(".box[data-snippet-id]");
-
-  snippets.forEach((snippet) => {
-    const tagsContainer = snippet.querySelector(".tags-container");
-    const snippetTags = Array.from(
-      tagsContainer.getElementsByClassName("tag")
-    ).map((tagElement) => tagElement.textContent.trim());
-
-    // Check if the snippet has all selected tags
-    const matchesAllTags = [...selectedTags].every((tag) =>
-      snippetTags.includes(tag)
-    );
-
-    snippet.parentElement.style.display = matchesAllTags ? "" : "none";
-  });
+  $(".search-tag")
+    .off("click")
+    .on("click", function (event) {
+      event.preventDefault();
+      const tag = $(this).text().trim();
+      window.location.href = "/?q=:" + encodeURIComponent(tag);
+    });
 }
 
 // Helper functions
@@ -258,13 +263,6 @@ addEventListener("keydown", function (event) {
   }
 });
 
-function changeTitle() {
-  if ($("#search-input").val().trim()) {
-    title.text($("#search-icon").hasClass("fa-globe") ? "Global Search" : "Local Search");
-    doSearch();
-  } else title.text("Your Snippets");
-}
-
 function toggleSearch() {
   $("#search-icon").toggleClass("fa-lock fa-globe");
   $("#search-type").toggleClass("is-danger is-success");
@@ -272,12 +270,17 @@ function toggleSearch() {
   changeTitle();
 }
 
-$(document).ready(function () {
+$(function () {
   attachTagListeners(); // Ensure initial tags are clickable
 
+  // Start a search if present in URL
   const query = new URLSearchParams(window.location.search).get("q");
   if (query) {
-    $("#search-input").val(query);  
-    doSearch();  
+    // Hide similar results when linked to a specific tag
+    if (query.includes(":") || query.includes("-"))
+      toggleResults("results-similar", false);
+
+    $("#search-input").val(query);
+    doSearch();
   }
 });

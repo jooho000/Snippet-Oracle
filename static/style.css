@@ -12,13 +12,27 @@
 
 .snippet-card-open {
   position: fixed;
-  left: 20vw;
-  right: 20vw;
+  left: 50%;
   top: 5vh;
-  max-height: 90vh;
   z-index: 50;
-  overflow-y: scroll;
   padding: 20px;
+  width: 800px;
+  margin-left: -400px;
+}
+
+@media screen and (max-width: 820px) {
+  .snippet-card-open {
+    margin-left: unset;
+    width: unset;
+    left: 10px;
+    right: 10px;
+    background-color: red;
+  }
+}
+
+.snippet-card-open > .box {
+  overflow-y: auto;
+  max-height: 85vh;
 }
 
 .snippet-card-code > pre {
@@ -101,4 +115,43 @@
 .stick-top {
   position: sticky;
   top: 0;
+}
+
+.horiz-line {
+  border-bottom: 1px solid
+    hsla(
+      var(--bulma-scheme-h),
+      var(--bulma-scheme-s),
+      var(--bulma-border-l),
+      0.5
+    );
+  width: 100%;
+}
+
+.tiny-horiz-line {
+  border-bottom: 1px solid
+    hsla(
+      var(--bulma-scheme-h),
+      var(--bulma-scheme-s),
+      var(--bulma-border-l),
+      0.5
+    );
+  width: 1em;
+}
+
+.results-show-all {
+  padding-left: 1em;
+  padding-right: 1em;
+  text-wrap: nowrap;
+}
+
+#dropdown-menu > .dropdown-content {
+  width: 800px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#user-selection {
+  max-height: 500px;
+  overflow-y: auto;
 }

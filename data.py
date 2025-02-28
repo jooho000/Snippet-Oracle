@@ -2,28 +2,20 @@
 Defines the application's databases.
 """
 
-import itertools
 import random
 import sqlite3
 import sqlite_vec
 import os
+import csv
 import uuid  # For generating unique shareable links
 import mock_data
 
-
-preset_tags = [
-    "HTML",
-    "CSS",
-    "JavaScript",
-    "Python",
-    "Flask",
-    "Django",
-    "React",
-    "Vue.js",
-    "Code Snippet",
-    "C#",
-]
-
+preset_tags: list[str] = []
+with open("tags_normalized.csv") as tags_file:
+    reader = csv.reader(tags_file)
+    for row in reader:
+        preset_tags.append(row[0])
+preset_tags.sort()
 
 _desc_transformer = None
 
@@ -288,7 +280,7 @@ class Data:
         res = cur.fetchone()
         if res is None:
             return None
-        
+
         cur.execute(
             """
             SELECT Platform, URL 
@@ -303,7 +295,9 @@ class Data:
         return {
             "name": res[0],
             "bio": res[1] if res[1] else "",
-            "profile_picture": res[2] if res[2] else "default_image.png",  # Return BLOB (frontend should handle display)
+            "profile_picture": res[2]
+            if res[2]
+            else "default_image.png",  # Return BLOB (frontend should handle display)
             "social_links": social_links,
         }
 
@@ -413,7 +407,7 @@ class Data:
 
         if snippet:
             user_details = self.get_user_details(snippet[4])
-            
+
             return {
                 "id": snippet[0],
                 "name": snippet[1],
@@ -470,20 +464,22 @@ class Data:
         for snippet in snippets:
             user_details = self.get_user_details(snippet[4])
 
-            snippets_list.append({
-                "id": snippet[0],
-                "name": snippet[1],
-                "code": snippet[2],
-                "description": snippet[3],
-                "user_id": snippet[4],
-                "parent_snippet_id": snippet[5],
-                "date": snippet[6],
-                "is_public": bool(snippet[7]),  # Fix index to correctly reference `is_public`
-                "tags": self.get_tags_for_snippet(snippet[0]),
-                "likes": self.get_likes(snippet[0]),
-                "is_liked": self.is_liked(snippet[0], viewer_id),
-                "author": user_details,  # Include (name, bio, profile_picture)
-            })
+            snippets_list.append(
+                {
+                    "id": snippet[0],
+                    "name": snippet[1],
+                    "code": snippet[2],
+                    "description": snippet[3],
+                    "user_id": snippet[4],
+                    "parent_snippet_id": snippet[5],
+                    "date": snippet[6],
+                    "is_public": bool(snippet[7]),
+                    "tags": self.get_tags_for_snippet(snippet[0]),
+                    "likes": self.get_likes(snippet[0]),
+                    "is_liked": self.is_liked(snippet[0], viewer_id),
+                    "author": user_details,  # Include (name, bio, profile_picture)
+                }
+            )
 
         return snippets_list
 
@@ -523,6 +519,32 @@ class Data:
                 "is_public": bool(snippet[1]),
             }
 
+    def search_tags(self, query):
+        """Returns a list of all preset tags matching the search query."""
+        query = query.lower()
+        return [tag for tag in preset_tags if query in tag.lower()]
+
+    def search_users(self, query):
+        """
+        Returns a list of all users with names matching the search query.
+
+        - "name": The user's name.
+        - "profile_picture": The user's profile picture.
+        """
+
+        cur = self._db.cursor()
+        results = cur.execute(
+            """
+            SELECT Name, ProfilePicture 
+            FROM User 
+            WHERE Name LIKE ?
+            ORDER BY Name
+            """,
+            ["%" + query + "%"],
+        )
+
+        return [{"name": res[0], "profile_picture": res[1]} for res in results]
+
     def search_snippets(
         self, names=None, tags=None, desc=None, viewer_id=None, public=True
     ):
@@ -531,10 +553,17 @@ class Data:
         the user has permission to view.
 
         - "id": The integer ID of the snippet.
-        - "tags": A list of tags associated with the snippet.
-        - "name": The full name of the snippet.
-        - "desc": The user-provided description.
+        - "name": The name of the snippet.
+        - "code": The content of the snippet.
+        - "description": The user-provided description.
         - "user_id": The author's integer ID.
+        - "parent_snippet_id": The integer ID of the parent snippet or `None`.
+        - "date": The date and time of this snippet's creation.
+        - "is_public": True if the snippet is public, False otherwise.
+        - "tags": A list of tags that the snippet has.
+        - "likes": The number of likes this snippet has.
+        - "is_liked": Whether the viewer has liked this snippet.
+        - "author": The author's user details.
         """
 
         if names is str:
@@ -602,6 +631,7 @@ class Data:
             FROM Snippet
             WHERE {" AND ".join(queries)}
             ORDER BY Date DESC
+            LIMIT 50
         """
 
         cur = self._db.cursor()
@@ -611,25 +641,26 @@ class Data:
         for res in results:
             user_details = self.get_user_details(res[4])
 
-            snippets_list.append({
-                "id": res[0],
-                "name": res[1],
-                "code": res[2],
-                "description": res[3],
-                "user_id": res[4],
-                "parent_snippet_id": res[5],
-                "date": res[6],
-                "is_public": bool(res[7]),
-                "tags": self.get_tags_for_snippet(res[0]),
-                "is_description_match": False,
-                "likes": self.get_likes(res[0]),
-                "is_liked": self.is_liked(res[0], viewer_id),
-                "author": user_details
-            })
+            snippets_list.append(
+                {
+                    "id": res[0],
+                    "name": res[1],
+                    "code": res[2],
+                    "description": res[3],
+                    "user_id": res[4],
+                    "parent_snippet_id": res[5],
+                    "date": res[6],
+                    "is_public": bool(res[7]),
+                    "tags": self.get_tags_for_snippet(res[0]),
+                    "likes": self.get_likes(res[0]),
+                    "is_liked": self.is_liked(res[0], viewer_id),
+                    "author": user_details,
+                }
+            )
 
         return snippets_list
 
-    def smart_search_snippets(self, query, viewer_id=None, public=True):
+    def smart_search_snippets(self, query, viewer_id=None):
         """
         Leverages AI to return summaries of all snippets that match a query,
         but ensures only accessible snippets are returned.
@@ -643,46 +674,12 @@ class Data:
         - "date": The date and time of this snippet's creation.
         - "is_public": True if the snippet is public, False otherwise.
         - "tags": A list of tags that the snippet has.
-        - "is_description_match": A list of tags that the snippet has.
+        - "likes": The number of likes this snippet has.
+        - "is_liked": Whether the viewer has liked this snippet.
+        - "author": The author's user details.
         """
         query_embedding = _get_transformer().encode(query)
-        query_terms = ["%" + term.strip() + "%" for term in query.split(" ")]
-
         cur = self._db.cursor()
-        if public:
-            access_filter = """
-                (IsPublic = 1 OR EXISTS (
-                SELECT 1 FROM SnippetPermissions AS P
-                WHERE P.SnippetID = ID AND P.UserID = ?
-                ))
-            """
-        else:
-            access_filter = """
-                Snippet.UserID = ?
-            """
-
-        # Find snippets that have all query terms in their names
-        cur.execute(
-            f"""
-            SELECT
-                ID,
-                Name,
-                Code,
-                Description,
-                UserID,
-                ParentSnippetID,
-                Date,
-                IsPublic,
-                0
-            FROM Snippet
-            WHERE ({" AND ".join(["Name LIKE ?"] * len(query_terms))})
-            AND {access_filter}
-            ORDER BY length(Name) ASC, Name
-            LIMIT 30
-            """,
-            query_terms + [viewer_id],
-        )
-        name_matches = cur.fetchall()
 
         # Search by description embedding
         # Embeddings are only generated for public snippets
@@ -691,7 +688,7 @@ class Data:
             WITH DescMatches AS (
                 SELECT SnippetID
                 FROM SnippetEmbedding
-                WHERE Embedding MATCH ? AND k = ?
+                WHERE Embedding MATCH ? AND k = 50
                 ORDER BY distance
             )
             SELECT
@@ -702,34 +699,31 @@ class Data:
                 Snippet.UserID,
                 Snippet.ParentSnippetID,
                 Snippet.Date,
-                Snippet.IsPublic,
-                1
+                Snippet.IsPublic
             FROM DescMatches
             JOIN Snippet ON Snippet.ID = DescMatches.SnippetID
             """,
-            [query_embedding, 35 - len(name_matches)],
+            [query_embedding],
         )
-        desc_matches = cur.fetchall()
 
         results = []
-        for res in itertools.chain(name_matches, desc_matches):
-            user_details = self.get_user_details(res[4])
-            
-            results.append({
-                "id": res[0],
-                "name": res[1],
-                "code": res[2],
-                "description": res[3],
-                "user_id": res[4],
-                "parent_snippet_id": res[5],
-                "date": res[6],
-                "is_public": bool(res[7]),
-                "tags": self.get_tags_for_snippet(res[0]),
-                "is_description_match": bool(res[8]),
-                "likes": self.get_likes(res[0]),
-                "is_liked": self.is_liked(res[0], viewer_id),
-                "author": user_details
-            })
+        for res in cur.fetchall():
+            results.append(
+                {
+                    "id": res[0],
+                    "name": res[1],
+                    "code": res[2],
+                    "description": res[3],
+                    "user_id": res[4],
+                    "parent_snippet_id": res[5],
+                    "date": res[6],
+                    "is_public": bool(res[7]),
+                    "tags": self.get_tags_for_snippet(res[0]),
+                    "likes": self.get_likes(res[0]),
+                    "is_liked": self.is_liked(res[0], viewer_id),
+                    "author": self.get_user_details(res[4]),
+                }
+            )
 
         return results
 

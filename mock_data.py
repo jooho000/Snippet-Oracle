@@ -8,30 +8,9 @@ import random
 import faker
 import requests
 import re
+import data
 
 fake = faker.Faker()
-langs = [
-    "C++",
-    "Java",
-    "C",
-    "C#",
-    "JavaScript",
-    "Go",
-    "SQL",
-    "Visual Basic",
-    "Fortran",
-    "Delphi",
-    "Pascal",
-    "Scratch",
-    "PHP",
-    "Rust",
-    "MATLAB",
-    "Ruby",
-    "Assembly",
-    "R",
-    "Swift",
-    "COBOL",
-]
 
 
 def _load_franken():
@@ -107,7 +86,7 @@ def tags():
         if random.random() < 0.2:
             new_tags.add(fake.word("adjective").capitalize())
         else:
-            new_tags.add(random.choice(langs))
+            new_tags.add(random.choice(data.preset_tags))
     return list(new_tags)
 
 
