@@ -11,7 +11,6 @@ def db():
     yield db
     db.close()
 
-
 @pytest.fixture
 def author(db):
     username = "Author"
@@ -31,8 +30,10 @@ def user(db):
 
 
 @pytest.fixture
-def snippet(db, author):
-    id = db.create_snippet("Snippet", "Snippet Code", author["id"], is_public=True)
+def snippet(db, author, tag=None, public=True):
+    id = db.create_snippet(
+        "Snippet", "Snippet Code", author["id"], tags=tag, is_public=public
+    )
     snippet = db.get_snippet(id)
     yield snippet
     db.delete_snippet(id, author["id"])
@@ -52,8 +53,6 @@ def child_snippet(db, author, snippet):
 
 
 # Tests
-
-
 def test_parent_snippet_isNotNull(snippet, child_snippet):
     assert child_snippet["parent_snippet_id"] == snippet["id"]
 
