@@ -117,7 +117,7 @@ function createTag(tag) {
 
   // Update link
   const url = new URL(script_root, location.href);
-  url.searchParams.append("q", ":" + tag);
+  url.searchParams.append("q", "+" + tag);
   elem.attr("href", url.href);
 
   return elem;
@@ -201,7 +201,6 @@ function createSnippet(snippet) {
   for (const tagName of snippet.tags) {
     const tagElem = $(document.createElement("a"));
     tagElem.addClass("tag is-info search-tag");
-    tagElem.attr("href", "/?q=:" + encodeURIComponent(tagName));
     tagElem.text(tagName);
     tagElem.appendTo(tagList);
   }
@@ -247,7 +246,7 @@ function attachTagListeners() {
     .on("click", function (event) {
       event.preventDefault();
       const tag = $(this).text().trim();
-      window.location.href = "/?q=:" + encodeURIComponent(tag);
+      window.location.href = "/?q=" + encodeURIComponent("+" + tag);
     });
 }
 
@@ -277,7 +276,7 @@ $(function () {
   const query = new URLSearchParams(window.location.search).get("q");
   if (query) {
     // Hide similar results when linked to a specific tag
-    if (query.includes(":") || query.includes("-"))
+    if (query.includes("+") || query.includes("-") || query.includes("@"))
       toggleResults("results-similar", false);
 
     $("#search-input").val(query);

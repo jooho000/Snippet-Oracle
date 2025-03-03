@@ -545,118 +545,156 @@ class Data:
 
         return [{"name": res[0], "profile_picture": res[1]} for res in results]
 
-    def search_snippets(
-        self, names=None, tags=None, desc=None, viewer_id=None, public=True
-    ):
+    def search_snippets(self, terms=None, include_tags=None, exclude_tags=None, usernames=None, viewer_id=None, public=True):
         """
-        Returns summaries of all snippets that include the given elements and that
-        the user has permission to view.
-
-        - "id": The integer ID of the snippet.
-        - "name": The name of the snippet.
-        - "code": The content of the snippet.
-        - "description": The user-provided description.
-        - "user_id": The author's integer ID.
-        - "parent_snippet_id": The integer ID of the parent snippet or `None`.
-        - "date": The date and time of this snippet's creation.
-        - "is_public": True if the snippet is public, False otherwise.
-        - "tags": A list of tags that the snippet has.
-        - "likes": The number of likes this snippet has.
-        - "is_liked": Whether the viewer has liked this snippet.
-        - "author": The author's user details.
+        Searches snippets based on:
+        - Prioritizes name matches before description matches.
+        - Breaks ties using likes.
+        - Exact (case-insensitive) match for authors; falls back to similar matches if no exact match.
+        - Prioritizes exact tag matches, falls back to prefix match if no exact matches exist.
         """
 
-        if names is str:
-            names = [names]
-        if tags is str:
-            tags = [tags]
-        if desc is str:
-            desc = [desc]
+        if isinstance(terms, str): terms = [terms]
+        if isinstance(include_tags, str): include_tags = [include_tags]
+        if isinstance(exclude_tags, str): exclude_tags = [exclude_tags]
+        if isinstance(usernames, str): usernames = [usernames]
+
+        # Convert usernames and tags to lowercase for case-insensitive search
+        usernames = [username.lower() for username in usernames] if usernames else []
+        include_tags = [tag.lower() for tag in include_tags] if include_tags else []
+        exclude_tags = [tag.lower() for tag in exclude_tags] if exclude_tags else []
 
         queries = []
         params = []
+        cur = self._db.cursor()
 
-        # Snippet name includes any of the given names
-        if names:
-            name_match = "(" + " OR ".join(["Name LIKE ?"] * len(names)) + ")"
-            queries.append(name_match)
-            params.extend(["%" + name + "%" for name in names])
+        # Name & Description - Fuzzy Search (Prioritize Name Matches)
+        name_priority = "0 AS name_priority"
+        if terms:
+            name_priority = "CASE WHEN LOWER(Snippet.Name) LIKE LOWER(?) THEN 1 ELSE 0 END AS name_priority"
+            fuzzy_match = " OR ".join(["(LOWER(Snippet.Name) LIKE LOWER(?) OR LOWER(Snippet.Description) LIKE LOWER(?))"] * len(terms))
+            queries.append(f"({fuzzy_match})")
+            for term in terms:
+                params.extend([f"%{term}%", f"%{term}%", f"%{term}%"])
 
-        # Snippet tags include all of the given tags
-        if tags:
-            tags_match = "(" + ",".join(["?"] * len(tags)) + ")"
-            queries.append(
-                f"""
-                EXISTS (
-                    SELECT 1 FROM TagUse AS T
-                    WHERE ID = T.SnippetID
-                    AND T.TagName IN {tags_match}
+        # Case-Insensitive User Search (Exact First, Then Fallback to Similar)
+        if usernames:
+            exact_user_query = """
+                SELECT COUNT(*) FROM User WHERE LOWER(Name) IN ({})
+            """.format(",".join(["?"] * len(usernames)))
+
+            cur.execute(exact_user_query, usernames)
+            exact_user_count = cur.fetchone()[0]
+
+            if exact_user_count > 0:
+                # If exact match exists, return only snippets from the exact user
+                queries.append("""
+                    Snippet.UserID IN (
+                        SELECT ID FROM User WHERE LOWER(Name) IN ({})
+                    )
+                """.format(",".join(["?"] * len(usernames))))
+                params.extend(usernames)
+            else:
+                # If no exact match, fall back to similar username search
+                queries.append("""
+                    Snippet.UserID IN (
+                        SELECT ID FROM User WHERE LOWER(Name) LIKE LOWER(?)
+                    )
+                """)
+                params.append(f"%{usernames[0]}%")  # Use the first username for fuzzy matching
+
+        # Tag Filtering (Exact Match First, Prefix Match if No Exact Matches Found)
+        if include_tags:
+            exact_match_query = """
+                SELECT COUNT(*) FROM Snippet
+                WHERE Snippet.ID IN (
+                    SELECT SnippetID FROM TagUse WHERE LOWER(TagName) IN ({})
                 )
-                """
-            )
-            params.extend(tags)
+            """.format(",".join(["?"] * len(include_tags)))
 
-        # Snippet description includes any of the given description text
-        if desc:
-            desc_match = "(" + " OR ".join(["Description LIKE ?"] * len(desc)) + ")"
-            queries.append(desc_match)
-            params.extend(["%" + desc_term + "%" for desc_term in desc])
+            exact_params = list(include_tags)
+            cur.execute(exact_match_query, exact_params)
+            exact_match_count = cur.fetchone()[0]
 
-        # Ensure only accessible snippets are returned
+            if exact_match_count > 0:
+                queries.append("""
+                    Snippet.ID IN (
+                        SELECT SnippetID FROM TagUse WHERE LOWER(TagName) IN ({})
+                    )
+                """.format(",".join(["?"] * len(include_tags))))
+                params.extend(exact_params)
+            else:
+                # If no exact matches, fall back to prefix search
+                prefix_conditions = ["LOWER(TagName) LIKE LOWER(?)"] * len(include_tags)
+                prefix_match_query = """
+                    Snippet.ID IN (
+                        SELECT SnippetID FROM TagUse WHERE {}
+                    )
+                """.format(" OR ".join(prefix_conditions))
+
+                prefix_params = [tag + "%" for tag in include_tags]
+                queries.append(prefix_match_query)
+                params.extend(prefix_params)
+
+        # Handle Exclude Tags (-tag)
+        if exclude_tags:
+            exclude_tags_match = ",".join(["?"] * len(exclude_tags))
+            queries.append(f"""
+                Snippet.ID NOT IN (
+                    SELECT DISTINCT SnippetID FROM TagUse WHERE LOWER(TagUse.TagName) IN ({exclude_tags_match})
+                )
+            """)
+            params.extend(exclude_tags)
+
+        # Access control filter (public/private visibility)
         if public:
             access_filter = """
-                (IsPublic = 1 OR EXISTS (
-                SELECT 1 FROM SnippetPermissions AS P
-                WHERE P.SnippetID = ID AND P.UserID = ?
+                (Snippet.IsPublic = 1 OR EXISTS (
+                    SELECT 1 FROM SnippetPermissions AS P
+                    WHERE P.SnippetID = Snippet.ID AND P.UserID = ?
                 ))
             """
         else:
-            access_filter = """
-                Snippet.UserID = ?
-            """
+            access_filter = "Snippet.UserID = ?"
         queries.append(access_filter)
         params.append(viewer_id)
 
-        # Final query with filters applied
+        # Ensure there's at least one condition to prevent empty WHERE clause
+        if not queries:
+            queries.append("1=1")  # This prevents SQL syntax errors if no filters are applied
+
+        # Final SQL query with ordering: Name Matches First, Then Sort by Likes
         query = f"""
-            SELECT
-                ID,
-                Name,
-                Code,
-                Description,
-                UserID,
-                ParentSnippetID,
-                Date,
-                IsPublic
+            SELECT Snippet.ID, Snippet.Name, Snippet.Code, Snippet.Description,
+                Snippet.UserID, Snippet.ParentSnippetID, Snippet.Date, Snippet.IsPublic,
+                (SELECT COUNT(*) FROM Like WHERE Like.SnippetID = Snippet.ID) AS like_count,
+                {name_priority}
             FROM Snippet
             WHERE {" AND ".join(queries)}
-            ORDER BY Date DESC
+            ORDER BY name_priority DESC, like_count DESC
             LIMIT 50
         """
 
-        cur = self._db.cursor()
-        results = cur.execute(query, params)
+        cur.execute(query, params)
+        results = cur.fetchall()
 
         snippets_list = []
         for res in results:
-            user_details = self.get_user_details(res[4])
-
-            snippets_list.append(
-                {
-                    "id": res[0],
-                    "name": res[1],
-                    "code": res[2],
-                    "description": res[3],
-                    "user_id": res[4],
-                    "parent_snippet_id": res[5],
-                    "date": res[6],
-                    "is_public": bool(res[7]),
-                    "tags": self.get_tags_for_snippet(res[0]),
-                    "likes": self.get_likes(res[0]),
-                    "is_liked": self.is_liked(res[0], viewer_id),
-                    "author": user_details,
-                }
-            )
+            user_details = self.get_user_details(res[4])  # Fetch user details
+            snippets_list.append({
+                "id": res[0],
+                "name": res[1],
+                "code": res[2],
+                "description": res[3],
+                "user_id": res[4],
+                "parent_snippet_id": res[5],
+                "date": res[6],
+                "is_public": bool(res[7]),
+                "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
+                "likes": res[8],  # Sort by like count
+                "is_liked": self.is_liked(res[0], viewer_id),  # Check if the user liked it
+                "author": user_details  # Attach user details
+            })
 
         return snippets_list
 
