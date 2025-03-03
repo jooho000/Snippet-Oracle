@@ -90,6 +90,12 @@ async function doSearch() {
     return;
   }
 
+  toggleResults("results-tags", false);
+  toggleResults("results-users", false);
+  toggleResults("results-snippets", true);
+  toggleResults("results-similar", false);
+  toggleResults("results-shared", false);
+
   searchInput.parent().addClass("is-loading");
 
   // Send the query to the server via AJAX (using fetch)
@@ -318,7 +324,6 @@ function populateResults(json) {
   if (!json.snippets.length) snippetDiv.hide();
   else snippetDiv.show();
 
-  console.log(json.similar);
   // Similar description snippet cards
   if (json.similar && json.similar.length) {
     similarDiv.show();
