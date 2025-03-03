@@ -923,6 +923,74 @@ class Data:
 
         return [tag[0] for tag in tags]
 
+    def get_popular_public_tags(self):
+        """
+        Gets The Top 10 Most Popular Global Snippets
+        Returns a list of tag and count
+        """
+        cur = self._db.cursor()
+        cur.execute(
+            """
+            SELECT TAGUSE.TAGNAME, count(*) AS tagCount
+            FROM TAGUSE
+            GROUP BY TAGUSE.TAGNAME 
+            ORDER BY tagCount DESC
+            LIMIT 10;
+            """,
+        )
+        return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
+
+    def get_profile_public_tags(self, user_id):
+        """
+        Takes user_id and returns top 10 tags on public facing snippets
+        Returns top 10
+        """
+        cur = self._db.cursor()
+        cur.execute(
+            """
+            SELECT TAGUSE.TAGNAME, count(*) AS tagCount
+            FROM TAGUSE
+            WHERE TAGUSE.SNIPPETID 
+            IN (
+              SELECT SNIPPET.ID 
+              FROM SNIPPET
+              WHERE SNIPPET.USERID  = :ok
+              AND SNIPPET.ISPUBLIC = 1
+            )
+            GROUP BY TAGUSE.TAGNAME 
+            ORDER BY tagCount DESC
+            LIMIT 10;
+            """,
+            [user_id],
+        )
+        return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
+
+    def get_profile_all_tags(self, user_id):
+      """
+      Takes user_id and returns top 10 tags based on all their snippest
+      Returns top 10
+      """
+      cur = self._db.cursor()
+      cur.execute(
+          """
+          SELECT TAGUSE.TAGNAME, count(*) AS tagCount
+          FROM TAGUSE
+          WHERE TAGUSE.SNIPPETID 
+          IN (
+            SELECT SNIPPET.ID 
+            FROM SNIPPET
+            WHERE SNIPPET.USERID  = :ok
+            AND SNIPPET.ISPUBLIC = 1
+          )
+          GROUP BY TAGUSE.TAGNAME 
+          ORDER BY tagCount DESC
+          LIMIT 10;
+          """,
+          [user_id],
+      )
+      return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
+
+    #Snippet Modification
     def update_snippet(
         self,
         id,
@@ -1023,6 +1091,7 @@ class Data:
 
         self._db.commit()
 
+    #Comment Functions
     def add_comment(self, snippet_id, user_id, comment, parent_id=None):
         """Adds a comment or reply to a snippet."""
         cur = self._db.cursor()
@@ -1126,6 +1195,7 @@ class Data:
 
         self._db.commit()
 
+    #Like Functions
     def add_like(self, snippet_id, user_id):
         """
         Adds a like to a snippet.

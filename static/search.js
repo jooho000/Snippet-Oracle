@@ -123,6 +123,11 @@ function createTag(tag) {
   return elem;
 }
 
+/**
+ * Creates a User Card.
+ * @param {*} user name, profile pic
+ * @returns {*} returns dom user card
+ */
 function createUserCard(user) {
   const elem = userCardTemplate.clone();
   const pic = elem.find(".user-card-picture");
