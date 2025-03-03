@@ -18,11 +18,11 @@ const similarCount = $("#results-similar-count");
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
-toggleResults("results-tags", false);
-toggleResults("results-users", false);
+toggleResults("results-tags", true);
+toggleResults("results-users", true);
 toggleResults("results-snippets", true);
-toggleResults("results-similar", true);
-allResults.hide();
+toggleResults("results-similar", false);
+
 
 $(".results-section > .level").on("click", function (event) {
   const id = $(event.currentTarget).parent().find(".results-container")[0].id;
@@ -287,4 +287,37 @@ $(function () {
     $("#search-input").val(query);
     doSearch();
   }
+});
+
+$(async function () {
+  try {
+    const searchUrl = new URL(script_root + "/getPopularEverything", location.href);
+    const json = await fetch(searchUrl).then((response) => response.json());
+    console.log(json);
+    
+    tagCount.text(json.tags.length);
+    for (const tag of json.tags) createTag(tag).appendTo(tagResults);
+    if (!json.tags.length) tagResults.hide();
+    else tagResults.show();
+
+    // Username matches
+    userCount.text(json.users.length);
+    for (const user of json.users) createUserCard(user).appendTo(userResults);
+    if (!json.users.length) userResults.hide();
+    else userResults.show();
+
+    // Name match snippet cards
+    snippetCount.text(json.snippets.length);
+    for (const snippet of json.snippets)
+      createSnippet(snippet).appendTo(snippetResults);
+    if (!json.snippets.length) snippetResults.hide();
+    else snippetResults.show();
+
+    console.log(json);
+  } catch (error) {
+      console.error("Error fetching search results:", error);
+      snippetResults.text("Error occurred while searching.");
+  }
+
+  
 });

@@ -665,3 +665,16 @@ def remove_like(snippet_id):
     get_db().remove_like(snippet_id, flask_login.current_user.id)
     likes = get_db().get_likes(snippet_id)
     return jsonify({likes: likes})
+
+@app.route("/getPopularEverything", methods=["GET"])
+def getPopular():
+    popularTags = get_db().get_popular_public_tags()
+    popularUsers = get_db().get_popular_users()
+    popularSnippets = get_db().get_popular_public_snippets()
+    return ({
+            "tags": popularTags,
+            "users": popularUsers,
+            "snippets": popularSnippets,
+            # "similar": get_db().smart_search_snippets(query),
+        })
+

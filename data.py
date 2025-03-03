@@ -301,6 +301,29 @@ class Data:
             "social_links": social_links,
         }
 
+    def get_popular_users(self):
+        """
+          Gets the Top 10 Most Popular Users
+          Returns Username, Profle Picture for card
+        """
+        cur = self._db.cursor()
+        results = cur.execute(
+            """
+            SELECT User.Name, User.ProfilePicture
+            FROM Snippet, User
+            WHERE Snippet.IsPublic = 1 AND Snippet.UserID = User.ID 
+            GROUP BY Snippet.UserID
+            ORDER BY SUM ((SELECT COUNT(*) FROM Like WHERE Like.SnippetID = Snippet.ID)) DESC, User.Name
+            LIMIT 10
+            """
+        )
+
+        if results is None:
+            return None
+        else:
+            return [{"name": res[0], "profile_picture": res[1]} for res in results]
+        
+    
     ## SNIPPETS ###
 
     def create_snippet(
@@ -518,6 +541,46 @@ class Data:
                 "id": snippet[0],
                 "is_public": bool(snippet[1]),
             }
+
+    def get_popular_public_snippets(self):
+        """
+          Gets the Top 10 Most Popular Snippets
+          Returns Snippet Card Info
+        """
+        cur = self._db.cursor()
+        results = cur.execute(
+            """
+            SELECT Snippet.ID, Snippet.Name, Snippet.Code, Snippet.Description,
+                Snippet.UserID, Snippet.ParentSnippetID, Snippet.Date, Snippet.IsPublic,
+                (SELECT COUNT(*) FROM Like WHERE Like.SnippetID = Snippet.ID) AS like_count
+            FROM Snippet
+            WHERE Snippet.IsPublic = 1
+            ORDER BY like_count DESC, Snippet.Date DESC
+            LIMIT 10
+            """
+        )
+
+        snippets_list = []
+        for res in results:
+            user_details = self.get_user_details(res[4])  # Fetch user details
+            snippets_list.append({
+                "id": res[0],
+                "name": res[1],
+                "code": res[2],
+                "description": res[3],
+                "user_id": res[4],
+                "parent_snippet_id": res[5],
+                "date": res[6],
+                "is_public": bool(res[7]),
+                "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
+                "likes": res[8],  # Sort by like count
+                "is_liked": self.is_liked(res[0], None),  # Check if the user liked it
+                "author": user_details  # Attach user details
+            })
+
+        return snippets_list
+
+        
 
     def search_tags(self, query):
         """Returns a list of all preset tags matching the search query."""
@@ -938,7 +1001,7 @@ class Data:
             LIMIT 10;
             """,
         )
-        return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
+        return [row[0] for row in cur.fetchall()]
 
     def get_profile_public_tags(self, user_id):
         """
