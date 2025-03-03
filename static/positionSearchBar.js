@@ -23,13 +23,9 @@ addEventListener("resize", () => {
  */
 function resizeSearchbar() {
   searchInput.removeClass("is-large");
-  if ($("#navbarBasic").css("display") == "flex") {
+  if ($("#navbarBasic").css("display") == "flex")
     $("#desktop-search").append(searchbar);
-    searchbar.removeClass("mt-2").addClass("mt-3");
-  } else {
-    $("#mobile-search").append(searchbar);
-    searchbar.removeClass("mt-3").addClass("mt-2");
-  }
+  else $("#mobile-search").append(searchbar);
 }
 
 /**
@@ -37,7 +33,6 @@ function resizeSearchbar() {
  */
 function restoreDefaults() {
   searchInput.addClass("is-large");
-  searchbar.removeClass("mt-3").removeClass("mt-2");
   initPos.append(searchbar);
 }
 
