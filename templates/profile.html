@@ -92,7 +92,13 @@
             <div class="control">
               <textarea class="textarea"
                         name="bio"
-                        placeholder="Write something about yourself...">{{ user.bio }}</textarea>
+                        placeholder="Write something about yourself..."
+                        id="bio-input"
+                        maxlength="250"
+                        oninput="updateCharacterCount('bio-input', 'bio-char-count')">{{ user.bio }}</textarea>
+            </div>
+            <div class="char-counter-container">
+              <p id="bio-char-count">0/250</p>
             </div>
           </div>
           <div class="field">
@@ -149,4 +155,5 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ url_for('static', filename='profile.js') }}"></script>
+  <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
 {% endblock %}

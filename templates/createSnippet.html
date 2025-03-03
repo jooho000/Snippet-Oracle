@@ -20,7 +20,13 @@
                      name="name"
                      placeholder="Enter snippet name"
                      {% block snippetName %}value="{{ snippet.name if snippet else '' }}"{% endblock %}
-                     required>
+                     maxlength="100"
+                     required
+                     oninput="updateCharacterCount('snippet-name', 'name-char-count')"
+                     id="snippet-name">
+            </div>
+            <div class="char-counter-container">
+              <p id="name-char-count" class="char-counter">0/100</p>
             </div>
           </div>
           <!-- Snippet Code -->
@@ -31,7 +37,13 @@
                         name="code"
                         placeholder="Paste your code here"
                         rows="6"
-                        required>{% block snippetCode %}{{ snippet.code if snippet else '' }}{% endblock %}</textarea>
+                        maxlength="5000"
+                        oninput="updateCharacterCount('snippet-code', 'code-char-count')"
+                        required
+                        id="snippet-code">{% block snippetCode %}{{ snippet.code if snippet else '' }}{% endblock %}</textarea>
+            </div>
+            <div class="char-counter-container">
+              <p id="code-char-count" class="char-counter">0/5000</p>
             </div>
           </div>
           <!-- Snippet Description -->
@@ -40,7 +52,13 @@
             <div class="control">
               <textarea class="textarea"
                         name="description"
-                        placeholder="Optional description">{% block snippetDesc %}{{ snippet.description if snippet else '' }}{% endblock %}</textarea>
+                        placeholder="Optional description"
+                        maxlength="1000"
+                        oninput="updateCharacterCount('snippet-description', 'desc-char-count')"
+                        id="snippet-description">{% block snippetDesc %}{{ snippet.description if snippet else '' }}{% endblock %}</textarea>
+            </div>
+            <div class="char-counter-container">
+              <p id="desc-char-count" class="char-counter">0/1000</p>
             </div>
           </div>
           <!-- Tags Input Section -->
@@ -54,38 +72,46 @@
                   <input id="tag-input"
                          class="input tag-input is-flex-grow-1"
                          placeholder="Type tags and press Enter"
-                         maxlength="20" />
+                         maxlength="20"
+                         oninput="updateCharacterCount('tag-input', 'tag-char-count')" />
                 </div>
               </div>
             </div>
           </div>
           <!-- Dropdown for Preset Tags -->
-          <div class="control">
-            <div class="dropdown" id="tag-dropdown">
-              <div class="dropdown-trigger">
-                <button type="button"
-                        class="button is-primary mt-3 mb-3"
-                        id="dropdown-button"
-                        aria-haspopup="true"
-                        aria-controls="dropdown-menu">
-                  <span>Select a Tag</span>
-                  <span class="icon is-small">
-                    <i class="fas fa-angle-down" aria-hidden="true"></i>
-                  </span>
-                </button>
-              </div>
-              <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                <div class="dropdown-content">
-                  <div class="dropdown-item">
-                    <div class="grid is-gap-0">
-                      {% for tag in preset_tags %}
-                        <a id="preset-{{ tag }}"
-                           class="cell dropdown-item preset-tag has-text-inherit">{{ tag }}</a>
-                      {% endfor %}
+          <div class="is-flex is-align-items-flex-start is-justify-content-space-between">
+            <div class="control">
+              <div class="dropdown" id="tag-dropdown">
+                <div class="dropdown-trigger">
+                  <button type="button"
+                          class="button is-primary mt-3 mb-3"
+                          id="dropdown-button"
+                          aria-haspopup="true"
+                          aria-controls="dropdown-menu">
+                    <span>Select a Tag</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                  </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                  <div class="dropdown-content">
+                    <div class="dropdown-item">
+                      <div class="grid is-gap-0">
+                        {% for tag in preset_tags %}
+                          <a id="preset-{{ tag }}"
+                            class="cell dropdown-item preset-tag has-text-inherit">{{ tag }}</a>
+                        {% endfor %}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div class="char-counter-container is-flex is-flex-direction-column has-text-right">
+              <p id="tag-char-count">0/20</p>
+              <p>Tag Count: <span id="tag-count">0/15</span></p>
             </div>
           </div>
           <!-- Visibility Toggle as a Button -->
@@ -114,7 +140,12 @@
                 <input type="text"
                        id="userSearch"
                        class="input"
-                       placeholder="Search users...">
+                       placeholder="Search users..."
+                       maxlength="20"
+                       oninput="updateCharacterCount('userSearch', 'userSearch-char-count')">
+              </div>
+              <div class="char-counter-container">
+                <p id="userSearch-char-count">0/20</p>
               </div>
               <div id="user-selection" class="box is-light" style="display: none"></div>
             </div>

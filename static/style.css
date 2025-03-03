@@ -164,3 +164,9 @@
   max-height: 500px;
   overflow-y: auto;
 }
+
+.char-counter-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0px;
+}

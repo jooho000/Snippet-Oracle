@@ -1,11 +1,39 @@
 $(function () {
+  const MAX_TAGS = 15;
   const tagInput = $("#tag-input");
   const hiddenInput = $("#hidden-tags");
   const tagsContainer = $("#tags-container");
   const presetTags = $(".preset-tag");
   const dropdown = $("#tag-dropdown");
   const dropdownButton = $("#dropdown-button");
+  const tagCounter = $("#tag-count");
+  const charCounter = $("#tag-char-count");
   let tags = [];
+
+  /**
+   * Update the tag count display
+   */
+  function updateTagCount() {
+    if (tagCounter.length) {
+      tagCounter.text(`${tags.length}/${MAX_TAGS}`);
+    }
+
+    // Disable input if the tag limit is reached
+    if (tags.length >= MAX_TAGS) {
+      tagInput.prop("disabled", true).attr("placeholder", "Tag limit reached");
+    } else {
+      tagInput.prop("disabled", false).attr("placeholder", "Type tags and press Enter");
+    }
+  }
+
+  /**
+   * Reset tag character counter
+   */
+  function resetTagCharCounter() {
+    if (charCounter.length) {
+      charCounter.text(`0/20`);
+    }
+  }
 
   /**
    * Hide tags that are already on post or do not match current input.
@@ -35,6 +63,7 @@ $(function () {
    */
   function tagsChanged() {
     hiddenInput.val(tags.join(","));
+    updateTagCount();
     updatePresetTags();
   }
 
@@ -44,6 +73,11 @@ $(function () {
    */
   function addTag(tagText) {
     tagText = tagText.trim();
+
+    if (tags.length >= MAX_TAGS) {
+      alert(`You can only add up to ${MAX_TAGS} tags.`);
+      return;
+    }
 
     // Apply canonical capitalization
     for (const presetTag of presetTags) {
@@ -74,6 +108,8 @@ $(function () {
       tag.append(deleteBtn).insertBefore(tagInput);
       tagInput.val("");
 
+      resetTagCharCounter();
+
       tagsChanged();
     } else {
       tagInput.val("").attr("placeholder", "Already Tagged");
@@ -81,19 +117,20 @@ $(function () {
   }
 
   tagInput.on("keydown", function (event) {
-    if (event.key === "Enter" || event.key === ",") {
+    if ((event.key === "Enter" || event.key === ",") && tags.length < MAX_TAGS) {
       event.preventDefault();
       addTag(tagInput.val());
       dropdown.removeClass("is-active");
     }
   });
 
-  tagInput.on("input", function (event) {
+  tagInput.on("input", function () {
     if (tagInput.val()) {
       dropdown.addClass("is-active");
     } else {
       tagInput.attr("placeholder", "Type tags and press Enter");
       dropdown.removeClass("is-active");
+      resetTagCharCounter();
     }
 
     updatePresetTags();
@@ -101,8 +138,10 @@ $(function () {
 
   for (const tag of presetTags) {
     $(tag).on("click", function () {
-      addTag($(tag).text());
-      dropdown.removeClass("is-active");
+      if (tags.length < MAX_TAGS) {
+        addTag($(tag).text());
+        dropdown.removeClass("is-active");
+      }
     });
   }
 
@@ -111,6 +150,9 @@ $(function () {
     event.stopPropagation();
     dropdown.toggleClass("is-active");
   });
+
+  updateTagCount();
+  resetTagCharCounter();
 
   // $(document).on("click", function () {
   //   dropdown.removeClass("is-active");

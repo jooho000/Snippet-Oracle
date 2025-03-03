@@ -380,7 +380,7 @@ def createSnippet(snippet_id=None):
     )
 
 
-# View All Personal User Snippets (Worked on by Alan Ly)
+# View All Personal User Snippets
 @app.route("/snippets")
 @flask_login.login_required
 def snippets():
