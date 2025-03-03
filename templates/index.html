@@ -33,15 +33,16 @@
         <a class="button is-link is-large" href="{{ url_for("profile") }}">View My Snippets</a>
       </div>
       <!-- Search Bar -->
-      <div class="field mt-5">
-        <div class="control has-icons-left has-icons-right is-large">
+      <div id="init-pos" class="field mt-5">
+        <div id="searchbar-Div"
+             class="container control has-icons-left has-icons-right is-large">
           <input class="input is-large is-primary"
                  id="search-input"
                  type="text"
                  maxlength="300"
-                 placeholder="Search for snippets... (name | -desc | :tag)"
+                 placeholder="Search for snippets... (+/- to include or exclude tags | @ search by author)"
                  value="{{ request.args.get('q', '') }}" />
-          <span class="icon is-small is-left">
+          <span id="search-icon" class="icon is-small is-left">
             <i class="fas fa-search"></i>
           </span>
         </div>
@@ -96,4 +97,5 @@
   {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='search.js') }}"></script>
+    <script src="{{ url_for('static', filename='positionSearchBar.js') }}"></script>
   {% endblock %}
