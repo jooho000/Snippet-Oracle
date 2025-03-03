@@ -92,7 +92,7 @@
           <div class="level is-mobile">
             <div class="level-item">
               <button class="snippet-card-like-button icon-text {% if snippet.get('is_liked', False) %}has-text-link{% endif %}"
-                      onclick="likeSnippet($(this).closest('.snippet-card'))">
+                      onclick="likeSnippetCard($(this).closest('.snippet-card'))">
                 <span class="icon is-small"><i class="fas fa-thumbs-up"></i></span>
                 <span class="snippet-card-likes">{{ snippet.get('likes', 0) }}</span>
               </button>
