@@ -566,15 +566,14 @@ class Data:
 
         queries = []
         params = []
-
         cur = self._db.cursor()
 
         # Name & Description - Fuzzy Search (Prioritize Name Matches)
+        name_priority = "0 AS name_priority"
         if terms:
             name_priority = "CASE WHEN LOWER(Snippet.Name) LIKE LOWER(?) THEN 1 ELSE 0 END AS name_priority"
             fuzzy_match = " OR ".join(["(LOWER(Snippet.Name) LIKE LOWER(?) OR LOWER(Snippet.Description) LIKE LOWER(?))"] * len(terms))
             queries.append(f"({fuzzy_match})")
-            
             for term in terms:
                 params.extend([f"%{term}%", f"%{term}%", f"%{term}%"])
 
@@ -698,7 +697,6 @@ class Data:
             })
 
         return snippets_list
-
 
     def smart_search_snippets(self, query, viewer_id=None):
         """
