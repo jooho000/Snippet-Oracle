@@ -6,14 +6,19 @@ const title = $("#title");
 const searchDelayMs = 250;
 
 // Containers for search results
+const tagDiv = $("#results-tags-div");
 const tagResults = $("#results-tags");
 const tagCount = $("#results-tags-count");
+const userDiv = $("#results-users-div");
 const userResults = $("#results-users");
 const userCount = $("#results-users-count");
+const snippetDiv = $("#results-snippets-div");
 const snippetResults = $("#results-snippets");
 const snippetCount = $("#results-snippets-count");
+const similarDiv = $("#results-similar-div");
 const similarResults = $("#results-similar");
 const similarCount = $("#results-similar-count");
+const sharedDiv = $("#results-shared-div");
 const sharedResults = $("#results-shared");
 const sharedCount = $("#results-shared-count");
 
@@ -297,38 +302,37 @@ function populateResults(json) {
   // Tag text matches
   tagCount.text(json.tags.length);
   for (const tag of json.tags) createTag(tag).appendTo(tagResults);
-  if (!json.tags.length) tagResults.hide();
-  else tagResults.show();
+  if (!json.tags.length) tagDiv.hide();
+  else tagDiv.show();
 
   // Username matches
   userCount.text(json.users.length);
   for (const user of json.users) createUserCard(user).appendTo(userResults);
-  if (!json.users.length) userResults.hide();
-  else userResults.show();
+  if (!json.users.length) userDiv.hide();
+  else userDiv.show();
 
   // Name match snippet cards
   snippetCount.text(json.snippets.length);
   for (const snippet of json.snippets)
     createSnippet(snippet).appendTo(snippetResults);
-  if (!json.snippets.length) snippetResults.hide();
-  else snippetResults.show();
+  if (!json.snippets.length) snippetDiv.hide();
+  else snippetDiv.show();
 
+  console.log(json.similar);
   // Similar description snippet cards
   if (json.similar && json.similar.length) {
-    similarResults.show();
+    similarDiv.show();
     similarCount.text(json.similar.length);
     for (const snippet of json.similar)
       createSnippet(snippet).appendTo(similarResults);
-  } else {
-    similarResults.hide();
-  }
-
+  } else similarDiv.hide();
+  
   if (json.shared && json.shared.length) {
-    sharedResults.show();
+    sharedDiv.show();
     sharedResults.text(json.shared.length);
     for (const snippet of json.shared)
       createSnippet(snippet).appendTo(sharedResults);
-  } else sharedResults.hide();
+  } else sharedDiv.hide();
 }
 
 /**
