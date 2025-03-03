@@ -668,13 +668,16 @@ def remove_like(snippet_id):
 
 @app.route("/getPopularEverything", methods=["GET"])
 def getPopular():
+    viewer_id = None
+    if flask_login.current_user.is_authenticated:
+        viewer_id = flask_login.current_user.id
     popularTags = get_db().get_popular_public_tags()
     popularUsers = get_db().get_popular_users()
-    popularSnippets = get_db().get_popular_public_snippets()
-    return ({
+    popularSnippets = get_db().get_popular_public_snippets(viewer_id=viewer_id)
+    return jsonify({
             "tags": popularTags,
             "users": popularUsers,
             "snippets": popularSnippets,
-            # "similar": get_db().smart_search_snippets(query),
+            "similar": [],
         })
 

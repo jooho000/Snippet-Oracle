@@ -542,7 +542,7 @@ class Data:
                 "is_public": bool(snippet[1]),
             }
 
-    def get_popular_public_snippets(self):
+    def get_popular_public_snippets(self, viewer_id=None):
         """
           Gets the Top 10 Most Popular Snippets
           Returns Snippet Card Info
@@ -574,13 +574,11 @@ class Data:
                 "is_public": bool(res[7]),
                 "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
                 "likes": res[8],  # Sort by like count
-                "is_liked": self.is_liked(res[0], None),  # Check if the user liked it
+                "is_liked": self.is_liked(res[0], viewer_id),  # Check if the user liked it
                 "author": user_details  # Attach user details
             })
 
-        return snippets_list
-
-        
+        return snippets_list  
 
     def search_tags(self, query):
         """Returns a list of all preset tags matching the search query."""
