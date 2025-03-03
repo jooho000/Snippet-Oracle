@@ -3,247 +3,264 @@
 {% block title %}{{ snippet["name"] }} - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
-    <div class="columns is-mobile is-vcentered">
-      <div class="column is-narrow">
-        <h1 class="title">{{ snippet["name"] }}</h1>
+    <div class = "container">
+      <div class="columns is-mobile is-vcentered">
+        <div class="column is-narrow">
+          <h1 class="title">{{ snippet["name"] }}</h1>
+        </div>
+        <div class="column is-narrow has-text-right">
+          {% if snippet["is_public"] %}
+            <span class="icon is-small"><i class="fas fa-globe"></i></span>
+            <span>Public</span>
+          {% else %}
+            <span class="icon is-small"><i class="fas fa-lock"></i></span>
+            <span>Private</span>
+          {% endif %}
+        </div>
       </div>
-      <div class="column is-narrow has-text-right">
-        {% if snippet["is_public"] %}
-          <span class="icon is-small"><i class="fas fa-globe"></i></span>
-          <span>Public</span>
+      <!-- Show parent snippet button if this is a remix -->
+      {% if snippet.parent_snippet_id is not none %}
+        <div class="field">
+          <div class="control">
+            <a class="button is-warning is-light"
+               href="{{ url_for('view_snippet', snippet_id=snippet['parent_snippet_id']) }}">
+              <span class="icon"><i class="fas fa-code-branch"></i></span>
+              <span>Remix of {{ parent_snippet['name'] }}</span>
+            </a>
+          </div>
+        </div>
+      {% endif %}
+      <!-- Snippet Content -->
+      <pre><code id="snippet-code">{{ snippet["code"] }}</code></pre>
+      <p>
+        <strong>Description:</strong> {{ snippet["description"] }}
+      </p>
+      <p>
+        <strong>Created at:</strong> {{ snippet["date"] }}
+      </p>
+      <div class="snippet-card-tags tags-container tags">
+        {% if snippet["tags"] %}
+          <strong>Tags:</strong>
+          {{ macros.tagsDisplay(snippet.get("tags", []) ) }}
         {% else %}
-          <span class="icon is-small"><i class="fas fa-lock"></i></span>
-          <span>Private</span>
+          <em>No Tags</em>
         {% endif %}
       </div>
-    </div>
-    <!-- Show parent snippet button if this is a remix -->
-    {% if snippet.parent_snippet_id is not none %}
       <div class="field">
         <div class="control">
-          <a class="button is-warning is-light"
-             href="{{ url_for('view_snippet', snippet_id=snippet['parent_snippet_id']) }}">
-            <span class="icon"><i class="fas fa-code-branch"></i></span>
-            <span>Remix of {{ parent_snippet['name'] }}</span>
-          </a>
-        </div>
-      </div>
-    {% endif %}
-    <!-- Snippet Content -->
-    <pre><code id="snippet-code">{{ snippet["code"] }}</code></pre>
-    <p>
-      <strong>Description:</strong> {{ snippet["description"] }}
-    </p>
-    <p>
-      <strong>Created at:</strong> {{ snippet["date"] }}
-    </p>
-    <div class="snippet-card-tags tags-container tags">
-      {% if snippet["tags"] %}
-        <strong>Tags:</strong>
-        {{ macros.tagsDisplay(snippet.get("tags", []) ) }}
-      {% else %}
-        <em>No Tags</em>
-      {% endif %}
-    </div>
-    <div class="field">
-      <div class="control">
-        <button class="button is-link" id="copyButton">Copy Code</button>
-        {% set id = current_user.get_id() | int if current_user.is_authenticated else None %}
-        {% if current_user.is_authenticated and snippet["user_id"] == id %}
-          <a class="button is-link"
-             href="{{ url_for('edit_snippet', snippet_id=snippet['id']) }}">
-            <span class="icon"><i class="fas fa-edit"></i></span>
-          </a>
-          <a class="button is-link"
-             href="{{ url_for('delete_snippet', snippet_id=snippet['id']) }}">
-            <span class="icon"><i class="fas fa-trash"></i></span>
-          </a>
-        {% endif %}
-        <!-- Remix Button -->
-        <a class="button is-warning"
-           href="{{ url_for('createSnippet', snippet_id=snippet['id']) }}">
-          <span class="icon"><i class="fas fa-random"></i></span>
-          <span>Remix</span>
-        </a>
-      </div>
-    </div>
-    <!-- Shareable Link -->
-    {% if not request.path.startswith('/share/') %}
-      <div class="box">
-        <p>
-          <strong>Shareable Link:</strong>
-        </p>
-        <div class="field has-addons">
-          <div class="control is-expanded">
-            <input class="input"
-                   type="text"
-                   id="shareableLink"
-                   value="{{ request.host_url }}share/{{ snippet['shareable_link'] }}"
-                   readonly>
-          </div>
-          <div class="control">
-            <button class="button is-info" id="copyShareLink">Copy Link</button>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-    <!-- Comment Section -->
-    <div class="box">
-      <h2 class="title is-4">Comments</h2>
-      <!-- Display Existing Comments -->
-      <div id="comments-section">
-        {% for comment in comments %}
-          <article id="comment-{{ comment['id'] }}" class="media box mb-4">
-            <figure class="media-left">
-              <p class="image is-48x48">
-                <a href="{{ url_for('profile', username=comment['user_name']) }}">
-                  <img class="is-rounded"
-                      src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] if comment['profile_picture'] else 'default_image.png') ) }}"
-                      alt="Profile Picture">
+          <div class="level is-mobile">
+            <div class = "level-left">
+              <button class="button level-item is-link" id="copyButton">Copy Code</button>
+              {% set id = current_user.get_id() | int if current_user.is_authenticated else None %}
+              {% if current_user.is_authenticated and snippet["user_id"] == id %}
+                <a class="button level-item is-link"
+                   href="{{ url_for('edit_snippet', snippet_id=snippet['id']) }}">
+                  <span class="icon"><i class="fas fa-edit"></i></span>
                 </a>
-              </p>
+                <a class="button level-item is-link"
+                   href="{{ url_for('delete_snippet', snippet_id=snippet['id']) }}">
+                  <span class="icon"><i class="fas fa-trash"></i></span>
+                </a>
+              {% endif %}
+              <!-- Remix Button -->
+              <a class="button level-item is-warning"
+                 href="{{ url_for('createSnippet', snippet_id=snippet['id']) }}">
+                <span class="icon"><i class="fas fa-random"></i></span>
+                <span>Remix</span>
+              </a>
+            </div>
+            <div class = "level-right">
+              <div class="level-item">
+                <!-- Like Button -->
+                <button id="like-button"
+                        class="level {% if snippet['is_liked'] %}has-text-link{% endif %}"
+                        onclick="toggleLike({{ snippet['id'] }})">
+                  <span class="icon"><i class="fas fa-thumbs-up"></i></span>
+                  <span id="like-count">{{ snippet['likes'] }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Shareable Link -->
+      {% if not request.path.startswith('/share/') %}
+        <div class="box">
+          <p>
+            <strong>Shareable Link:</strong>
+          </p>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input"
+                     type="text"
+                     id="shareableLink"
+                     value="{{ request.host_url }}share/{{ snippet['shareable_link'] }}"
+                     readonly>
+            </div>
+            <div class="control">
+              <button class="button is-info" id="copyShareLink">Copy Link</button>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+      <!-- Comment Section -->
+      <div class="box">
+        <h2 class="title is-4">Comments</h2>
+        <!-- Display Existing Comments -->
+        <div id="comments-section">
+          {% for comment in comments %}
+            <article id="comment-{{ comment['id'] }}" class="media box mb-4">
+              <figure class="media-left">
+                <p class="image is-48x48">
+                  <a href="{{ url_for('profile', username=comment['user_name']) }}">
+                    <img class="is-rounded"
+                        src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] if comment['profile_picture'] else 'default_image.png') ) }}"
+                        alt="Profile Picture">
+                  </a>
+                </p>
+              </figure>
+              <div class="media-content">
+                <div class="content">
+                  <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-white">
+                    <strong>{{ comment["user_name"] }}</strong>
+                  </a>
+                  <small class="has-text-grey-light timestamp"
+                         data-timestamp="{{ comment['date'] }}">{{ comment["date"] }}</small>
+                  <p>{{ comment["content"]}}</p>
+                </div>
+                <!-- Comment Actions -->
+                <nav class="level is-mobile">
+                  <div class="level-left">
+                    <a class="level-item" onclick="toggleReplyForm('{{ comment['id'] }}')">
+                      <span class="icon is-small">
+                        <i class="fas fa-reply"></i>
+                      </span>
+                    </a>
+                    {% if current_user.is_authenticated and (comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
+                      <button class="icon is-small has-text-danger"
+                              comment-info=""
+                              {{ comment }}
+                              onclick="confirmCommentDelete('{{ comment['id'] }}')">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                </nav>
+                {% if current_user.is_authenticated %}
+                  <!-- Reply Form -->
+                  <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">
+                    <form action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-' ~ comment['id']) }}"
+                          method="post">
+                      <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
+                      <textarea class="textarea"
+                                name="comment"
+                                id="reply-input-{{ comment['id'] }}"
+                                placeholder="Write a reply..."
+                                maxlength="500"
+                                required
+                                oninput="updateCharacterCount('reply-input-{{ comment['id'] }}', 'reply-char-count-{{ comment['id'] }}')"></textarea>
+                      <p id="reply-char-count-{{ comment['id'] }}" class="has-text-grey-light">0/500</p>
+                      <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
+                    </form>
+                  </div>
+                {% endif %}
+                <!-- Nested Replies -->
+                {% if comment["replies"] %}
+                  <span class="toggle-replies-icon"
+                        onclick="toggleReplies('{{ comment['id'] }}')"
+                        id="toggle-arrow-{{ comment['id'] }}">
+                    <i class="fas fa-chevron-right"></i>
+                    <span id="reply-count-{{ comment['id'] }}">{{ comment["replies"] | length }} {{ "reply" if comment["replies"] | length == 1 else "replies" }}</span>
+                  </span>
+                  <div id="replies-{{ comment['id'] }}" class="is-hidden">
+                    {% for reply in comment["replies"] %}
+                      <article id="comment-{{ reply['id'] }}" class="media ml-5">
+                        <figure class="media-left">
+                          <p class="image is-64x64">
+                            <img class="is-rounded"
+                                 src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
+                                 alt="Profile Picture">
+                          </p>
+                        </figure>
+                        <div class="media-content">
+                          <div class="content">
+                            <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-white">
+                              <strong>{{ reply["user_name"] }}</strong>
+                            </a>
+                            <small class="has-text-grey-light timestamp"
+                                   data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
+                            <p>{{ reply["content"] }}</p>
+                          </div>
+                          <!-- Reply Actions -->
+                          <nav class="level is-mobile">
+                            <div class="level-left">
+                              {% if current_user.is_authenticated and (reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
+                                <button class="icon is-small has-text-danger"
+                                        comment-info=""
+                                        {{ comment }}
+                                        onclick="confirmCommentDelete('{{ reply['id'] }}')">
+                                  <i class="fas fa-trash"></i>
+                                </button>
+                              {% endif %}
+                            </div>
+                          </nav>
+                        </div>
+                      </article>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% else %}
+            <p>No comments yet. Be the first to comment!</p>
+          {% endfor %}
+        </div>
+        {% if current_user.is_authenticated %}
+          <!-- Add New Comment -->
+          <article class="media">
+            <figure class="media-left">
             </figure>
             <div class="media-content">
-              <div class="content">
-                <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-white">
-                  <strong>{{ comment["user_name"] }}</strong>
-                </a>
-                <small class="has-text-grey-light timestamp"
-                      data-timestamp="{{ comment['date'] }}">{{ comment["date"] }}</small>
-                <p>{{ comment["content"] }}</p>
-              </div>
-              <!-- Comment Actions -->
-              <nav class="level is-mobile">
-                <div class="level-left">
-                  <a class="level-item" onclick="toggleReplyForm('{{ comment['id'] }}')">
-                    <span class="icon is-small">
-                      <i class="fas fa-reply"></i>
-                    </span>
-                  </a>
-                  {% if current_user.is_authenticated and (comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
-                    <button class="icon is-small has-text-danger"
-                            comment-info=""
-                            {{ comment }}
-                            onclick="confirmCommentDelete('{{ comment['id'] }}')">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  {% endif %}
+              <form id="comment-form"
+                    action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-form') }}"
+                    method="post">
+                <div class="field">
+                  <p class="control">
+                    <textarea class="textarea"
+                              name="comment"
+                              id="comment-input"
+                              placeholder="Write your comment here..."
+                              maxlength="500"
+                              required
+                              oninput="updateCharacterCount('comment-input', 'char-count')"></textarea>
+                    <p id="char-count" class="has-text-grey-light">0/500</p>
+                  </p>
                 </div>
-              </nav>
-              {% if current_user.is_authenticated %}
-                <!-- Reply Form -->
-                <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">
-                  <form action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-' ~ comment['id']) }}"
-                        method="post">
-                    <input type="hidden" name="parent_id" value="{{ comment['id'] }}">
-                          <textarea class="textarea"
-                          name="comment"
-                          id="reply-input-{{ comment['id'] }}"
-                          placeholder="Write a reply..."
-                          maxlength="500" required
-                          oninput="updateCharacterCount('reply-input-{{ comment['id'] }}', 'reply-char-count-{{ comment['id'] }}')"></textarea>
-                    <p id="reply-char-count-{{ comment['id'] }}" class="has-text-grey-light">0/500</p>
-                    <button type="submit" class="button is-link is-small mt-2">Post Reply</button>
-                  </form>
+                <div class="field">
+                  <p class="control">
+                    <button class="button is-link">Post Comment</button>
+                  </p>
                 </div>
-              {% endif %}
-              <!-- Nested Replies -->
-              {% if comment["replies"] %}
-                <span class="toggle-replies-icon"
-                      onclick="toggleReplies('{{ comment['id'] }}')"
-                      id="toggle-arrow-{{ comment['id'] }}">
-                  <i class="fas fa-chevron-right"></i>
-                  <span id="reply-count-{{ comment['id'] }}">{{ comment["replies"] | length }} {{ "reply" if comment["replies"] | length == 1 else "replies" }}</span>
-                </span>
-                <div id="replies-{{ comment['id'] }}" class="is-hidden">
-                  {% for reply in comment["replies"] %}
-                    <article id="comment-{{ reply['id'] }}" class="media ml-5">
-                      <figure class="media-left">
-                        <p class="image is-48x48">
-                          <a href="{{ url_for('profile', username=reply['user_name']) }}">
-                            <img class="is-rounded"
-                                src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
-                                alt="Profile Picture">
-                          </a>
-                        </p>
-                      </figure>
-                      <div class="media-content">
-                        <div class="content">
-                          <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-white">
-                            <strong>{{ reply["user_name"] }}</strong>
-                          </a>
-                          <small class="has-text-grey-light timestamp"
-                                data-timestamp="{{ reply['date'] }}">{{ reply["date"] }}</small>
-                          <p>{{ reply["content"] }}</p>
-                        </div>
-                        <!-- Reply Actions -->
-                        <nav class="level is-mobile">
-                          <div class="level-left">
-                            {% if current_user.is_authenticated and (reply["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
-                              <button class="icon is-small has-text-danger"
-                                      comment-info=""
-                                      {{ comment }}
-                                      onclick="confirmCommentDelete('{{ reply['id'] }}')">
-                                <i class="fas fa-trash"></i>
-                              </button>
-                            {% endif %}
-                          </div>
-                        </nav>
-                      </div>
-                    </article>
-                  {% endfor %}
-                </div>
-              {% endif %}
+              </form>
             </div>
           </article>
-        {% else %}
-          <p>No comments yet. Be the first to comment!</p>
-        {% endfor %}
+        {% endif %}
       </div>
-      {% if current_user.is_authenticated %}
-        <!-- Add New Comment -->
-        <article class="media">
-          <figure class="media-left">
-          </figure>
-          <div class="media-content">
-            <form id="comment-form"
-                  action="{{ url_for('add_comment', snippet_id=snippet['id'], _anchor='comment-form') }}"
-                  method="post">
-              <div class="field">
-                <p class="control">
-                  <textarea class="textarea"
-                            name="comment"
-                            id="comment-input"
-                            placeholder="Write your comment here..." 
-                            maxlength="500" required
-                            oninput="updateCharacterCount('comment-input', 'char-count')"></textarea>
-                  <p id="char-count" class="has-text-grey-light">0/500</p>
-                </p>
-              </div>
-              <div class="field">
-                <p class="control">
-                  <button class="button is-link">Post Comment</button>
-                </p>
-              </div>
-            </form>
-          </div>
-        </article>
+      <!-- Message for users viewing a shared snippet -->
+      {% if request.path.startswith('/share/') %}
+        <div class="notification is-info">
+          <p>You are viewing this snippet from a shareable link.</p>
+          <a href="{{ url_for("index") }}" class="button is-primary">Go to Homepage</a>
+        </div>
       {% endif %}
-    </div>
-    <!-- Message for users viewing a shared snippet -->
-    {% if request.path.startswith('/share/') %}
-      <div class="notification is-info">
-        <p>You are viewing this snippet from a shareable link.</p>
-        <a href="{{ url_for("index") }}" class="button is-primary">Go to Homepage</a>
-      </div>
-    {% endif %}
-    <!-- Navigation Buttons -->
-    <div class="field is-grouped">
-      <div class="control">
-        <a class="button is-light" href="{{ url_for("snippets") }}">Back to All Snippets</a>
-      </div>
-      <div class="control">
-        <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
+      <!-- Navigation Buttons -->
+      <div class="field is-grouped">
+        <div class="control">
+          <a class="button is-light" href="{{ url_for("snippets") }}">Back to All Snippets</a>
+        </div>
+        <div class="control">
+          <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
+        </div>
       </div>
     </div>
   </section>
@@ -252,6 +269,7 @@
   {{ super() }}
   <script src="{{ url_for('static', filename='copy.js') }}"></script>
   <script src="{{ url_for('static', filename='comments.js') }}"></script>
+  <script src="{{ url_for('static', filename='site.js') }}"></script>
   <script>
   document.getElementById("copyShareLink")?.addEventListener("click", function() {
     const input = document.getElementById("shareableLink");

@@ -76,7 +76,7 @@ function copySnippet(card) {
  * Likes or unlikes a snippet.
  * @param {JQuery} card
  */
-async function likeSnippet(card) {
+async function likeSnippetCard(card) {
   // When not logged in, redirect to login page
   if (current_user_id === null) {
     const url = new URL(script_root + "/login", location.href);
@@ -139,6 +139,32 @@ async function confirmDeleteSnippet(card) {
     await fetch(`/deleteSnippet/${snippetId}`);
     window.location.reload();
   }
+}
+
+async function toggleLike(id) {
+  // When not logged in, redirect to login page
+  if (current_user_id === null) {
+    const url = new URL(script_root + "/login", location.href);
+    url.searchParams.append("next", location.pathname);
+    location.href = url.href;
+    return;
+  }
+
+  const button = $("#like-button");
+  const likes = $("#like-count");
+  const wasLiked = button.hasClass("has-text-link");
+
+  // Update text and color locally
+  likes.text(parseInt(likes.text()) + (wasLiked ? -1 : 1));
+  if (wasLiked) button.removeClass("has-text-link");
+  else button.addClass("has-text-link");
+
+  // Update likes on server
+  const options = {
+    method: wasLiked ? "DELETE" : "POST",
+  };
+
+  fetch(script_root + `/likes/${id}`, options).catch(console.error);
 }
 
 $(function () {
