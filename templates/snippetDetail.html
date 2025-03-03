@@ -176,10 +176,12 @@
                     {% for reply in comment["replies"] %}
                       <article id="comment-{{ reply['id'] }}" class="media ml-5">
                         <figure class="media-left">
-                          <p class="image is-64x64">
-                            <img class="is-rounded"
-                                 src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
-                                 alt="Profile Picture">
+                          <p class="image is-48x48">
+                            <a href="{{ url_for('profile', username=reply['user_name']) }}">
+                              <img class="is-rounded"
+                                  src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
+                                  alt="Profile Picture">
+                            </a>
                           </p>
                         </figure>
                         <div class="media-content">
