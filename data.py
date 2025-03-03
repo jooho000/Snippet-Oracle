@@ -671,7 +671,7 @@ class Data:
                 {name_priority}
             FROM Snippet
             WHERE {" AND ".join(queries)}
-            ORDER BY name_priority DESC, like_count DESC
+            ORDER BY name_priority DESC, like_count DESC, Snippet.Date DESC
             LIMIT 50
         """
 
