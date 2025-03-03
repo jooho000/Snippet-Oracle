@@ -467,36 +467,44 @@ def view_snippet_by_link(link):
 
 @app.route("/search/", methods=["GET"])
 def search_snippets():
-    query = request.args.get("q", "")  # Get the search query from the URL
-    public = request.args.get("public") == "1"
+    query = request.args.get("q", "").strip()
+    public = request.args.get("public") == "1"  
     if len(query) > 300:
-        query = query[:300]
-    terms = query.split(" ")
-    tags, names = set(), set()
-    desc_has = []
+        query = query[:300]  # Limit query length
 
+    # Initialize filters
+    include_tags, exclude_tags, usernames, general_terms = set(), set(), set(), []
+
+    # Process query terms
+    terms = query.split(" ")
     for term in terms:
-        if term != "":
-            if term[0] == ":":
-                if len(term) > 1:
-                    tags.add(term[1:])
-            elif term[0] == "-":
-                if len(term) > 1:
-                    desc_has.append(term[1:])
-            else:
-                names.add(term)
+        if term.startswith("+"):
+            include_tags.add(term[1:].lower())
+        elif term.startswith("-"):
+            exclude_tags.add(term[1:].lower())
+        elif term.startswith("@"):
+            usernames.add(term[1:].lower())
+        else:
+            general_terms.append(term)  # Fuzzy search for names & descriptions
 
     user_id = None
     if flask_login.current_user.is_authenticated:
         user_id = flask_login.current_user.id
 
+    search_results = get_db().search_snippets(
+        terms=general_terms if general_terms else None,
+        include_tags=include_tags if include_tags else None,
+        exclude_tags=exclude_tags if exclude_tags else None,
+        usernames=usernames if usernames else None,
+        viewer_id=user_id,
+        public=public
+    )
+
     return jsonify(
         {
-            "tags": list(tags) if tags else get_db().search_tags(query),
+            "tags": list(include_tags) if include_tags else get_db().search_tags(query),
             "users": get_db().search_users(query),
-            "snippets": get_db().search_snippets(
-                names, tags, desc_has, user_id, public
-            ),
+            "snippets": search_results,
             "similar": get_db().smart_search_snippets(query),
         }
     )

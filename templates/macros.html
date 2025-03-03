@@ -105,7 +105,7 @@
 {%- endmacro %}
 {% macro tagsDisplay(tags, limit=None) -%}
   {% for tag in tags[:limit] %}
-    <a href="{{ url_for('index', q=':' + tag) }}"
+    <a href="{{ url_for('index', q='+' + tag) }}"
        class="tag is-info search-tag">{{ tag }}</a>
   {% endfor %}
   <!-- Dummy tag to ensure spacing is correct even with no tags -->
