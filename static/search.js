@@ -14,6 +14,8 @@ const snippetResults = $("#results-snippets");
 const snippetCount = $("#results-snippets-count");
 const similarResults = $("#results-similar");
 const similarCount = $("#results-similar-count");
+const sharedResults = $("#results-shared");
+const sharedCount = $("#results-shared-count");
 
 let popValues;
 
@@ -24,6 +26,7 @@ toggleResults("results-tags", true);
 toggleResults("results-users", true);
 toggleResults("results-snippets", true);
 toggleResults("results-similar", false);
+toggleResults("results-shared", true);
 
 $(function () {
   // Start search after the user stops typing
@@ -37,12 +40,8 @@ $(function () {
 
 $(async function () {
   try {
-    const searchUrl = new URL(
-      script_root + "/getPopularEverything",
-      location.href
-    );
+    const searchUrl = new URL(script_root + "/defaultView", location.href);
     popValues = await fetch(searchUrl).then((response) => response.json());
-    console.log(popValues);
     populateResults(popValues);
     popText();
   } catch (error) {
@@ -81,7 +80,8 @@ async function doSearch() {
   // Don't search if input is empty
   if (!query.trim()) {
     populateResults(popValues);
-    popText()
+    history.pushState(null, "", "/");
+    popText();
     return;
   }
 
@@ -92,6 +92,12 @@ async function doSearch() {
   searchUrl.searchParams.append("q", query);
   searchUrl.searchParams.append("public", 1);
   pendingSearchUrl = searchUrl;
+
+  //update url to match current search
+  const newUrl = new URL(script_root + "/", location.href);
+  newUrl.searchParams.append("q", query);
+  newUrl.searchParams.append("public", 1);
+  history.pushState(null, "", newUrl);
 
   try {
     const json = await fetch(searchUrl).then((response) => response.json());
@@ -308,11 +314,21 @@ function populateResults(json) {
   else snippetResults.show();
 
   // Similar description snippet cards
-  similarCount.text(json.similar.length);
-  for (const snippet of json.similar)
-    createSnippet(snippet).appendTo(similarResults);
-  if (!json.similar.length) similarResults.hide();
-  else similarResults.show();
+  if (json.similar && json.similar.length) {
+    similarResults.show();
+    similarCount.text(json.similar.length);
+    for (const snippet of json.similar)
+      createSnippet(snippet).appendTo(similarResults);
+  } else {
+    similarResults.hide();
+  }
+
+  if (json.shared && json.shared.length) {
+    sharedResults.show();
+    sharedResults.text(json.shared.length);
+    for (const snippet of json.shared)
+      createSnippet(snippet).appendTo(sharedResults);
+  } else sharedResults.hide();
 }
 
 /**

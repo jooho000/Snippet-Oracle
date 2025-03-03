@@ -468,7 +468,7 @@ def view_snippet_by_link(link):
 @app.route("/search/", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "").strip()
-    public = request.args.get("public") == "1"  
+    public = request.args.get("public") == "1"
     if len(query) > 300:
         query = query[:300]  # Limit query length
 
@@ -497,7 +497,7 @@ def search_snippets():
         exclude_tags=exclude_tags if exclude_tags else None,
         usernames=usernames if usernames else None,
         viewer_id=user_id,
-        public=public
+        public=public,
     )
 
     return jsonify(
@@ -607,7 +607,7 @@ def add_comment(snippet_id):
     if not comment_content.strip():
         flask.flash("Comment cannot be empty!", "warning")
         return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
-    
+
     comment_content = comment_content.replace("\r\n", "\n")
 
     if len(comment_content) > 500:
@@ -666,18 +666,21 @@ def remove_like(snippet_id):
     likes = get_db().get_likes(snippet_id)
     return jsonify({likes: likes})
 
-@app.route("/getPopularEverything", methods=["GET"])
+
+@app.route("/defaultView", methods=["GET"])
 def getPopular():
     viewer_id = None
     if flask_login.current_user.is_authenticated:
         viewer_id = flask_login.current_user.id
     popularTags = get_db().get_popular_public_tags()
     popularUsers = get_db().get_popular_users()
-    popularSnippets = get_db().get_popular_public_snippets(viewer_id=viewer_id)
-    return jsonify({
+    popularSnippets = get_db().get_popular_public_snippets(viewer_id)
+    recentlyShared = get_db().get_recent_shared_snippets(viewer_id)
+    return jsonify(
+        {
             "tags": popularTags,
             "users": popularUsers,
             "snippets": popularSnippets,
-            "similar": [],
-        })
-
+            "shared": recentlyShared,
+        }
+    )

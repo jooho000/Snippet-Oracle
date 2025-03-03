@@ -303,8 +303,8 @@ class Data:
 
     def get_popular_users(self):
         """
-          Gets the Top 10 Most Popular Users
-          Returns Username, Profle Picture for card
+        Gets the Top 10 Most Popular Users
+        Returns Username, Profle Picture for card
         """
         cur = self._db.cursor()
         results = cur.execute(
@@ -322,8 +322,7 @@ class Data:
             return None
         else:
             return [{"name": res[0], "profile_picture": res[1]} for res in results]
-        
-    
+
     ## SNIPPETS ###
 
     def create_snippet(
@@ -544,8 +543,8 @@ class Data:
 
     def get_popular_public_snippets(self, viewer_id=None):
         """
-          Gets the Top 10 Most Popular Snippets
-          Returns Snippet Card Info
+        Gets the Top 10 Most Popular Snippets
+        Returns Snippet Card Info
         """
         cur = self._db.cursor()
         results = cur.execute(
@@ -563,22 +562,70 @@ class Data:
         snippets_list = []
         for res in results:
             user_details = self.get_user_details(res[4])  # Fetch user details
-            snippets_list.append({
-                "id": res[0],
-                "name": res[1],
-                "code": res[2],
-                "description": res[3],
-                "user_id": res[4],
-                "parent_snippet_id": res[5],
-                "date": res[6],
-                "is_public": bool(res[7]),
-                "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
-                "likes": res[8],  # Sort by like count
-                "is_liked": self.is_liked(res[0], viewer_id),  # Check if the user liked it
-                "author": user_details  # Attach user details
-            })
+            snippets_list.append(
+                {
+                    "id": res[0],
+                    "name": res[1],
+                    "code": res[2],
+                    "description": res[3],
+                    "user_id": res[4],
+                    "parent_snippet_id": res[5],
+                    "date": res[6],
+                    "is_public": bool(res[7]),
+                    "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
+                    "likes": res[8],  # Sort by like count
+                    "is_liked": self.is_liked(
+                        res[0], viewer_id
+                    ),  # Check if the user liked it
+                    "author": user_details,  # Attach user details
+                }
+            )
 
-        return snippets_list  
+        return snippets_list
+
+    def get_recent_shared_snippets(self, user_id=None):
+        """
+        Gets the Top 10 Most Popular Snippets
+        Returns Snippet Card Info
+        """
+        cur = self._db.cursor()
+        results = cur.execute(
+            """
+            SELECT Snippet.ID, Snippet.Name, Snippet.Code, Snippet.Description,
+                Snippet.UserID, Snippet.ParentSnippetID, Snippet.Date, Snippet.IsPublic
+            FROM Snippet
+            WHERE Snippet.ID IN 
+              (SELECT SnippetID FROM SnippetPermissions
+                WHERE UserID = ?)
+            ORDER BY Snippet.Date DESC
+            LIMIT 10
+            """,
+            [user_id],
+        )
+
+        snippets_list = []
+        for res in results:
+            user_details = self.get_user_details(res[4])  # Fetch user details
+            snippets_list.append(
+                {
+                    "id": res[0],
+                    "name": res[1],
+                    "code": res[2],
+                    "description": res[3],
+                    "user_id": res[4],
+                    "parent_snippet_id": res[5],
+                    "date": res[6],
+                    "is_public": bool(res[7]),
+                    "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
+                    "likes": res[8],  # Sort by like count
+                    "is_liked": self.is_liked(
+                        res[0], user_id
+                    ),  # Check if the user liked it
+                    "author": user_details,  # Attach user details
+                }
+            )
+
+        return snippets_list
 
     def search_tags(self, query):
         """Returns a list of all preset tags matching the search query."""
@@ -606,7 +653,15 @@ class Data:
 
         return [{"name": res[0], "profile_picture": res[1]} for res in results]
 
-    def search_snippets(self, terms=None, include_tags=None, exclude_tags=None, usernames=None, viewer_id=None, public=True):
+    def search_snippets(
+        self,
+        terms=None,
+        include_tags=None,
+        exclude_tags=None,
+        usernames=None,
+        viewer_id=None,
+        public=True,
+    ):
         """
         Searches snippets based on:
         - Prioritizes name matches before description matches.
@@ -615,10 +670,14 @@ class Data:
         - Prioritizes exact tag matches, falls back to prefix match if no exact matches exist.
         """
 
-        if isinstance(terms, str): terms = [terms]
-        if isinstance(include_tags, str): include_tags = [include_tags]
-        if isinstance(exclude_tags, str): exclude_tags = [exclude_tags]
-        if isinstance(usernames, str): usernames = [usernames]
+        if isinstance(terms, str):
+            terms = [terms]
+        if isinstance(include_tags, str):
+            include_tags = [include_tags]
+        if isinstance(exclude_tags, str):
+            exclude_tags = [exclude_tags]
+        if isinstance(usernames, str):
+            usernames = [usernames]
 
         # Convert usernames and tags to lowercase for case-insensitive search
         usernames = [username.lower() for username in usernames] if usernames else []
@@ -633,7 +692,12 @@ class Data:
         name_priority = "0 AS name_priority"
         if terms:
             name_priority = "CASE WHEN LOWER(Snippet.Name) LIKE LOWER(?) THEN 1 ELSE 0 END AS name_priority"
-            fuzzy_match = " OR ".join(["(LOWER(Snippet.Name) LIKE LOWER(?) OR LOWER(Snippet.Description) LIKE LOWER(?))"] * len(terms))
+            fuzzy_match = " OR ".join(
+                [
+                    "(LOWER(Snippet.Name) LIKE LOWER(?) OR LOWER(Snippet.Description) LIKE LOWER(?))"
+                ]
+                * len(terms)
+            )
             queries.append(f"({fuzzy_match})")
             for term in terms:
                 params.extend([f"%{term}%", f"%{term}%", f"%{term}%"])
@@ -649,11 +713,13 @@ class Data:
 
             if exact_user_count > 0:
                 # If exact match exists, return only snippets from the exact user
-                queries.append("""
+                queries.append(
+                    """
                     Snippet.UserID IN (
                         SELECT ID FROM User WHERE LOWER(Name) IN ({})
                     )
-                """.format(",".join(["?"] * len(usernames))))
+                """.format(",".join(["?"] * len(usernames)))
+                )
                 params.extend(usernames)
             else:
                 # If no exact match, fall back to similar username search
@@ -662,7 +728,9 @@ class Data:
                         SELECT ID FROM User WHERE LOWER(Name) LIKE LOWER(?)
                     )
                 """)
-                params.append(f"%{usernames[0]}%")  # Use the first username for fuzzy matching
+                params.append(
+                    f"%{usernames[0]}%"
+                )  # Use the first username for fuzzy matching
 
         # Tag Filtering (Exact Match First, Prefix Match if No Exact Matches Found)
         if include_tags:
@@ -678,11 +746,13 @@ class Data:
             exact_match_count = cur.fetchone()[0]
 
             if exact_match_count > 0:
-                queries.append("""
+                queries.append(
+                    """
                     Snippet.ID IN (
                         SELECT SnippetID FROM TagUse WHERE LOWER(TagName) IN ({})
                     )
-                """.format(",".join(["?"] * len(include_tags))))
+                """.format(",".join(["?"] * len(include_tags)))
+                )
                 params.extend(exact_params)
             else:
                 # If no exact matches, fall back to prefix search
@@ -722,7 +792,9 @@ class Data:
 
         # Ensure there's at least one condition to prevent empty WHERE clause
         if not queries:
-            queries.append("1=1")  # This prevents SQL syntax errors if no filters are applied
+            queries.append(
+                "1=1"
+            )  # This prevents SQL syntax errors if no filters are applied
 
         # Final SQL query with ordering: Name Matches First, Then Sort by Likes
         query = f"""
@@ -742,20 +814,24 @@ class Data:
         snippets_list = []
         for res in results:
             user_details = self.get_user_details(res[4])  # Fetch user details
-            snippets_list.append({
-                "id": res[0],
-                "name": res[1],
-                "code": res[2],
-                "description": res[3],
-                "user_id": res[4],
-                "parent_snippet_id": res[5],
-                "date": res[6],
-                "is_public": bool(res[7]),
-                "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
-                "likes": res[8],  # Sort by like count
-                "is_liked": self.is_liked(res[0], viewer_id),  # Check if the user liked it
-                "author": user_details  # Attach user details
-            })
+            snippets_list.append(
+                {
+                    "id": res[0],
+                    "name": res[1],
+                    "code": res[2],
+                    "description": res[3],
+                    "user_id": res[4],
+                    "parent_snippet_id": res[5],
+                    "date": res[6],
+                    "is_public": bool(res[7]),
+                    "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
+                    "likes": res[8],  # Sort by like count
+                    "is_liked": self.is_liked(
+                        res[0], viewer_id
+                    ),  # Check if the user liked it
+                    "author": user_details,  # Attach user details
+                }
+            )
 
         return snippets_list
 
@@ -1027,13 +1103,13 @@ class Data:
         return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
 
     def get_profile_all_tags(self, user_id):
-      """
-      Takes user_id and returns top 10 tags based on all their snippest
-      Returns top 10
-      """
-      cur = self._db.cursor()
-      cur.execute(
-          """
+        """
+        Takes user_id and returns top 10 tags based on all their snippest
+        Returns top 10
+        """
+        cur = self._db.cursor()
+        cur.execute(
+            """
           SELECT TAGUSE.TAGNAME, count(*) AS tagCount
           FROM TAGUSE
           WHERE TAGUSE.SNIPPETID 
@@ -1047,11 +1123,11 @@ class Data:
           ORDER BY tagCount DESC
           LIMIT 10;
           """,
-          [user_id],
-      )
-      return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
+            [user_id],
+        )
+        return [{"Name": row[0], "Count": row[1]} for row in cur.fetchall()]
 
-    #Snippet Modification
+    # Snippet Modification
     def update_snippet(
         self,
         id,
@@ -1152,7 +1228,7 @@ class Data:
 
         self._db.commit()
 
-    #Comment Functions
+    # Comment Functions
     def add_comment(self, snippet_id, user_id, comment, parent_id=None):
         """Adds a comment or reply to a snippet."""
         cur = self._db.cursor()
@@ -1256,7 +1332,7 @@ class Data:
 
         self._db.commit()
 
-    #Like Functions
+    # Like Functions
     def add_like(self, snippet_id, user_id):
         """
         Adds a like to a snippet.

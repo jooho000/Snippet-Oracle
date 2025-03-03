@@ -67,6 +67,13 @@
             <div id="results-similar" class="results-container grid is-col-min-16"></div>
           </section>
         {% endcall %}
+        {% if current_user.is_authenticated %}
+          {% call resultsSection("results-shared", "Shared Snippets", "fa-user-friends") %}
+            <section class="block pl-4">
+              <div id="results-shared" class="results-container grid is-col-min-16"></div>
+            </section>
+          {% endcall %}
+        {% endif %}
       </div>
       <!-- Templates to be cloned during search -->
       <div hidden>
