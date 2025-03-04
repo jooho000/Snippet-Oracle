@@ -99,10 +99,11 @@
           </div>
         </div>
       </div>
-    </section>
-  {% endblock %}
-  {% block scripts %}
-    {{ super() }}
-    <script src="{{ url_for('static', filename='search.js') }}"></script>
-    <script src="{{ url_for('static', filename='positionSearchBar.js') }}"></script>
-  {% endblock %}
+    </div>
+  </section>
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='search.js') }}"></script>
+  <script src="{{ url_for('static', filename='positionSearchBar.js') }}"></script>
+{% endblock %}
