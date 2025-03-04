@@ -50,8 +50,9 @@ def get_username_error(username):
         return "Username must not be empty!"
     if len(username) > 20:
         return "Username must be 20 or fewer characters!"
-    else:
-        return None
+    if len(username) < 4:
+        return "Username must be 4 or more characters!"
+    return None
 
 
 def get_password_error(password):
