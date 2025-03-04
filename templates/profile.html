@@ -68,7 +68,7 @@
             <div class="container" id="snippet-grid">
               {% if snippets %}
                 {% for snippet in snippets %}
-                  {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == (current_user.id if current_user.is_authenticated else -1)) }}
+                  {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == (current_user.id | int if current_user.is_authenticated else -1)) }}
                 {% endfor %}
               {% else %}
                 <p>No snippets found. Start creating your first snippet!</p>
