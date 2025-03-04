@@ -273,7 +273,14 @@ function attachTagListeners() {
     .on("click", function (event) {
       event.preventDefault();
       const tag = $(this).text().trim();
-      window.location.href = "/?q=" + encodeURIComponent("+" + tag);
+      const query = encodeURIComponent("+" + tag);
+      
+      if (window.location.pathname === "/") {
+        $("#search-input").val("+" + tag);
+        doSearch();
+      } else {
+        window.location.href = "/?q=" + query;
+      }
     });
 }
 
