@@ -711,6 +711,7 @@ class Data:
         name_priority = "0 AS name_priority"
         if terms:
             name_priority = "CASE WHEN LOWER(Snippet.Name) LIKE LOWER(?) THEN 1 ELSE 0 END AS name_priority"
+            params.append("%" + " ".join(terms) + "%")
             fuzzy_match = " OR ".join(
                 [
                     "(LOWER(Snippet.Name) LIKE LOWER(?) OR LOWER(Snippet.Description) LIKE LOWER(?))"
@@ -719,7 +720,7 @@ class Data:
             )
             queries.append(f"({fuzzy_match})")
             for term in terms:
-                params.extend([f"%{term}%", f"%{term}%", f"%{term}%"])
+                params.extend([f"%{term}%"] * 2)
 
         # Case-Insensitive User Search (Exact First, Then Fallback to Similar)
         if usernames:

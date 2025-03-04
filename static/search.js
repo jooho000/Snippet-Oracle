@@ -272,7 +272,6 @@ function attachTagListeners() {
     .attr("draggable", "true")
     .off("dragstart click")
     .on("dragstart", function (event) {
-      console.log( $(this).text())
       event.originalEvent.dataTransfer.setData("text/plain", $(this).text().trim());
       event.originalEvent.dataTransfer.effectAllowed = "copy";
     })
