@@ -382,7 +382,12 @@ def createSnippet(snippet_id=None):
 
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 def view_snippet(snippet_id):
-    current_user_id = auth.get_current_id_or_none()
+    current_user_id = None
+    if flask_login.current_user.is_authenticated:
+        current_user_id = flask_login.current_user.id
+    elif get_db().get_snippet_isPublic(snippet_id):
+        return auth.login_manager.unauthorized()
+
     snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
@@ -420,36 +425,6 @@ def update_snippet_visibility(snippet_id):
     flask.flash("Snippet visibility updated!", "success")
 
     return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
-
-
-# Allow users to access private snippets via shareable links
-@app.route("/share/<string:link>")
-def view_snippet_by_link(link):
-    info = get_db().get_snippet_id_by_shareable_link(link)
-
-    if info:
-        user_id = None
-        if flask_login.current_user.is_authenticated:
-            user_id = flask_login.current_user.id
-        elif not info["is_public"]:
-            return auth.login_manager.unauthorized()
-
-    snippet = get_db().get_snippet(info["id"], user_id)
-
-    if snippet:
-        parent_snippet = None
-        if snippet["parent_snippet_id"] is not None:
-            parent_snippet = get_db().get_snippet(snippet["parent_snippet_id"], user_id)
-        return flask.render_template(
-            "snippetDetail.html",
-            user=user_id,
-            snippet=snippet,
-            parent_snippet=parent_snippet,
-        )
-
-    flask.flash("Unauthorized or snippet not found!", "danger")
-    return flask.redirect(flask.url_for("index"))
-
 
 @app.route("/search/", methods=["GET"])
 def search_snippets():
