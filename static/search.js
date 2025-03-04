@@ -135,7 +135,7 @@ async function doSearch() {
 function createTag(tag) {
   const elem = $(document.createElement("a"));
   elem.text(tag);
-  elem.addClass("tag is-info searhc-tag");
+  elem.addClass("tag is-info search-tag");
 
   // Update link
   const url = new URL(script_root, location.href);
@@ -272,6 +272,7 @@ function attachTagListeners() {
     .attr("draggable", "true")
     .off("dragstart click")
     .on("dragstart", function (event) {
+      console.log( $(this).text())
       event.originalEvent.dataTransfer.setData("text/plain", $(this).text().trim());
       event.originalEvent.dataTransfer.effectAllowed = "copy";
     })
