@@ -83,26 +83,6 @@
           </div>
         </div>
       </div>
-      <!-- Shareable Link -->
-      {% if not request.path.startswith('/share/') %}
-        <div class="box">
-          <p>
-            <strong>Shareable Link:</strong>
-          </p>
-          <div class="field has-addons">
-            <div class="control is-expanded">
-              <input class="input"
-                     type="text"
-                     id="shareableLink"
-                     value="{{ request.host_url }}share/{{ snippet['shareable_link'] }}"
-                     readonly>
-            </div>
-            <div class="control">
-              <button class="button is-info" id="copyShareLink">Copy Link</button>
-            </div>
-          </div>
-        </div>
-      {% endif %}
       <!-- Comment Section -->
       <div class="box">
         <h2 class="title is-4">Comments</h2>
@@ -271,7 +251,6 @@
   {{ super() }}
   <script src="{{ url_for('static', filename='copy.js') }}"></script>
   <script src="{{ url_for('static', filename='comments.js') }}"></script>
-  <script src="{{ url_for('static', filename='site.js') }}"></script>
   <script>
   document.getElementById("copyShareLink")?.addEventListener("click", function() {
     const input = document.getElementById("shareableLink");
