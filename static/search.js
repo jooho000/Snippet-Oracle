@@ -118,8 +118,6 @@ async function doSearch() {
     if (searchUrl !== pendingSearchUrl) return;
 
     populateResults(json);
-
-    attachTagListeners(); // Ensure tags are clickable after search results update
   } catch (error) {
     console.error("Error fetching search results:", error);
     snippetResults.text("Error occurred while searching.");
@@ -334,10 +332,12 @@ function populateResults(json) {
   
   if (json.shared && json.shared.length) {
     sharedDiv.show();
-    sharedResults.text(json.shared.length);
+    sharedCount.text(json.shared.length);
     for (const snippet of json.shared)
       createSnippet(snippet).appendTo(sharedResults);
   } else sharedDiv.hide();
+  
+  attachTagListeners();
 }
 
 /**

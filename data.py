@@ -596,11 +596,11 @@ class Data:
             FROM Snippet
             WHERE Snippet.ID IN 
               (SELECT SnippetID FROM SnippetPermissions
-                WHERE UserID = ?)
+                WHERE UserID = ?) AND Snippet.UserID != ?
             ORDER BY Snippet.Date DESC
             LIMIT 10
             """,
-            [user_id],
+            [user_id, user_id]
         )
 
         snippets_list = []
@@ -617,7 +617,7 @@ class Data:
                     "date": res[6],
                     "is_public": bool(res[7]),
                     "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
-                    "likes": res[8],  # Sort by like count
+                    "likes": self.get_likes(res[0]),  # Sort by like count
                     "is_liked": self.is_liked(
                         res[0], user_id
                     ),  # Check if the user liked it

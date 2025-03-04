@@ -325,7 +325,7 @@ def createSnippet(snippet_id=None):
         original_snippet = get_db().get_snippet(snippet_id, flask_login.current_user.id)
         if not original_snippet:
             flask.flash("Original snippet not found or inaccessible!", "danger")
-            return flask.redirect(flask.url_for("snippets"))
+            return flask.redirect(flask.url_for("index"))
 
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
@@ -365,7 +365,7 @@ def createSnippet(snippet_id=None):
 
         if new_snippet_id:
             flask.flash("Snippet created successfully!", "success")
-            return flask.redirect(flask.url_for("snippets"))
+            return flask.redirect(flask.url_for("index"))
         else:
             flask.flash("Failed to create snippet!", "danger")
 
@@ -380,27 +380,13 @@ def createSnippet(snippet_id=None):
     )
 
 
-# View All Personal User Snippets
-@app.route("/snippets")
-@flask_login.login_required
-def snippets():
-    # Fetch all snippets for the logged-in user
-    user_snippets = get_db().get_user_snippets(
-        flask_login.current_user.id, flask_login.current_user.id
-    )
-    user_details = get_db().get_user_details(flask_login.current_user.id)
-    return flask.render_template(
-        "snippets.html", user=user_details, snippets=user_snippets
-    )
-
-
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 def view_snippet(snippet_id):
     current_user_id = auth.get_current_id_or_none()
     snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet:
         flask.flash("Snippet not found or not accessible!", "warning")
-        return flask.redirect(flask.url_for("snippets"))
+        return flask.redirect(flask.url_for("index"))
 
     parent_snippet = None
     if snippet["parent_snippet_id"] is not None:
@@ -428,7 +414,7 @@ def update_snippet_visibility(snippet_id):
     snippet = get_db().get_snippet(snippet_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
-        return flask.redirect(flask.url_for("snippets"))
+        return flask.redirect(flask.url_for("index"))
 
     get_db().set_snippet_visibility(snippet_id, is_public)
     flask.flash("Snippet visibility updated!", "success")
@@ -519,7 +505,7 @@ def edit_snippet(snippet_id):
 
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
-        return flask.redirect(flask.url_for("snippets"))
+        return flask.redirect(flask.url_for("index"))
 
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
@@ -583,7 +569,7 @@ def edit_snippet(snippet_id):
         )
     else:
         flask.flash("Snippet not found!", "warning")
-        return flask.redirect(flask.url_for("snippets"))
+        return flask.redirect(flask.url_for("index"))
 
 
 @app.route("/deleteSnippet/<int:snippet_id>")
@@ -593,9 +579,9 @@ def delete_snippet(snippet_id):
     snippet = get_db().get_snippet(snippet_id, current_user_id)
     if not snippet or str(snippet["user_id"]) != flask_login.current_user.id:
         flask.flash("Unauthorized or snippet not found!", "danger")
-        return flask.redirect(flask.url_for("snippets"))
+        return flask.redirect(flask.url_for("index"))
     get_db().delete_snippet(snippet_id, snippet["user_id"])
-    return flask.redirect(flask.url_for("snippets"))
+    return flask.redirect(flask.url_for("index"))
 
 
 @app.route("/snippet/<int:snippet_id>/comment", methods=["POST"])

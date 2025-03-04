@@ -252,13 +252,13 @@
       {% if request.path.startswith('/share/') %}
         <div class="notification is-info">
           <p>You are viewing this snippet from a shareable link.</p>
-          <a href="{{ url_for("index") }}" class="button is-primary">Go to Homepage</a>
+          <a href="{{ url_for("profile") }}" class="button is-primary">Go to Homepage</a>
         </div>
       {% endif %}
       <!-- Navigation Buttons -->
       <div class="field is-grouped">
         <div class="control">
-          <a class="button is-light" href="{{ url_for("snippets") }}">Back to All Snippets</a>
+          <a class="button is-light" href="{{ url_for("index") }}">Back to All Snippets</a>
         </div>
         <div class="control">
           <a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>
