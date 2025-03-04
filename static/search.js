@@ -271,20 +271,50 @@ function toggleResults(id, visible) {
  */
 function attachTagListeners() {
   $(".search-tag")
-    .off("click")
+    .attr("draggable", "true")
+    .off("dragstart click")
+    .on("dragstart", function (event) {
+      event.originalEvent.dataTransfer.setData("text/plain", $(this).text().trim());
+      event.originalEvent.dataTransfer.effectAllowed = "copy";
+    })
     .on("click", function (event) {
       event.preventDefault();
       const tag = $(this).text().trim();
-      const query = encodeURIComponent("+" + tag);
-      
-      if (window.location.pathname === "/") {
-        $("#search-input").val("+" + tag);
+      const currentQuery = $("#search-input").val().trim();
+
+      // Convert search input into an array of tags
+      let currentTags = currentQuery.split(/\s+/).filter(tag => tag.startsWith("+"));
+
+      // Prevent duplicate tag insertion
+      if (!currentTags.includes("+" + tag)) {
+        $("#search-input").val(currentQuery ? `${currentQuery} +${tag}` : `+${tag}`);
         doSearch();
-      } else {
-        window.location.href = "/?q=" + query;
       }
     });
 }
+
+$("#search-input")
+  .on("dragover", function (event) {
+    event.preventDefault();
+    event.originalEvent.dataTransfer.dropEffect = "copy";
+  })
+  .on("drop", function (event) {
+    event.preventDefault();
+    $(this).removeClass("drag-over");
+
+    const tag = event.originalEvent.dataTransfer.getData("text/plain").trim();
+    if (tag) {
+      let currentQuery = $(this).val().trim();
+
+      let currentTags = currentQuery.split(/\s+/).filter(tag => tag.startsWith("+"));
+
+      if (!currentTags.includes("+" + tag)) {
+        // Append only if not present
+        $(this).val(currentQuery ? `${currentQuery} +${tag}` : `+${tag}`);
+        doSearch();
+      }
+    }
+  });
 
 // Helper functions
 addEventListener("keydown", function (event) {
