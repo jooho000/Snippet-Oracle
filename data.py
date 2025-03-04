@@ -406,6 +406,25 @@ class Data:
 
         return snippet_id
 
+    def get_snippet_isPublic(self,snippet_id):
+        cur = self._db.cursor()
+
+        cur.execute(
+         """
+            SELECT IsPublic 
+            FROM Snippet 
+            WHERE ID = ? 
+            """, [snippet_id],
+        )
+
+        result = cur.fetchone()
+
+        if result:
+            return bool(result)
+        else:
+            return None
+    
+
     def get_snippet(self, snippet_id, viewer_id=None):
         cur = self._db.cursor()
 
