@@ -6,28 +6,32 @@ const title = $("#title");
 const searchDelayMs = 250;
 
 // Containers for search results
+const tagDiv = $("#results-tags-div");
 const tagResults = $("#results-tags");
 const tagCount = $("#results-tags-count");
+const userDiv = $("#results-users-div");
 const userResults = $("#results-users");
 const userCount = $("#results-users-count");
+const snippetDiv = $("#results-snippets-div");
 const snippetResults = $("#results-snippets");
 const snippetCount = $("#results-snippets-count");
+const similarDiv = $("#results-similar-div");
 const similarResults = $("#results-similar");
 const similarCount = $("#results-similar-count");
+const sharedDiv = $("#results-shared-div");
+const sharedResults = $("#results-shared");
+const sharedCount = $("#results-shared-count");
+
+let popValues;
 
 let pendingSearchUrl = null;
 let searchTimeout = null;
 
-toggleResults("results-tags", false);
-toggleResults("results-users", false);
+toggleResults("results-tags", true);
+toggleResults("results-users", true);
 toggleResults("results-snippets", true);
-toggleResults("results-similar", true);
-allResults.hide();
-
-$(".results-section > .level").on("click", function (event) {
-  const id = $(event.currentTarget).parent().find(".results-container")[0].id;
-  toggleResults(id);
-});
+toggleResults("results-similar", false);
+toggleResults("results-shared", true);
 
 $(function () {
   // Start search after the user stops typing
@@ -39,6 +43,38 @@ $(function () {
   });
 });
 
+$(async function () {
+  try {
+    const searchUrl = new URL(script_root + "/defaultView", location.href);
+    popValues = await fetch(searchUrl).then((response) => response.json());
+    populateResults(popValues);
+    popText();
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    snippetResults.text("Error occurred while searching.");
+  }
+});
+
+$(function () {
+  attachTagListeners(); // Ensure initial tags are clickable
+
+  // Start a search if present in URL
+  const query = new URLSearchParams(window.location.search).get("q");
+  if (query) {
+    // Hide similar results when linked to a specific tag
+    if (query.includes("+") || query.includes("-") || query.includes("@"))
+      toggleResults("results-similar", false);
+
+    $("#search-input").val(query);
+    doSearch();
+  }
+});
+
+$(".results-section > .level").on("click", function (event) {
+  const id = $(event.currentTarget).parent().find(".results-container")[0].id;
+  toggleResults(id);
+});
+
 /**
  * Start a search immediately, updating search results when complete.
  */
@@ -48,9 +84,17 @@ async function doSearch() {
 
   // Don't search if input is empty
   if (!query.trim()) {
-    allResults.hide();
+    populateResults(popValues);
+    history.pushState(null, "", "/");
+    popText();
     return;
   }
+
+  toggleResults("results-tags", false);
+  toggleResults("results-users", false);
+  toggleResults("results-snippets", true);
+  toggleResults("results-similar", false);
+  toggleResults("results-shared", false);
 
   searchInput.parent().addClass("is-loading");
 
@@ -60,6 +104,12 @@ async function doSearch() {
   searchUrl.searchParams.append("public", 1);
   pendingSearchUrl = searchUrl;
 
+  //update url to match current search
+  const newUrl = new URL(script_root + "/", location.href);
+  newUrl.searchParams.append("q", query);
+  newUrl.searchParams.append("public", 1);
+  history.pushState(null, "", newUrl);
+
   try {
     const json = await fetch(searchUrl).then((response) => response.json());
     allResults.show();
@@ -67,33 +117,7 @@ async function doSearch() {
     // Ignore results if another search is pending
     if (searchUrl !== pendingSearchUrl) return;
 
-    $(".results-container").empty();
-
-    // Tag text matches
-    tagCount.text(json.tags.length);
-    for (const tag of json.tags) createTag(tag).appendTo(tagResults);
-    if (!json.tags.length) tagResults.hide();
-    else tagResults.show();
-
-    // Username matches
-    userCount.text(json.users.length);
-    for (const user of json.users) createUserCard(user).appendTo(userResults);
-    if (!json.users.length) userResults.hide();
-    else userResults.show();
-
-    // Name match snippet cards
-    snippetCount.text(json.snippets.length);
-    for (const snippet of json.snippets)
-      createSnippet(snippet).appendTo(snippetResults);
-    if (!json.snippets.length) snippetResults.hide();
-    else snippetResults.show();
-
-    // Similar description snippet cards
-    similarCount.text(json.similar.length);
-    for (const snippet of json.similar)
-      createSnippet(snippet).appendTo(similarResults);
-    if (!json.similar.length) similarResults.hide();
-    else similarResults.show();
+    populateResults(json);
 
     attachTagListeners(); // Ensure tags are clickable after search results update
   } catch (error) {
@@ -274,17 +298,53 @@ function toggleSearch() {
   changeTitle();
 }
 
-$(function () {
-  attachTagListeners(); // Ensure initial tags are clickable
+/**
+ * Populates Search Categories w/ Results
+ * @param {*} json Takes in search results
+ */
+function populateResults(json) {
+  $(".results-container").empty();
 
-  // Start a search if present in URL
-  const query = new URLSearchParams(window.location.search).get("q");
-  if (query) {
-    // Hide similar results when linked to a specific tag
-    if (query.includes("+") || query.includes("-") || query.includes("@"))
-      toggleResults("results-similar", false);
+  // Tag text matches
+  tagCount.text(json.tags.length);
+  for (const tag of json.tags) createTag(tag).appendTo(tagResults);
+  if (!json.tags.length) tagDiv.hide();
+  else tagDiv.show();
 
-    $("#search-input").val(query);
-    doSearch();
-  }
-});
+  // Username matches
+  userCount.text(json.users.length);
+  for (const user of json.users) createUserCard(user).appendTo(userResults);
+  if (!json.users.length) userDiv.hide();
+  else userDiv.show();
+
+  // Name match snippet cards
+  snippetCount.text(json.snippets.length);
+  for (const snippet of json.snippets)
+    createSnippet(snippet).appendTo(snippetResults);
+  if (!json.snippets.length) snippetDiv.hide();
+  else snippetDiv.show();
+
+  // Similar description snippet cards
+  if (json.similar && json.similar.length) {
+    similarDiv.show();
+    similarCount.text(json.similar.length);
+    for (const snippet of json.similar)
+      createSnippet(snippet).appendTo(similarResults);
+  } else similarDiv.hide();
+  
+  if (json.shared && json.shared.length) {
+    sharedDiv.show();
+    sharedResults.text(json.shared.length);
+    for (const snippet of json.shared)
+      createSnippet(snippet).appendTo(sharedResults);
+  } else sharedDiv.hide();
+}
+
+/**
+ * Change Default Category Display
+ */
+function popText() {
+  tagCount.text("Popular Tags");
+  userCount.text("Most Liked Users");
+  snippetCount.text("Most Liked Snippets");
+}
