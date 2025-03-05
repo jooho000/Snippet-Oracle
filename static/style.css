@@ -174,3 +174,7 @@
   background-color: transparent;
   padding: 0;
 }
+
+.user-card-name-container {
+  overflow: visible;
+}
