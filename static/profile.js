@@ -20,6 +20,15 @@ function addSocialLink() {
   container.appendChild(newField);
 }
 
+function isValidURL(url) {
+  try {
+    const parsedURL = new URL(url);
+    return parsedURL.protocol === "http:" || parsedURL.protocol === "https:";
+  } catch (e) {
+    return false;
+  }
+}
+
 function previewImage(event) {
   const file = event.target.files[0];
 
@@ -74,6 +83,15 @@ function previewImage(event) {
 function submitProfileForm(event) {
   event.preventDefault();
   const form = document.getElementById("edit-profile-form");
+  const socialLinks = document.getElementsByName("links");
+
+  for (let linkInput of socialLinks) {
+    let url = linkInput.value.trim();
+    if (url && !isValidURL(url)) {
+      alert(`Invalid URL: ${url}. Ensure it starts with http:// or https://`);
+      return;
+    }
+  }
 
   if (cropper) {
     const croppedCanvas = cropper.getCroppedCanvas({

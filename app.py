@@ -201,6 +201,16 @@ def profile(username=None):
         links = flask.request.form.getlist("links")
         profile_picture_base64 = flask.request.form.get("profile_picture_base64")
 
+        # Validate URLs before storing
+        validated_links = []
+        for link in links:
+            link = link.strip()
+            if link:
+                if not is_valid_url(link):
+                    flask.flash(f"Invalid URL: {link}. Ensure it starts with http:// or https://", "danger")
+                    return flask.redirect(flask.request.url)
+                validated_links.append(link)
+
         # Handle base64-encoded image
         if profile_picture_base64:
             header, encoded_image = profile_picture_base64.split(",", 1)
@@ -243,7 +253,7 @@ def profile(username=None):
 
         # Clear existing links and insert updated links
         cur.execute("DELETE FROM Links WHERE UserID = ?", [user_id])
-        for link in links:
+        for link in validated_links:
             if link.strip():
                 cur.execute(
                     "INSERT INTO Links (UserID, Platform, URL) VALUES (?, ?, ?)",
@@ -256,11 +266,6 @@ def profile(username=None):
     # Fetch social links
     cur.execute("SELECT Platform, URL FROM Links WHERE UserID = ?", [user_id])
     user_links = cur.fetchall()
-
-    # Fetch Snippets with Pagination
-    page = int(flask.request.args.get("page", 1))
-    limit = 10
-    offset = (page - 1) * limit
 
     # Fetch all snippets if owner, only public snippets if visitor
     viewer_id = (
@@ -282,10 +287,17 @@ def profile(username=None):
         user=user_details,
         links=user_links,
         snippets=user_snippets,
-        page=page,
-        is_owner=is_owner,  # Pass flag to template
+        is_owner=is_owner,
         get_social_icon=get_social_icon,
     )
+
+
+def is_valid_url(url):
+    """
+    Ensure the URL has a valid scheme (http or https).
+    """
+    parsed_url = urlparse(url)
+    return parsed_url.scheme in {"http", "https"}
 
 
 # Helper function to get social media platform icon
@@ -299,6 +311,10 @@ def get_social_icon(url):
         "facebook.com": "/static/icons/facebook.png",
         "instagram.com": "/static/icons/instagram.png",
         "youtube.com": "/static/icons/youtube.png",
+        "tiktok.com": "/static/icons/tiktok.png",
+        "reddit.com": "/static/icons/reddit.png",
+        "twitch.tv": "/static/icons/twitch.png",
+        "twitch.com": "/static/icons/twitch.png",
     }
 
     # Check the domain of the URL to match with social platforms
