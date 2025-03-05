@@ -4,7 +4,7 @@
 {% block content %}
   <section class="section">
     <div class = "container">
-      <div class="columns is-mobile is-vcentered">
+      <div class="columns is-mobile is-vcentered mb-0">
         <div class="column is-narrow">
           <h1 class="title">{{ snippet["name"] }}</h1>
         </div>
@@ -17,6 +17,9 @@
             <span>Private</span>
           {% endif %}
         </div>
+      </div>
+      <div class="mb-4">
+        <small class="subtitle is-6 timestamp" data-timestamp="{{ snippet['date'] }}"></small>
       </div>
       <!-- Show parent snippet button if this is a remix -->
       {% if snippet.parent_snippet_id is not none %}
@@ -31,13 +34,10 @@
         </div>
       {% endif %}
       <!-- Snippet Content -->
-      <pre><code id="snippet-code" data-code='{{ snippet.get('code', None) }}'>{{ snippet["code"] }}</code></pre>
-      <p>
+      <pre class="code-container block"><code id="snippet-code" data-code='{{ snippet.get('code', None) }}' class="hljs">{{ snippet["code"] }}</code></pre>
+      <div class="block">
         <strong>Description:</strong> {{ snippet["description"] }}
-      </p>
-      <p>
-        <strong>Created at:</strong> {{ snippet["date"] }}
-      </p>
+      </div>
       <div class="snippet-card-tags tags-container tags">
         {% if snippet["tags"] %}
           <strong>Tags:</strong>
@@ -101,7 +101,7 @@
               </figure>
               <div class="media-content">
                 <div class="content">
-                  <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-white">
+                  <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-current">
                     <strong>{{ comment["user_name"] }}</strong>
                   </a>
                   <small class="has-text-grey-light timestamp"
@@ -166,7 +166,7 @@
                         </figure>
                         <div class="media-content">
                           <div class="content">
-                            <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-white">
+                            <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-current">
                               <strong>{{ reply["user_name"] }}</strong>
                             </a>
                             <small class="has-text-grey-light timestamp"

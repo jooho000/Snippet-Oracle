@@ -59,11 +59,13 @@ async function confirmCommentDelete(id) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".timestamp").forEach(function (element) {
+// Format all timestamps on the page
+$(function () {
+  for (const element of $(".timestamp")) {
     let timestamp = element.dataset.timestamp;
     element.textContent = timeAgo(timestamp);
-  });
+    element.title = parseDate(timestamp).toLocaleString();
+  }
 });
 
 function updateCharacterCount(inputId, countDisplayId) {

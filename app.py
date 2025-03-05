@@ -521,10 +521,12 @@ def search_snippets():
         public=public,
     )
 
+    advanced = include_tags or exclude_tags or usernames
+
     return jsonify(
         {
-            "tags": list(include_tags) if include_tags else get_db().search_tags(query),
-            "users": get_db().search_users(query),
+            "tags": get_db().search_tags(query) if not advanced else [],
+            "users": get_db().search_users(query) if not advanced else [],
             "snippets": search_results,
             "similar": get_db().smart_search_snippets(query),
         }
