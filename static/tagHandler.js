@@ -74,6 +74,8 @@ $(function () {
   function addTag(tagText) {
     tagText = tagText.trim();
 
+    if (tagText === "") return;
+
     if (tags.length >= MAX_TAGS) {
       alert(`You can only add up to ${MAX_TAGS} tags.`);
       return;
@@ -119,6 +121,11 @@ $(function () {
   tagInput.on("keydown", function (event) {
     if ((event.key === "Enter" || event.key === ",") && tags.length < MAX_TAGS) {
       event.preventDefault();
+      if (tagInput.val().trim() === "") {
+        tagInput.attr("placeholder", "Cannot add an empty tag");
+        return;
+      }
+
       addTag(tagInput.val());
       dropdown.removeClass("is-active");
     }
@@ -153,6 +160,12 @@ $(function () {
 
   updateTagCount();
   resetTagCharCounter();
+
+  tagInput.closest("form").on("keydown", function (event) {
+    if (event.key === "Enter" && tagInput.is(":focus")) {
+      event.preventDefault();
+    }
+  });
 
   // $(document).on("click", function () {
   //   dropdown.removeClass("is-active");

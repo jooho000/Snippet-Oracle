@@ -35,6 +35,14 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # Limit file size to 16 MB
 
 
+MAX_NAME_LENGTH = 100
+MAX_DESCRIPTION_LENGTH = 1000
+MAX_CODE_LENGTH = 5000
+MAX_TAG_INPUT_LENGTH = 20
+MAX_TAG_COUNT = 15
+MAX_BIO_LENGTH = 250
+
+
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -208,6 +216,11 @@ def profile(username=None):
         links = flask.request.form.getlist("links")
         profile_picture_base64 = flask.request.form.get("profile_picture_base64")
 
+        # Validate bio length
+        if len(bio) > MAX_BIO_LENGTH:
+            flask.flash("Bio cannot exceed 250 characters!", "warning")
+            return flask.redirect(flask.request.url)
+
         # Validate URLs before storing
         validated_links = []
         for link in links:
@@ -357,6 +370,29 @@ def createSnippet(snippet_id=None):
         tags = flask.request.form.get("tags", "")
         is_public = flask.request.form.get("is_public") == "1"
         user_id = flask_login.current_user.id
+
+        # Validate input lengths
+        if len(name) > MAX_NAME_LENGTH:
+            flask.flash("Snippet name cannot exceed 100 characters!", "warning")
+            return flask.redirect(flask.url_for("createSnippet"))
+
+        if len(description) > MAX_DESCRIPTION_LENGTH:
+            flask.flash("Description cannot exceed 1000 characters!", "warning")
+            return flask.redirect(flask.url_for("createSnippet"))
+
+        if len(code) > MAX_CODE_LENGTH:
+            flask.flash("Code cannot exceed 5000 characters!", "warning")
+            return flask.redirect(flask.url_for("createSnippet"))
+
+        if tags:
+            tag_list = set(tags.replace(" ", "").split(","))
+            if any(len(tag) > MAX_TAG_INPUT_LENGTH for tag in tag_list):
+                flask.flash(f"Each tag cannot exceed {MAX_TAG_INPUT_LENGTH} characters!", "warning")
+                return flask.redirect(flask.url_for("createSnippet"))
+
+            if len(tag_list) > MAX_TAG_COUNT:
+                flask.flash(f"You can only have up to {MAX_TAG_COUNT} tags!", "warning")
+                return flask.redirect(flask.url_for("createSnippet"))
 
         try:
             permitted_users = flask.request.form.getlist("permitted_users[]")
