@@ -169,3 +169,8 @@
   justify-content: flex-end;
   margin-top: 0px;
 }
+
+.code-container {
+  background-color: transparent;
+  padding: 0;
+}

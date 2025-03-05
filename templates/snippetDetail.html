@@ -31,7 +31,7 @@
         </div>
       {% endif %}
       <!-- Snippet Content -->
-      <pre><code id="snippet-code">{{ snippet["code"] }}</code></pre>
+      <pre class="code-container"><code id="snippet-code" class="hljs">{{ snippet["code"] }}</code></pre>
       <p>
         <strong>Description:</strong> {{ snippet["description"] }}
       </p>
@@ -101,7 +101,7 @@
               </figure>
               <div class="media-content">
                 <div class="content">
-                  <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-white">
+                  <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-current">
                     <strong>{{ comment["user_name"] }}</strong>
                   </a>
                   <small class="has-text-grey-light timestamp"
@@ -166,7 +166,7 @@
                         </figure>
                         <div class="media-content">
                           <div class="content">
-                            <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-white">
+                            <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-current">
                               <strong>{{ reply["user_name"] }}</strong>
                             </a>
                             <small class="has-text-grey-light timestamp"

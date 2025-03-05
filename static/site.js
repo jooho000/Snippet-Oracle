@@ -167,59 +167,52 @@ async function toggleLike(id) {
   fetch(script_root + `/likes/${id}`, options).catch(console.error);
 }
 
-$(function () {
-  // Apply code highlighting
-  hljs.highlightAll();
+// Apply code highlighting
+hljs.highlightAll();
 
-  // Manage burger menu
-  const navbarBurger = $(".navbar-burger");
-  const navbarMenu = $("#navbarBasic");
+// Manage burger menu
+const navbarBurger = $(".navbar-burger");
+const navbarMenu = $("#navbarBasic");
 
-  if (navbarBurger.length) {
-    navbarBurger.on("click", () => {
-      navbarBurger.toggleClass("is-active");
-      navbarMenu.toggleClass("is-active");
-    });
-  }
-
-  // Manage dark and light themes
-  const themeButton = $("#theme-button");
-  const themeIcon = themeButton.children("span");
-  let theme = null;
-
-  function setTheme(newTheme) {
-    theme = newTheme;
-    sessionStorage.setItem("theme", theme);
-    $("html").removeClass("theme-dark theme-light");
-    if (theme !== null) $("html").addClass("theme-" + theme);
-
-    themeIcon.removeClass("fa-sun fa-moon fa-lightbulb");
-    switch (theme) {
-      case "dark":
-        themeIcon.addClass("fa-moon");
-        break;
-      case "light":
-        themeIcon.addClass("fa-sun");
-        break;
-      default:
-        themeIcon.addClass("fa-lightbulb");
-        break;
-    }
-  }
-
-  setTheme(sessionStorage.getItem("theme"));
-
-  themeButton.on("click", (_) => {
-    switch (theme) {
-      case "dark":
-        setTheme("light");
-        break;
-      case "light":
-        setTheme(null);
-        break;
-      default:
-        setTheme("dark");
-        break;
-    }
+if (navbarBurger.length) {
+  navbarBurger.on("click", () => {
+    navbarBurger.toggleClass("is-active");
+    navbarMenu.toggleClass("is-active");
   });
+}
+
+// Manage dark and light themes
+const themeButton = $("#theme-button");
+const themeIcon = themeButton.children("span");
+let theme = null;
+
+function setTheme(newTheme) {
+  theme = newTheme;
+  sessionStorage.setItem("theme", theme);
+  $("html").removeClass("theme-dark theme-light");
+  if (theme !== null) $("html").addClass("theme-" + theme);
+
+  themeIcon.removeClass("fa-sun fa-moon fa-lightbulb");
+  switch (theme) {
+    case "dark":
+      themeIcon.addClass("fa-moon");
+      break;
+    case "light":
+      themeIcon.addClass("fa-sun");
+      break;
+  }
+}
+
+setTheme(sessionStorage.getItem("theme") || "dark");
+
+themeButton.on("click", (_) => {
+  switch (theme) {
+    default:
+    case "dark":
+      setTheme("light");
+      break;
+    case "light":
+      setTheme("dark");
+      break;
+  }
 });

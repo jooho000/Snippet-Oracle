@@ -401,7 +401,7 @@ def view_snippet(snippet_id):
     current_user_id = None
     if flask_login.current_user.is_authenticated:
         current_user_id = flask_login.current_user.id
-    elif get_db().get_snippet_isPublic(snippet_id):
+    elif not get_db().get_snippet_isPublic(snippet_id):
         return auth.login_manager.unauthorized()
 
     snippet = get_db().get_snippet(snippet_id, current_user_id)
@@ -477,10 +477,12 @@ def search_snippets():
         public=public,
     )
 
+    advanced = include_tags or exclude_tags or usernames
+
     return jsonify(
         {
-            "tags": list(include_tags) if include_tags else get_db().search_tags(query),
-            "users": get_db().search_users(query),
+            "tags": get_db().search_tags(query) if not advanced else [],
+            "users": get_db().search_users(query) if not advanced else [],
             "snippets": search_results,
             "similar": get_db().smart_search_snippets(query),
         }
