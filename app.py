@@ -95,6 +95,13 @@ def login():
 
         user = auth.try_login(username, password)
 
+        # Validate username and password
+        username_error = auth.get_username_error(username)
+        password_error = auth.get_password_error(password)
+
+        if username_error or password_error is not None:
+            flask.flash("Invalid username or password!", "warning")
+            return flask.render_template("login.html", username=username)
         if username is None or username == "":
             flask.flash("Input a username!", "warning")
         elif password is None or password == "":
@@ -123,7 +130,7 @@ def signup():
     elif flask.request.method == "POST":
         username = flask.request.form.get("username")
         password = flask.request.form.get("password")
-        repeat_password = flask.request.form.get("repeatPassword")
+        repeat_password = flask.request.form.get("repeatPassword")\
 
         # Allow logging in, if the user is on this page by mistake
         user = auth.try_login(username, password)
@@ -399,9 +406,10 @@ def createSnippet(snippet_id=None):
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 def view_snippet(snippet_id):
     current_user_id = None
+    print(get_db().get_snippet_isPublic(snippet_id))
     if flask_login.current_user.is_authenticated:
         current_user_id = flask_login.current_user.id
-    elif get_db().get_snippet_isPublic(snippet_id):
+    elif not get_db().get_snippet_isPublic(snippet_id):
         return auth.login_manager.unauthorized()
 
     snippet = get_db().get_snippet(snippet_id, current_user_id)
