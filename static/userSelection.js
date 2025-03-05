@@ -135,6 +135,12 @@ $(function () {
     });
   }
 
+  userSearch.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+    }
+  });
+
   // Listen to search input
   userSearch.addEventListener("input", function () {
     renderUserList(userSearch.value.trim());
