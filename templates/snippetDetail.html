@@ -109,6 +109,7 @@
                   <p>{{ comment["content"]}}</p>
                 </div>
                 <!-- Comment Actions -->
+                {% if current_user.is_authenticated %}
                 <nav class="level is-mobile">
                   <div class="level-left">
                     <a class="level-item" onclick="toggleReplyForm('{{ comment['id'] }}')">
@@ -126,6 +127,7 @@
                     {% endif %}
                   </div>
                 </nav>
+                {% endif %}
                 {% if current_user.is_authenticated %}
                   <!-- Reply Form -->
                   <div id="reply-form-{{ comment['id'] }}" class="reply-form is-hidden">

@@ -654,7 +654,7 @@ def delete_comment(comment_id):
     comment = get_db().get_comment_by_id(comment_id)
 
     # Get the snippet details to get snippet author
-    snippet = get_db().get_snippet(comment["snippet_id"])
+    snippet = get_db().get_snippet(comment["snippet_id"], current_user_id)
 
     # Checks if the current user is the comment/snippet author
     if comment["user_id"] != int(current_user_id) and snippet["user_id"] != int(
