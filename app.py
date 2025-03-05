@@ -102,7 +102,7 @@ def login():
         password = flask.request.form.get("password")
 
         user = auth.try_login(username, password)
-        
+
         if username is None or username == "":
             flask.flash("Input a username!", "warning")
         elif password is None or password == "":
@@ -131,7 +131,7 @@ def signup():
     elif flask.request.method == "POST":
         username = flask.request.form.get("username")
         password = flask.request.form.get("password")
-        repeat_password = flask.request.form.get("repeatPassword")\
+        repeat_password = flask.request.form.get("repeatPassword")
 
         # Allow logging in, if the user is on this page by mistake
         user = auth.try_login(username, password)
@@ -220,7 +220,10 @@ def profile(username=None):
             link = link.strip()
             if link:
                 if not is_valid_url(link):
-                    flask.flash(f"Invalid URL: {link}. Ensure it starts with http:// or https://", "danger")
+                    flask.flash(
+                        f"Invalid URL: {link}. Ensure it starts with http:// or https://",
+                        "danger",
+                    )
                     return flask.redirect(flask.request.url)
                 validated_links.append(link)
 
@@ -380,7 +383,10 @@ def createSnippet(snippet_id=None):
         if tags:
             tag_list = set(tags.replace(" ", "").split(","))
             if any(len(tag) > MAX_TAG_INPUT_LENGTH for tag in tag_list):
-                flask.flash(f"Each tag cannot exceed {MAX_TAG_INPUT_LENGTH} characters!", "warning")
+                flask.flash(
+                    f"Each tag cannot exceed {MAX_TAG_INPUT_LENGTH} characters!",
+                    "warning",
+                )
                 return flask.redirect(flask.url_for("createSnippet"))
 
             if len(tag_list) > MAX_TAG_COUNT:
@@ -435,7 +441,7 @@ def createSnippet(snippet_id=None):
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 def view_snippet(snippet_id):
     current_user_id = None
-    print(get_db().get_snippet_isPublic(snippet_id))
+
     if flask_login.current_user.is_authenticated:
         current_user_id = flask_login.current_user.id
     elif not get_db().get_snippet_isPublic(snippet_id):
@@ -478,6 +484,7 @@ def update_snippet_visibility(snippet_id):
     flask.flash("Snippet visibility updated!", "success")
 
     return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+
 
 @app.route("/search/", methods=["GET"])
 def search_snippets():
