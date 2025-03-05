@@ -682,11 +682,12 @@ class Data:
         public=True,
     ):
         """
-        Searches snippets based on:
-        - Prioritizes name matches before description matches.
-        - Breaks ties using likes.
-        - Exact (case-insensitive) match for authors; falls back to similar matches if no exact match.
-        - Prioritizes exact tag matches, falls back to prefix match if no exact matches exist.
+        Performs an AND-based search on snippets.
+
+        - Returns only snippets that match ALL provided terms, tags, and usernames.
+        - If multiple search terms are provided, they must ALL appear in either name or description.
+        - If multiple tags are provided, the snippet must have ALL the specified tags.
+        - If multiple usernames are provided, the snippet must be owned by one of them.
         """
 
         if isinstance(terms, str):
@@ -707,92 +708,42 @@ class Data:
         params = []
         cur = self._db.cursor()
 
-        # Name & Description - Fuzzy Search (Prioritize Name Matches)
-        name_priority = "0 AS name_priority"
+        # AND-based Name & Description search
         if terms:
-            name_priority = "CASE WHEN LOWER(Snippet.Name) LIKE LOWER(?) THEN 1 ELSE 0 END AS name_priority"
-            params.append("%" + " ".join(terms) + "%")
-            fuzzy_match = " OR ".join(
+            term_conditions = " AND ".join(
                 [
                     "(LOWER(Snippet.Name) LIKE LOWER(?) OR LOWER(Snippet.Description) LIKE LOWER(?))"
                 ]
                 * len(terms)
             )
-            queries.append(f"({fuzzy_match})")
+            queries.append(f"({term_conditions})")
             for term in terms:
-                params.extend([f"%{term}%"] * 2)
+                params.extend([f"%{term}%", f"%{term}%"])  # Both for name and description
 
-        # Case-Insensitive User Search (Exact First, Then Fallback to Similar)
+        # AND-based User filtering
         if usernames:
-            exact_user_query = """
-                SELECT COUNT(*) FROM User WHERE LOWER(Name) IN ({})
-            """.format(",".join(["?"] * len(usernames)))
+            queries.append(
+                f"Snippet.UserID IN (SELECT ID FROM User WHERE LOWER(Name) IN ({','.join(['?'] * len(usernames))}))"
+            )
+            params.extend(usernames)
 
-            cur.execute(exact_user_query, usernames)
-            exact_user_count = cur.fetchone()[0]
-
-            if exact_user_count > 0:
-                # If exact match exists, return only snippets from the exact user
-                queries.append(
-                    """
-                    Snippet.UserID IN (
-                        SELECT ID FROM User WHERE LOWER(Name) IN ({})
-                    )
-                """.format(",".join(["?"] * len(usernames)))
-                )
-                params.extend(usernames)
-            else:
-                # If no exact match, fall back to similar username search
-                queries.append("""
-                    Snippet.UserID IN (
-                        SELECT ID FROM User WHERE LOWER(Name) LIKE LOWER(?)
-                    )
-                """)
-                params.append(
-                    f"%{usernames[0]}%"
-                )  # Use the first username for fuzzy matching
-
-        # Tag Filtering (Exact Match First, Prefix Match if No Exact Matches Found)
+        # AND-based Tag Filtering (Must Contain All Tags)
         if include_tags:
-            exact_match_query = """
-                SELECT COUNT(*) FROM Snippet
-                WHERE Snippet.ID IN (
-                    SELECT SnippetID FROM TagUse WHERE LOWER(TagName) IN ({})
-                )
-            """.format(",".join(["?"] * len(include_tags)))
+            tag_query = " AND ".join(
+                [
+                    "Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) = ?)"
+                ]
+                * len(include_tags)
+            )
+            queries.append(f"({tag_query})")
+            params.extend(include_tags)
 
-            exact_params = list(include_tags)
-            cur.execute(exact_match_query, exact_params)
-            exact_match_count = cur.fetchone()[0]
-
-            if exact_match_count > 0:
-                queries.append(
-                    """
-                    Snippet.ID IN (
-                        SELECT SnippetID FROM TagUse WHERE LOWER(TagName) IN ({})
-                    )
-                """.format(",".join(["?"] * len(include_tags)))
-                )
-                params.extend(exact_params)
-            else:
-                # If no exact matches, fall back to prefix search
-                prefix_conditions = ["LOWER(TagName) LIKE LOWER(?)"] * len(include_tags)
-                prefix_match_query = """
-                    Snippet.ID IN (
-                        SELECT SnippetID FROM TagUse WHERE {}
-                    )
-                """.format(" OR ".join(prefix_conditions))
-
-                prefix_params = [tag + "%" for tag in include_tags]
-                queries.append(prefix_match_query)
-                params.extend(prefix_params)
-
-        # Handle Exclude Tags (-tag)
+        # Exclude tags filtering (-tag)
         if exclude_tags:
             exclude_tags_match = ",".join(["?"] * len(exclude_tags))
             queries.append(f"""
                 Snippet.ID NOT IN (
-                    SELECT DISTINCT SnippetID FROM TagUse WHERE LOWER(TagUse.TagName) IN ({exclude_tags_match})
+                    SELECT DISTINCT SnippetID FROM TagUse WHERE LOWER(TagName) IN ({exclude_tags_match})
                 )
             """)
             params.extend(exclude_tags)
@@ -812,19 +763,16 @@ class Data:
 
         # Ensure there's at least one condition to prevent empty WHERE clause
         if not queries:
-            queries.append(
-                "1=1"
-            )  # This prevents SQL syntax errors if no filters are applied
+            queries.append("1=1")  # This prevents SQL syntax errors if no filters are applied
 
         # Final SQL query with ordering: Name Matches First, Then Sort by Likes
         query = f"""
             SELECT Snippet.ID, Snippet.Name, Snippet.Code, Snippet.Description,
                 Snippet.UserID, Snippet.ParentSnippetID, Snippet.Date, Snippet.IsPublic,
-                (SELECT COUNT(*) FROM Like WHERE Like.SnippetID = Snippet.ID) AS like_count,
-                {name_priority}
+                (SELECT COUNT(*) FROM Like WHERE Like.SnippetID = Snippet.ID) AS like_count
             FROM Snippet
             WHERE {" AND ".join(queries)}
-            ORDER BY name_priority DESC, like_count DESC, Snippet.Date DESC
+            ORDER BY like_count DESC, Snippet.Date DESC
             LIMIT 50
         """
 
@@ -846,14 +794,13 @@ class Data:
                     "is_public": bool(res[7]),
                     "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
                     "likes": res[8],  # Sort by like count
-                    "is_liked": self.is_liked(
-                        res[0], viewer_id
-                    ),  # Check if the user liked it
+                    "is_liked": self.is_liked(res[0], viewer_id),  # Check if the user liked it
                     "author": user_details,  # Attach user details
                 }
             )
 
         return snippets_list
+
 
     def smart_search_snippets(self, query, viewer_id=None):
         """

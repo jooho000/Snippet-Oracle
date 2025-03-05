@@ -220,7 +220,10 @@ def profile(username=None):
             link = link.strip()
             if link:
                 if not is_valid_url(link):
-                    flask.flash(f"Invalid URL: {link}. Ensure it starts with http:// or https://", "danger")
+                    flask.flash(
+                        f"Invalid URL: {link}. Ensure it starts with http:// or https://",
+                        "danger",
+                    )
                     return flask.redirect(flask.request.url)
                 validated_links.append(link)
 
@@ -380,7 +383,10 @@ def createSnippet(snippet_id=None):
         if tags:
             tag_list = set(tags.replace(" ", "").split(","))
             if any(len(tag) > MAX_TAG_INPUT_LENGTH for tag in tag_list):
-                flask.flash(f"Each tag cannot exceed {MAX_TAG_INPUT_LENGTH} characters!", "warning")
+                flask.flash(
+                    f"Each tag cannot exceed {MAX_TAG_INPUT_LENGTH} characters!",
+                    "warning",
+                )
                 return flask.redirect(flask.url_for("createSnippet"))
 
             if len(tag_list) > MAX_TAG_COUNT:
@@ -435,6 +441,7 @@ def createSnippet(snippet_id=None):
 @app.route("/snippet/<int:snippet_id>", methods=["GET"])
 def view_snippet(snippet_id):
     current_user_id = None
+
     if flask_login.current_user.is_authenticated:
         current_user_id = flask_login.current_user.id
     elif not get_db().get_snippet_isPublic(snippet_id):
@@ -477,6 +484,7 @@ def update_snippet_visibility(snippet_id):
     flask.flash("Snippet visibility updated!", "success")
 
     return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
+
 
 @app.route("/search", methods=["GET"])
 def search_snippets():
@@ -650,7 +658,7 @@ def delete_comment(comment_id):
     comment = get_db().get_comment_by_id(comment_id)
 
     # Get the snippet details to get snippet author
-    snippet = get_db().get_snippet(comment["snippet_id"])
+    snippet = get_db().get_snippet(comment["snippet_id"], current_user_id)
 
     # Checks if the current user is the comment/snippet author
     if comment["user_id"] != int(current_user_id) and snippet["user_id"] != int(
