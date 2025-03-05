@@ -31,7 +31,7 @@
         </div>
       {% endif %}
       <!-- Snippet Content -->
-      <pre><code id="snippet-code">{{ snippet["code"] }}</code></pre>
+      <pre><code id="snippet-code" data-code='{{ snippet.get('code', None) }}'>{{ snippet["code"] }}</code></pre>
       <p>
         <strong>Description:</strong> {{ snippet["description"] }}
       </p>
@@ -50,7 +50,7 @@
         <div class="control">
           <div class="level is-mobile">
             <div class = "level-left">
-              <button class="button level-item is-link" id="copyButton">Copy Code</button>
+              <button class="button level-item is-link" id="copyButton"  onclick="copySnippet($('#snippet-code'))">Copy Code</button>
               {% set id = current_user.get_id() | int if current_user.is_authenticated else None %}
               {% if current_user.is_authenticated and snippet["user_id"] == id %}
                 <a class="button level-item is-link"
@@ -242,14 +242,5 @@
 {% endblock %}
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='copy.js') }}"></script>
   <script src="{{ url_for('static', filename='comments.js') }}"></script>
-  <script>
-  document.getElementById("copyShareLink")?.addEventListener("click", function() {
-    const input = document.getElementById("shareableLink");
-    input.select();
-    document.execCommand("copy");
-    alert("Shareable link copied!");
-  });
-  </script>
 {% endblock %}

@@ -102,14 +102,7 @@ def login():
         password = flask.request.form.get("password")
 
         user = auth.try_login(username, password)
-
-        # Validate username and password
-        username_error = auth.get_username_error(username)
-        password_error = auth.get_password_error(password)
-
-        if username_error or password_error is not None:
-            flask.flash("Invalid username or password!", "warning")
-            return flask.render_template("login.html", username=username)
+        
         if username is None or username == "":
             flask.flash("Input a username!", "warning")
         elif password is None or password == "":
