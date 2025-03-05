@@ -989,12 +989,14 @@ class Data:
         cur = self._db.cursor()
         cur.execute(
             """
-            SELECT 1 FROM SnippetPermissions
-            WHERE SnippetID = ? AND UserID = ?
+            SELECT IsPublic OR P.UserID FROM Snippet as S
+            LEFT JOIN SnippetPermissions AS P ON P.SnippetID = S.ID AND P.UserID = ?
+            WHERE S.ID = ?
             """,
-            [snippet_id, user_id],
+            [user_id, snippet_id],
         )
-        return cur.fetchone() is not None
+        result = cur.fetchone()
+        return result is not None and result[0]
 
     def get_snippets_user_has_access_to(self, user_id):
         """

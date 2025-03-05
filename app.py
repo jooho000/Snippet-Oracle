@@ -478,7 +478,7 @@ def update_snippet_visibility(snippet_id):
 
     return flask.redirect(flask.url_for("view_snippet", snippet_id=snippet_id))
 
-@app.route("/search/", methods=["GET"])
+@app.route("/search", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "").strip()
     public = request.args.get("public") == "1"
@@ -616,6 +616,10 @@ def delete_snippet(snippet_id):
 @app.route("/snippet/<int:snippet_id>/comment", methods=["POST"])
 @flask_login.login_required
 def add_comment(snippet_id):
+    if not get_db().user_has_permission(snippet_id, flask_login.current_user.id):
+        flask.flash("Unauthorized or snippet not found!", "danger")
+        return flask.redirect(flask.url_for("index"))
+    
     comment_content = flask.request.form.get("comment")
     parent_id = flask.request.form.get("parent_id")
 
@@ -664,21 +668,21 @@ def delete_comment(comment_id):
     )
 
 
-@app.route("/likes/<int:snippet_id>", methods=["POST"])
+@app.route("/likes/<int:snippet_id>", methods=["PUT"])
 @flask_login.login_required
 def add_like(snippet_id):
-    """Adds a like to a snippet for the current user."""
-    get_db().add_like(snippet_id, flask_login.current_user.id)
-    likes = get_db().get_likes(snippet_id)
-    return jsonify({likes: likes})
+    """Adds or removes a like to a snippet for the current user."""
 
+    if not get_db().user_has_permission(snippet_id, flask_login.current_user.id):
+        return flask.abort(403)
 
-@app.route("/likes/<int:snippet_id>", methods=["DELETE"])
-@flask_login.login_required
-def remove_like(snippet_id):
-    """Removes the current user's like from a snippet."""
-    get_db().remove_like(snippet_id, flask_login.current_user.id)
-    likes = get_db().get_likes(snippet_id)
+    if request.json["like"]:
+        get_db().add_like(snippet_id, flask_login.current_user.id)
+        likes = get_db().get_likes(snippet_id)
+    else:
+        get_db().remove_like(snippet_id, flask_login.current_user.id)
+        likes = get_db().get_likes(snippet_id)
+
     return jsonify({likes: likes})
 
 
