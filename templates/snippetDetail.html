@@ -3,7 +3,7 @@
 {% block title %}{{ snippet["name"] }} - Snippet Oracle{% endblock %}
 {% block content %}
   <section class="section">
-    <div class = "container">
+    <div class="container">
       <div class="columns is-mobile is-vcentered mb-0">
         <div class="column is-narrow">
           <h1 class="title">{{ snippet["name"] }}</h1>
@@ -18,8 +18,30 @@
           {% endif %}
         </div>
       </div>
+      {% if snippet.get("author") %}
+        <div class="media">
+          <!-- Profile Image -->
+          <div class="media-left">
+            <figure class="image is-32x32">
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
+                <img class="is-rounded"
+                     src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png') ) }}"
+                     alt="{{ snippet['author']['name'] }}'s profile picture">
+              </a>
+            </figure>
+          </div>
+          <!-- Owner Name -->
+          <div class="media-content mt-2">
+            <p class="title is-6">
+              <a href="{{ url_for('profile', username=snippet['author']['name']) }}"
+                 class="white-icon has-text-light has-text-weight-medium">{{ snippet['author']['name'] }}</a>
+            </p>
+          </div>
+        </div>
+      {% endif %}
       <div class="mb-4">
-        <small class="subtitle is-6 timestamp" data-timestamp="{{ snippet['date'] }}"></small>
+        <small class="subtitle is-6 timestamp"
+               data-timestamp="{{ snippet['date'] }}"></small>
       </div>
       <!-- Show parent snippet button if this is a remix -->
       {% if snippet.parent_snippet_id is not none %}
@@ -50,7 +72,9 @@
         <div class="control">
           <div class="level is-mobile">
             <div class = "level-left">
-              <button class="button level-item is-link" id="copyButton"  onclick="copySnippet($('#snippet-code'))">Copy Code</button>
+              <button class="button level-item is-link"
+                      id="copyButton"
+                      onclick="copySnippet($('#snippet-code'))">Copy Code</button>
               {% set id = current_user.get_id() | int if current_user.is_authenticated else None %}
               {% if current_user.is_authenticated and snippet["user_id"] == id %}
                 <a class="button level-item is-link"
@@ -94,39 +118,40 @@
                 <p class="image is-48x48">
                   <a href="{{ url_for('profile', username=comment['user_name']) }}">
                     <img class="is-rounded"
-                        src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] if comment['profile_picture'] else 'default_image.png') ) }}"
-                        alt="Profile Picture">
+                         src="{{ url_for('static', filename='profile_pictures/' + (comment['profile_picture'] if comment['profile_picture'] else 'default_image.png') ) }}"
+                         alt="Profile Picture">
                   </a>
                 </p>
               </figure>
               <div class="media-content">
                 <div class="content">
-                  <a href="{{ url_for('profile', username=comment['user_name']) }}" class="has-text-current">
+                  <a href="{{ url_for('profile', username=comment['user_name']) }}"
+                     class="has-text-current">
                     <strong>{{ comment["user_name"] }}</strong>
                   </a>
                   <small class="has-text-grey-light timestamp"
                          data-timestamp="{{ comment['date'] }}">{{ comment["date"] }}</small>
-                  <p>{{ comment["content"]}}</p>
+                  <p>{{ comment["content"] }}</p>
                 </div>
                 <!-- Comment Actions -->
                 {% if current_user.is_authenticated %}
-                <nav class="level is-mobile">
-                  <div class="level-left">
-                    <a class="level-item" onclick="toggleReplyForm('{{ comment['id'] }}')">
-                      <span class="icon is-small">
-                        <i class="fas fa-reply"></i>
-                      </span>
-                    </a>
-                    {% if current_user.is_authenticated and (comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
-                      <button class="icon is-small has-text-danger"
-                              comment-info=""
-                              {{ comment }}
-                              onclick="confirmCommentDelete('{{ comment['id'] }}')">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    {% endif %}
-                  </div>
-                </nav>
+                  <nav class="level is-mobile">
+                    <div class="level-left">
+                      <a class="level-item" onclick="toggleReplyForm('{{ comment['id'] }}')">
+                        <span class="icon is-small">
+                          <i class="fas fa-reply"></i>
+                        </span>
+                      </a>
+                      {% if current_user.is_authenticated and (comment["user_id"] == current_user.id | int or snippet["user_id"] == current_user.id | int) %}
+                        <button class="icon is-small has-text-danger"
+                                comment-info=""
+                                {{ comment }}
+                                onclick="confirmCommentDelete('{{ comment['id'] }}')">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      {% endif %}
+                    </div>
+                  </nav>
                 {% endif %}
                 {% if current_user.is_authenticated %}
                   <!-- Reply Form -->
@@ -161,14 +186,15 @@
                           <p class="image is-48x48">
                             <a href="{{ url_for('profile', username=reply['user_name']) }}">
                               <img class="is-rounded"
-                                  src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
-                                  alt="Profile Picture">
+                                   src="{{ url_for('static', filename='profile_pictures/' + (reply['profile_picture'] if reply['profile_picture'] else 'default_image.png') ) }}"
+                                   alt="Profile Picture">
                             </a>
                           </p>
                         </figure>
                         <div class="media-content">
                           <div class="content">
-                            <a href="{{ url_for('profile', username=reply['user_name']) }}" class="has-text-current">
+                            <a href="{{ url_for('profile', username=reply['user_name']) }}"
+                               class="has-text-current">
                               <strong>{{ reply["user_name"] }}</strong>
                             </a>
                             <small class="has-text-grey-light timestamp"
