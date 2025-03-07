@@ -178,3 +178,15 @@
 .user-card-name-container {
   overflow: visible;
 }
+
+.tag-box {
+  max-height: 24px;
+  min-height: 24px;
+  overflow-y: hidden;
+}
+
+.profile-titles {
+  display: flex;
+  justify-content: space-between;
+}
+
