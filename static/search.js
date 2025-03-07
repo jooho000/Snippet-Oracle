@@ -33,6 +33,12 @@ toggleResults("results-snippets", true);
 toggleResults("results-similar", false);
 toggleResults("results-shared", true);
 
+tagDiv.hide()
+userDiv.hide()
+snippetDiv.hide()
+similarDiv.hide()
+sharedDiv.hide()
+
 $(function () {
   // Start search after the user stops typing
   searchInput.on("input", function () {
