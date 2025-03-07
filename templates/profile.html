@@ -78,6 +78,11 @@
               <div class="level-right">
                 <div class="level-item">
                   {% if is_owner %}<a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>{% endif %}
+                  <a class="button is-info ml-3" href="{{url_for('index', q='@' ~ user.name, public=1)}}">
+                    <span class="icon">
+                      <i class = "fas fa-search"></i>
+                    </span>
+                  </a>
                 </div>
               </div>
             </div>
