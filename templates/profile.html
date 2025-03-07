@@ -81,7 +81,7 @@
                 </div>
               </div>
             </div>
-            <div class="container" id="snippet-grid">
+            <div class="container grid is-col-min-24" id="snippet-grid">
               {% if snippets %}
                 {% for snippet in snippets %}
                   {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == (current_user.id | int if current_user.is_authenticated else -1) ) }}
