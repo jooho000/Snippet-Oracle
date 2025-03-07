@@ -19,30 +19,32 @@
         </div>
       </div>
       <!-- Snippet Header: Profile Picture & Owner Name -->
-      <div class="snippet-card-user is-flex is-align-items-center py-2">
+      <div class="snippet-card-user level py-2">
         <!-- Profile Picture -->
-        {% if snippet.get("author") %}
-          <div class="media-left">
-            <figure class="image is-32x32">
-              <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
-                <img class="is-rounded"
-                     src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png') ) }}"
-                     alt="{{ snippet['author']['name'] }}'s profile picture">
-              </a>
-            </figure>
+        <div class="level-left">
+          {% if snippet.get("author") %}
+            <div class="level-item">
+              <figure class="media-left image is-32x32">
+                <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
+                  <img class="is-rounded"
+                       src="{{ url_for('static', filename='profile_pictures/' + (snippet['author']['profile_picture'] if snippet['author']['profile_picture'] else 'default_image.png') ) }}"
+                       alt="{{ snippet['author']['name'] }}'s profile picture">
+                </a>
+              </figure>
+            </div>
+            <!-- Owner Name -->
+            <div class="level-item">
+              <p class="title is-6 media-content ml-2">
+                <a href="{{ url_for('profile', username=snippet['author']['name']) }}"
+                   class="white-icon has-text-light has-text-weight-medium">{{ snippet['author']['name'] }}</a>
+              </p>
+            </div>
+          {% endif %}
+          <div class="level-item">
+            <small class="media-content subtitle is-6 timestamp"
+                   data-timestamp="{{ snippet['date'] }}"></small>
           </div>
-          <!-- Owner Name -->
-          <div class="media-content ml-2">
-            <p class="title is-6">
-              <a href="{{ url_for('profile', username=snippet['author']['name']) }}"
-                 class="white-icon has-text-light has-text-weight-medium">{{ snippet['author']['name'] }}</a>
-            </p>
-          </div>
-        {% endif %}
-      </div>
-      <div class="mb-4">
-        <small class="subtitle is-6 timestamp"
-               data-timestamp="{{ snippet['date'] }}"></small>
+        </div>
       </div>
       <!-- Show parent snippet button if this is a remix -->
       {% if snippet.parent_snippet_id is not none %}
