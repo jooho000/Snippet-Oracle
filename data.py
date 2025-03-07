@@ -720,23 +720,43 @@ class Data:
             for term in terms:
                 params.extend([f"%{term}%", f"%{term}%"])  # Both for name and description
 
-        # AND-based User filtering
-        if usernames:
-            queries.append(
-                f"Snippet.UserID IN (SELECT ID FROM User WHERE LOWER(Name) IN ({','.join(['?'] * len(usernames))}))"
+        user_conditions = []
+        for username in usernames:
+            cur.execute(
+                "SELECT ID FROM User WHERE LOWER(Name) = ?",
+                [username.lower()],
             )
-            params.extend(usernames)
+            exact_match = cur.fetchone()
+
+            if exact_match:
+                user_conditions.append("Snippet.UserID = ?")
+                params.append(exact_match[0])
+            else:
+                user_conditions.append("Snippet.UserID IN (SELECT ID FROM User WHERE Name LIKE ?)")
+                params.append("%" + username + "%")
+        
+        if user_conditions:
+            queries.append(f"({' OR '.join(user_conditions)})")
 
         # AND-based Tag Filtering (Must Contain All Tags)
         if include_tags:
-            tag_query = " AND ".join(
-                [
-                    "Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) = ?)"
-                ]
-                * len(include_tags)
-            )
-            queries.append(f"({tag_query})")
-            params.extend(include_tags)
+            tag_conditions = []
+            for tag in include_tags:
+                cur.execute(
+                    "SELECT TagName FROM TagUse WHERE LOWER(TagName) = ?",
+                    [tag.lower()],
+                )
+                exact_match = cur.fetchone()
+
+                if exact_match:
+                    tag_conditions.append("Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) = ?)")
+                    params.append(tag.lower())
+                else:
+                    tag_conditions.append("Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) LIKE ?)")
+                    params.append("%" + tag + "%")
+            
+            if tag_conditions:
+                queries.append(f"({' AND '.join(tag_conditions)})")
 
         # Exclude tags filtering (-tag)
         if exclude_tags:
