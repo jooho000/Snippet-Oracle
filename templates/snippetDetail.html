@@ -18,9 +18,10 @@
           {% endif %}
         </div>
       </div>
-      {% if snippet.get("author") %}
-        <div class="media">
-          <!-- Profile Image -->
+      <!-- Snippet Header: Profile Picture & Owner Name -->
+      <div class="snippet-card-user is-flex is-align-items-center py-2">
+        <!-- Profile Picture -->
+        {% if snippet.get("author") %}
           <div class="media-left">
             <figure class="image is-32x32">
               <a href="{{ url_for('profile', username=snippet['author']['name']) }}">
@@ -31,14 +32,14 @@
             </figure>
           </div>
           <!-- Owner Name -->
-          <div class="media-content mt-2">
+          <div class="media-content ml-2">
             <p class="title is-6">
               <a href="{{ url_for('profile', username=snippet['author']['name']) }}"
                  class="white-icon has-text-light has-text-weight-medium">{{ snippet['author']['name'] }}</a>
             </p>
           </div>
-        </div>
-      {% endif %}
+        {% endif %}
+      </div>
       <div class="mb-4">
         <small class="subtitle is-6 timestamp"
                data-timestamp="{{ snippet['date'] }}"></small>
