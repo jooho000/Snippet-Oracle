@@ -184,3 +184,8 @@
   min-height: 36px;
   overflow-y: scroll;
 }
+
+.profile-titles {
+  display: flex;
+  justify-content: space-between;
+}
