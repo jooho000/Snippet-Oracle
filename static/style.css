@@ -189,3 +189,7 @@
   display: flex;
   justify-content: space-between;
 }
+
+.search-bar-spacer {
+  min-height: 60px;
+}
