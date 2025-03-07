@@ -193,3 +193,24 @@
 .search-bar-spacer {
   min-height: 60px;
 }
+
+#snippet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr)); /* Ensures 2 columns */
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* For Tablets: Maintain Two Columns */
+@media screen and (max-width: 1024px) {
+  #snippet-grid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr)); /* Ensures 2 per row */
+  }
+}
+
+/* For Mobile: Only One Column */
+@media screen and (max-width: 768px) {
+  #snippet-grid {
+    grid-template-columns: repeat(1, minmax(280px, 1fr)); /* Ensures 1 per row */
+  }
+}
