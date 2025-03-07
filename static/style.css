@@ -178,3 +178,9 @@
 .user-card-name-container {
   overflow: visible;
 }
+
+.tag-box {
+  max-height: 36px;
+  min-height: 36px;
+  overflow-y: scroll;
+}
