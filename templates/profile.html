@@ -63,15 +63,23 @@
         </div>
         <div class="column">
           <div class="box">
-            <div class="media profile-titles">
-              <h4 class="title is-10">
-                {% if is_owner %}
-                  Your Snippets
-                {% else %}
-                  Public Snippets
-                {% endif %}
-              </h4>
-              {% if is_owner %}<a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>{% endif %}
+            <div class="level profile-titles">
+              <div class="level-left">
+                <div class="level-item">
+                  <h4 class="title is-10">
+                    {% if is_owner %}
+                      Your Snippets
+                    {% else %}
+                      Public Snippets
+                    {% endif %}
+                  </h4>
+                </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  {% if is_owner %}<a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>{% endif %}
+                </div>
+              </div>
             </div>
             <div class="container" id="snippet-grid">
               {% if snippets %}
