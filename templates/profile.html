@@ -4,7 +4,8 @@
 {% block head %}
   {{ super() }}
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 {% endblock %}
 {% block content %}
@@ -16,7 +17,6 @@
           <button class="button is-primary level-right" onclick="openEditModal()">Edit Profile</button>
         {% endif %}
       </div>
-      
       <div class="columns">
         <div class="column is-one-quarter">
           <figure class="image is-square">
@@ -63,11 +63,28 @@
         </div>
         <div class="column">
           <div class="box">
-            <h4 class="title is-5">{% if is_owner %}Your Snippets{% else %}Public Snippets{% endif %}</h4>
+            <div class="level profile-titles">
+              <div class="level-left">
+                <div class="level-item">
+                  <h4 class="title is-10">
+                    {% if is_owner %}
+                      Your Snippets
+                    {% else %}
+                      Public Snippets
+                    {% endif %}
+                  </h4>
+                </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  {% if is_owner %}<a class="button is-light" href="{{ url_for("createSnippet") }}">Create New Snippet</a>{% endif %}
+                </div>
+              </div>
+            </div>
             <div class="container" id="snippet-grid">
               {% if snippets %}
                 {% for snippet in snippets %}
-                  {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == (current_user.id | int if current_user.is_authenticated else -1)) }}
+                  {{ macros.snippetCard(None, snippet, editable=snippet["user_id"] == (current_user.id | int if current_user.is_authenticated else -1) ) }}
                 {% endfor %}
               {% else %}
                 <p>No snippets found. Start creating your first snippet!</p>
