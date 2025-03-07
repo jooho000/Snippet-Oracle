@@ -487,6 +487,7 @@ def update_snippet_visibility(snippet_id):
 
 
 @app.route("/search", methods=["GET"])
+@app.route("/search/", methods=["GET"])
 def search_snippets():
     query = request.args.get("q", "").strip()
     public = request.args.get("public") == "1"
