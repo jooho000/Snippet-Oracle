@@ -102,11 +102,11 @@ async function likeSnippetCard(card) {
   else allButtons.addClass("has-text-link");
 
   // Update likes on server
-  const options = {
-    method: wasLiked ? "DELETE" : "POST",
-  };
-
-  fetch(script_root + `/likes/${id}`, options).catch(console.error);
+  fetch(script_root + `/likes/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ like: !wasLiked }),
+  });
 }
 
 /**
@@ -160,11 +160,11 @@ async function toggleLike(id) {
   else button.addClass("has-text-link");
 
   // Update likes on server
-  const options = {
-    method: wasLiked ? "DELETE" : "POST",
-  };
-
-  fetch(script_root + `/likes/${id}`, options).catch(console.error);
+  fetch(script_root + `/likes/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ like: !wasLiked }),
+  });
 }
 
 // Apply code highlighting
