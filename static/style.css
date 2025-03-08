@@ -82,9 +82,9 @@
 .social-links-box a {
   display: inline-block;
   max-width: 90%;
-  white-space: nowrap; /* Prevent line wrapping */
-  overflow: hidden; /* Hide overflowing content */
-  text-overflow: ellipsis; /* Add ellipsis for truncation */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   vertical-align: middle;
 }
 
@@ -194,23 +194,62 @@
   min-height: 60px;
 }
 
+.profile-picture-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+
+.profile-picture-container img {
+  max-width: 250px;
+  width: 100%;
+  height: auto;
+  border-radius: 50%;
+}
+
+@media screen and (max-width: 768px) {
+  .profile-picture-container img {
+    max-width: 150px;
+  }
+}
+
 #snippet-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr)); /* Ensures 2 columns */
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap: 1rem;
   justify-content: center;
 }
 
-/* For Tablets: Maintain Two Columns */
 @media screen and (max-width: 1024px) {
   #snippet-grid {
-    grid-template-columns: repeat(2, minmax(280px, 1fr)); /* Ensures 2 per row */
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
   }
 }
 
-/* For Mobile: Only One Column */
 @media screen and (max-width: 768px) {
   #snippet-grid {
-    grid-template-columns: repeat(1, minmax(280px, 1fr)); /* Ensures 1 per row */
+    grid-template-columns: repeat(1, minmax(280px, 1fr));
   }
+}
+
+.name {
+  display: block;
+  max-width: 800px;
+  width: 80vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-word;
+}
+
+.name:hover {
+  white-space: normal;
+  overflow: visible;
+}
+
+.description {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
