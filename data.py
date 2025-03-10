@@ -160,12 +160,17 @@ class Data:
             user_id = self.get_user_by_name(user_name)["id"]
 
             for _ in range(random.randint(0, 20)):
+                snippet_data = mock_data.code()
+                snippet_code = snippet_data["snippet"]
+                snippet_tags = snippet_data["tags"]
+                snippet_description = snippet_data["description"]
+
                 self.create_snippet(
                     name=mock_data.title(),
-                    code=mock_data.code(),
+                    code=snippet_code,
                     user_id=user_id,
-                    description=mock_data.paragraph(),
-                    tags=mock_data.tags(),
+                    description=snippet_description,
+                    tags=snippet_tags,
                     is_public=random.choice([True, False]),
                 )
 
