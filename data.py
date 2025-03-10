@@ -104,7 +104,7 @@ class Data:
                 FOREIGN KEY (UserID) REFERENCES User(ID) ON DELETE CASCADE
             );
             CREATE VIRTUAL TABLE IF NOT EXISTS SnippetEmbedding USING vec0(
-                SnippetID INTEGER PRIMARY KEY,
+                SnippetID INTEGER PRIMARY KEY ON DELETE CASCADE,
                 Embedding float[384]
             );
             CREATE TABLE IF NOT EXISTS Comments (
