@@ -58,6 +58,11 @@ def populate_db():
     get_db().populate()
 
 
+@app.cli.command("regenerate-embeddings")
+def regenerate_snippet_embeddings():
+    get_db().regenerate_embeddings()
+
+
 def get_db():
     db = getattr(g, "_database", None)
     if db is None:

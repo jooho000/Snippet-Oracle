@@ -174,6 +174,21 @@ class Data:
                     is_public=random.choice([True, False]),
                 )
 
+    def regenerate_embeddings(self):
+        cur = self._db.cursor()
+        cur.execute("DELETE FROM SnippetEmbedding")
+        cur.execute("SELECT ID, Name, Description, IsPublic FROM Snippet")
+        for snippet in cur:
+            embedding = _get_transformer().encode(snippet[1] + " " + snippet[2])
+            if snippet[3]:
+                cur.execute(
+                    """
+                    INSERT INTO SnippetEmbedding (SnippetID, Embedding)
+                    VALUES (?, ?)
+                    """,
+                    [snippet[0], embedding],
+                )
+
     ## USER INFO ###
 
     def delete_user(self, id):
@@ -389,13 +404,8 @@ class Data:
                 [(snippet_id, tag) for tag in tags],
             )
 
-        if (
-            description is not None
-            and description != ""
-            and is_public
-            and self.generate_embeddings
-        ):
-            embedding = _get_transformer().encode(description)
+        if is_public and self.generate_embeddings:
+            embedding = _get_transformer().encode(name + " " + description)
             cur.execute(
                 """
                 INSERT INTO SnippetEmbedding (SnippetID, Embedding)
@@ -1191,13 +1201,8 @@ class Data:
             """,
             [id],
         )
-        if (
-            description is not None
-            and description != ""
-            and is_public
-            and self.generate_embeddings
-        ):
-            embedding = _get_transformer().encode(description)
+        if is_public and self.generate_embeddings:
+            embedding = _get_transformer().encode(name + " " + description)
             cur.execute(
                 """
                 INSERT INTO SnippetEmbedding (SnippetID, Embedding)
