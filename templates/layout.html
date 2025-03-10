@@ -84,8 +84,8 @@
                     <div class="level is-mobile">
                       <div class="level-left">
                         <div class="level-item">
-                          <figure class="image is-32x32 mr-2">
-                            <img src="{{ url_for('static', filename='profile_pictures/' + (user.profile_picture if user.profile_picture else 'default_image.png') ) }}"
+                          <figure class="image is-32x32 mr-3">
+                            <img src="{{ url_for('static', filename='profile_pictures/' + navbar_user_picture) }}"
                                 alt="Profile Picture"
                                 class="is-rounded">
                           </figure>

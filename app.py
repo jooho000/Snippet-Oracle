@@ -350,6 +350,20 @@ def get_social_icon(url):
     return "/static/profile_pictures/default_image.png"
 
 
+@app.context_processor
+def inject_navbar_user_picture():
+    """
+    Ensure navbar_user_picture is available in all templates
+    """
+    navbar_user_picture = None
+
+    if flask_login.current_user.is_authenticated:
+        user_details = get_db().get_user_details(flask_login.current_user.id)
+        navbar_user_picture = user_details["profile_picture"]
+
+    return dict(navbar_user_picture=navbar_user_picture)
+
+
 @app.route("/createSnippet", methods=["GET", "POST"])
 @app.route("/remixSnippet/<int:snippet_id>", methods=["GET", "POST"])
 @flask_login.login_required
