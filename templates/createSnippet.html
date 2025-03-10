@@ -33,7 +33,7 @@
           <div class="field">
             <label class="label">Code</label>
             <div class="control">
-              <textarea class="textarea is-family-code"
+              <textarea class="textarea is-family-code code-editor"
                         name="code"
                         placeholder="Paste your code here"
                         rows="6"
@@ -175,4 +175,5 @@
   {{ super() }}
   <script src="{{ url_for('static', filename='userSelection.js') }}"></script>
   <script src="{{ url_for('static', filename='tagHandler.js') }}"></script>
+  <script src="{{ url_for('static', filename='codeEditor.js') }}"></script>
 {% endblock %}
