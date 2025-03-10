@@ -628,7 +628,7 @@ def add_comment(snippet_id):
     if not get_db().user_has_permission(snippet_id, flask_login.current_user.id):
         flask.flash("Unauthorized or snippet not found!", "danger")
         return flask.redirect(flask.url_for("index"))
-    
+
     comment_content = flask.request.form.get("comment")
     parent_id = flask.request.form.get("parent_id")
 

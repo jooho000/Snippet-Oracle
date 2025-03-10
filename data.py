@@ -411,24 +411,24 @@ class Data:
 
         return snippet_id
 
-    def get_snippet_isPublic(self,snippet_id):
+    def get_snippet_isPublic(self, snippet_id):
         cur = self._db.cursor()
 
         cur.execute(
-         """
+            """
             SELECT IsPublic 
             FROM Snippet 
             WHERE ID = ? 
-            """, [snippet_id],
+            """,
+            [snippet_id],
         )
 
         result = cur.fetchone()
 
         if result:
-            return bool(result)
+            return result[0]
         else:
             return None
-    
 
     def get_snippet(self, snippet_id, viewer_id=None):
         cur = self._db.cursor()
@@ -624,7 +624,7 @@ class Data:
             ORDER BY Snippet.Date DESC
             LIMIT 10
             """,
-            [user_id, user_id]
+            [user_id, user_id],
         )
 
         snippets_list = []
@@ -723,7 +723,9 @@ class Data:
             )
             queries.append(f"({term_conditions})")
             for term in terms:
-                params.extend([f"%{term}%", f"%{term}%"])  # Both for name and description
+                params.extend(
+                    [f"%{term}%", f"%{term}%"]
+                )  # Both for name and description
 
         user_conditions = []
         for username in usernames:
@@ -737,9 +739,11 @@ class Data:
                 user_conditions.append("Snippet.UserID = ?")
                 params.append(exact_match[0])
             else:
-                user_conditions.append("Snippet.UserID IN (SELECT ID FROM User WHERE Name LIKE ?)")
+                user_conditions.append(
+                    "Snippet.UserID IN (SELECT ID FROM User WHERE Name LIKE ?)"
+                )
                 params.append("%" + username + "%")
-        
+
         if user_conditions:
             queries.append(f"({' OR '.join(user_conditions)})")
 
@@ -754,12 +758,16 @@ class Data:
                 exact_match = cur.fetchone()
 
                 if exact_match:
-                    tag_conditions.append("Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) = ?)")
+                    tag_conditions.append(
+                        "Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) = ?)"
+                    )
                     params.append(tag.lower())
                 else:
-                    tag_conditions.append("Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) LIKE ?)")
+                    tag_conditions.append(
+                        "Snippet.ID IN (SELECT SnippetID FROM TagUse WHERE LOWER(TagName) LIKE ?)"
+                    )
                     params.append("%" + tag + "%")
-            
+
             if tag_conditions:
                 queries.append(f"({' AND '.join(tag_conditions)})")
 
@@ -788,7 +796,9 @@ class Data:
 
         # Ensure there's at least one condition to prevent empty WHERE clause
         if not queries:
-            queries.append("1=1")  # This prevents SQL syntax errors if no filters are applied
+            queries.append(
+                "1=1"
+            )  # This prevents SQL syntax errors if no filters are applied
 
         # Final SQL query with ordering: Name Matches First, Then Sort by Likes
         query = f"""
@@ -819,13 +829,14 @@ class Data:
                     "is_public": bool(res[7]),
                     "tags": self.get_tags_for_snippet(res[0]),  # Fetch snippet tags
                     "likes": res[8],  # Sort by like count
-                    "is_liked": self.is_liked(res[0], viewer_id),  # Check if the user liked it
+                    "is_liked": self.is_liked(
+                        res[0], viewer_id
+                    ),  # Check if the user liked it
                     "author": user_details,  # Attach user details
                 }
             )
 
         return snippets_list
-
 
     def smart_search_snippets(self, query, viewer_id=None):
         """
