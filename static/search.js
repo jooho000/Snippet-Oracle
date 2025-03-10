@@ -99,7 +99,7 @@ async function doSearch() {
   toggleResults("results-tags", false);
   toggleResults("results-users", false);
   toggleResults("results-snippets", true);
-  toggleResults("results-similar", false);
+  toggleResults("results-similar", true);
   toggleResults("results-shared", false);
 
   searchInput.parent().addClass("is-loading");
