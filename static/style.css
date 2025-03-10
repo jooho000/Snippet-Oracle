@@ -236,7 +236,6 @@
 .name {
   display: block;
   max-width: 800px;
-  width: 80vw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
