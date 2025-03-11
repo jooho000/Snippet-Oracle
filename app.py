@@ -442,7 +442,7 @@ def createSnippet(snippet_id=None):
 
         if new_snippet_id:
             flask.flash("Snippet created successfully!", "success")
-            return flask.redirect(flask.url_for("index"))
+            return flask.redirect(flask.url_for("view_snippet", snippet_id=new_snippet_id))
         else:
             flask.flash("Failed to create snippet!", "danger")
 
