@@ -210,7 +210,7 @@ def profile(username=None):
 
     # If the profile owner is editing
     if flask.request.method == "POST":
-        bio = flask.request.form.get("bio", "")
+        bio = flask.request.form.get("bio", "").replace("\r\n", "\n")
         links = flask.request.form.getlist("links")
         profile_picture_base64 = flask.request.form.get("profile_picture_base64")
 
@@ -380,8 +380,8 @@ def createSnippet(snippet_id=None):
 
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
-        code = flask.request.form.get("code")
-        description = flask.request.form.get("description", "")
+        code = flask.request.form.get("code").replace("\r\n", "\n")
+        description = flask.request.form.get("description", "").replace("\r\n", "\n")
         tags = flask.request.form.get("tags", "")
         is_public = flask.request.form.get("is_public") == "1"
         user_id = flask_login.current_user.id
@@ -566,8 +566,8 @@ def edit_snippet(snippet_id):
 
     if flask.request.method == "POST":
         name = flask.request.form.get("name")
-        code = flask.request.form.get("code")
-        description = flask.request.form.get("description")
+        code = flask.request.form.get("code").replace("\r\n", "\n")
+        description = flask.request.form.get("description").replace("\r\n", "\n")
         tags = flask.request.form.get("tags")
         user_id = flask_login.current_user.id
         is_public = flask.request.form.get("is_public") == "1"
